@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 type QuestionType = 'TRUE_FALSE' | 'MCQ' | 'TEXT' | 'MULTI_TEXT';
@@ -28,8 +28,14 @@ type QuizFormState = {
   description: string;
   isPublic: boolean;
   randomizeQuestions?: boolean;
+  categoryId?: string;
   questions: QuestionForm[];
 };
+
+interface Category {
+  id: string;
+  name: string;
+}
 
 let idCounter = 0;
 const generateId = () => `temp_${Date.now()}_${idCounter++}`;
@@ -99,6 +105,7 @@ export default function QuizForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const titleRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<QuizFormState>(() => ({
@@ -107,6 +114,7 @@ export default function QuizForm({
     description: initialData?.description ?? '',
     isPublic: initialData?.isPublic ?? true,
     randomizeQuestions: initialData?.randomizeQuestions ?? false,
+    categoryId: initialData?.categoryId ?? '',
     questions: initialData?.questions?.length
       ? (initialData.questions as QuestionForm[]).map(q => ({
         ...normalizeQuestion(q),
@@ -123,12 +131,16 @@ export default function QuizForm({
       }],
   }));
 
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(r => r.json())
+      .then(setCategories);
+  }, []);
+
   const totalPoints = useMemo(
     () => form.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0),
     [form.questions]
   );
-
-  // ─── Validation ──────────────────────────────────────────────────────────
 
   function setFieldError(key: string, msg: string) {
     setFieldErrors(prev => ({ ...prev, [key]: msg }));
@@ -158,13 +170,9 @@ export default function QuizForm({
     return Object.keys(fieldErrors).some(k => k.startsWith(`q${qi}_`) && fieldErrors[k]);
   }
 
-  // ─── Helpers pour affichage conditionnel ─────────────────────────────────
-
   function fieldError(key: string) {
     return submitted ? fieldErrors[key] : '';
   }
-
-  // ─── Handlers ────────────────────────────────────────────────────────────
 
   function setQuizField<K extends keyof QuizFormState>(key: K, value: QuizFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -183,7 +191,7 @@ export default function QuizForm({
           patch.type === 'TRUE_FALSE' ? 2
             : patch.type === 'TEXT' ? 5
               : patch.type === 'MULTI_TEXT' ? 1
-                : 3; // MCQ
+                : 3;
 
         next[index] = normalizeQuestion({ ...current, ...patch, points: defaultPoints });
       } else {
@@ -198,12 +206,10 @@ export default function QuizForm({
     if (submitted) {
       if (patch.text !== undefined) validateQuestionText(index, patch.text);
       if (patch.points !== undefined) validateQuestionPoints(index, patch.points);
-      // Pour les réponses MCQ : ne valider que isCorrect, pas le texte en cours de frappe
       if (patch.answers !== undefined && patch.type === undefined) {
         setForm(prev => {
           const q = prev.questions[index];
           const type = q.type;
-          // Pour MCQ : valider uniquement si on change isCorrect (pas le texte)
           const isCorrectChange = patch.answers!.some((a, i) => a.isCorrect !== q.answers[i]?.isCorrect);
           if (type !== 'MCQ' || isCorrectChange) {
             validateAnswers(index, patch.answers!, type);
@@ -218,7 +224,6 @@ export default function QuizForm({
     const last = form.questions[form.questions.length - 1];
     const qi = form.questions.length - 1;
 
-    // Vérification titre avant d'ajouter une question
     if (!form.title.trim()) {
       setSubmitted(true);
       setFieldError('title', 'Titre requis');
@@ -229,24 +234,14 @@ export default function QuizForm({
       return;
     }
 
-    // Vérification de la dernière question
     const newErrors: Record<string, string> = {};
-    if (!last.text.trim()) {
-      newErrors[`q${qi}_text`] = 'Texte de la question requis';
-    }
+    if (!last.text.trim()) newErrors[`q${qi}_text`] = 'Texte de la question requis';
     if (last.type === 'MCQ') {
-      if (last.answers.some(a => !a.text.trim())) {
-        newErrors[`q${qi}_answers`] = 'Une réponse est vide';
-      } else if (!last.answers.some(a => a.isCorrect)) {
-        newErrors[`q${qi}_answers`] = 'Coche au moins une bonne réponse';
-      }
+      if (last.answers.some(a => !a.text.trim())) newErrors[`q${qi}_answers`] = 'Une réponse est vide';
+      else if (!last.answers.some(a => a.isCorrect)) newErrors[`q${qi}_answers`] = 'Coche au moins une bonne réponse';
     }
-    if (last.type === 'TEXT' && !last.answers[0]?.text.trim()) {
-      newErrors[`q${qi}_answers`] = 'Réponse attendue requise';
-    }
-    if (last.type === 'MULTI_TEXT' && last.answers.some(a => !a.text.trim())) {
-      newErrors[`q${qi}_answers`] = 'Une réponse attendue est vide';
-    }
+    if (last.type === 'TEXT' && !last.answers[0]?.text.trim()) newErrors[`q${qi}_answers`] = 'Réponse attendue requise';
+    if (last.type === 'MULTI_TEXT' && last.answers.some(a => !a.text.trim())) newErrors[`q${qi}_answers`] = 'Une réponse attendue est vide';
 
     if (Object.keys(newErrors).length > 0) {
       setSubmitted(true);
@@ -342,8 +337,6 @@ export default function QuizForm({
     });
   }
 
-  // ─── Validation globale ───────────────────────────────────────────────────
-
   function validate(): string | null {
     if (!form.title.trim()) return 'Titre requis.';
     if (form.questions.length === 0) return 'Ajoute au moins une question.';
@@ -371,7 +364,6 @@ export default function QuizForm({
   async function onSubmit() {
     setSubmitted(true);
 
-    // Scroll vers le titre si vide
     if (!form.title.trim()) {
       setFieldError('title', 'Titre requis');
       setTimeout(() => {
@@ -381,7 +373,6 @@ export default function QuizForm({
       return;
     }
 
-    // Valider toutes les questions
     form.questions.forEach((q, qi) => {
       validateQuestionText(qi, q.text);
       validateQuestionPoints(qi, q.points);
@@ -403,6 +394,7 @@ export default function QuizForm({
         description: form.description,
         isPublic: form.isPublic,
         randomizeQuestions: form.randomizeQuestions,
+        categoryId: form.categoryId || null,
         questions: form.questions.map((q) => ({
           id: q.id,
           text: q.text,
@@ -483,6 +475,22 @@ export default function QuizForm({
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+            <select
+              value={form.categoryId ?? ''}
+              onChange={(e) => setQuizField('categoryId', e.target.value)}
+              className="w-full border rounded-lg p-3 focus:outline-none focus:border-blue-600"
+            >
+              <option value="">Aucune catégorie</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
               type="checkbox"
@@ -507,8 +515,7 @@ export default function QuizForm({
         {form.questions.map((q, qi) => (
           <div
             key={q.id || q.tempId}
-            className={`bg-white rounded-xl shadow-lg p-6 transition-all ${hasQuestionErrors(qi) ? 'ring-2 ring-red-400 border border-red-400' : ''
-              }`}
+            className={`bg-white rounded-xl shadow-lg p-6 transition-all ${hasQuestionErrors(qi) ? 'ring-2 ring-red-400 border border-red-400' : ''}`}
           >
             {hasQuestionErrors(qi) && (
               <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600 text-sm font-medium">
@@ -582,10 +589,7 @@ export default function QuizForm({
               </div>
 
               <div className="text-sm text-gray-500 flex items-end">
-                {q.type === 'MCQ' ? ''
-                  : q.type === 'TRUE_FALSE' ? ''
-                    : q.type === 'MULTI_TEXT' ? 'Points par bonne réponse'
-                      : ''}
+                {q.type === 'MULTI_TEXT' ? 'Points par bonne réponse' : ''}
               </div>
             </div>
 
@@ -628,8 +632,7 @@ export default function QuizForm({
                           const answers = q.answers.map((x, i) => i === ai ? { ...x, text: e.target.value } : x);
                           updateQuestion(qi, { answers });
                         }}
-                        className={`flex-1 border rounded-lg p-3 focus:outline-none focus:border-blue-600 ${!a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300' : ''
-                          }`}
+                        className={`flex-1 border rounded-lg p-3 focus:outline-none focus:border-blue-600 ${!a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300' : ''}`}
                         placeholder={`Réponse attendue ${ai + 1}`}
                       />
                       <button
@@ -666,8 +669,7 @@ export default function QuizForm({
                           const answers = q.answers.map((x, i) => (i === ai ? { ...x, text: e.target.value } : x));
                           updateQuestion(qi, { answers });
                         }}
-                        className={`flex-1 border rounded-lg p-3 ${q.type === 'MCQ' && !a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300' : ''
-                          }`}
+                        className={`flex-1 border rounded-lg p-3 ${q.type === 'MCQ' && !a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300' : ''}`}
                         placeholder={`Réponse ${ai + 1}`}
                         disabled={q.type === 'TRUE_FALSE'}
                       />

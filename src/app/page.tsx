@@ -5,6 +5,11 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import QuizCard from '@/components/QuizCard';
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface Quiz {
   id: string;
   title: string;
@@ -27,6 +32,8 @@ interface UserScore {
   totalScore: number;
 }
 
+type SortOption = 'name_asc' | 'name_desc' | 'category';
+
 export default function HomePage() {
   const { data: session } = useSession();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -34,18 +41,30 @@ export default function HomePage() {
   const [quizPoints, setQuizPoints] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryId, setCategoryId] = useState('');
+  const [sort, setSort] = useState<SortOption>('name_asc');
 
-  // Remplace l'ancien useEffect
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(r => r.json())
+      .then(setCategories);
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchData(search);
+      fetchData(search, categoryId);
     }, 300);
     return () => clearTimeout(timer);
-  }, [search, session]);
+  }, [search, categoryId, session]);
 
-  const fetchData = async (searchTerm = '') => {
+  const fetchData = async (searchTerm = '', catId = '') => {
     try {
-      const res = await fetch(`/api/quiz?search=${encodeURIComponent(searchTerm)}`);
+      const params = new URLSearchParams();
+      if (searchTerm) params.set('search', searchTerm);
+      if (catId) params.set('categoryId', catId);
+
+      const res = await fetch(`/api/quiz?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setQuizzes(data);
@@ -85,7 +104,16 @@ export default function HomePage() {
     setQuizPoints(pointsMap);
   };
 
-  const completedQuizIds = myScores.map((s) => s.quiz.id);
+  const sortedQuizzes = [...quizzes].sort((a, b) => {
+    if (sort === 'name_asc') return a.title.localeCompare(b.title);
+    if (sort === 'name_desc') return b.title.localeCompare(a.title);
+    if (sort === 'category') {
+      const catA = a.category?.name ?? 'zzz';
+      const catB = b.category?.name ?? 'zzz';
+      return catA.localeCompare(catB);
+    }
+    return 0;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -115,8 +143,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Titre + Recherche + Leaderboard */}
-        <div className="mb-8">
+        {/* Titre + Leaderboard */}
+        <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-2xl font-bold text-gray-900">Quiz disponibles</h3>
             <Link
@@ -126,13 +154,56 @@ export default function HomePage() {
               🏆 Voir le classement
             </Link>
           </div>
-          <input
-            type="text"
-            placeholder="🔍 Rechercher un quiz par titre..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input-field w-full sm:w-1/3"
-          />
+
+          {/* Filtres + Tri */}
+          <div className="bg-white rounded-xl shadow-sm p-4 flex flex-wrap gap-3 items-end">
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-medium text-gray-500 mb-1">🔍 Recherche</label>
+              <input
+                type="text"
+                placeholder="Rechercher par titre..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="input-field w-full"
+              />
+            </div>
+
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-500 mb-1">🏷️ Catégorie</label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="input-field w-full"
+              >
+                <option value="">Toutes les catégories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-500 mb-1">↕️ Trier par</label>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortOption)}
+                className="input-field w-full"
+              >
+                <option value="name_asc">Nom (A → Z)</option>
+                <option value="name_desc">Nom (Z → A)</option>
+                <option value="category">Catégorie</option>
+              </select>
+            </div>
+
+            {(search || categoryId) && (
+              <button
+                onClick={() => { setSearch(''); setCategoryId(''); }}
+                className="text-sm text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -140,14 +211,14 @@ export default function HomePage() {
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             <p className="mt-4 text-gray-600">Chargement des quiz...</p>
           </div>
-        ) : quizzes.length === 0 ? (
+        ) : sortedQuizzes.length === 0 ? (
           <div className="card text-center py-12">
             <p className="text-gray-600 text-lg">Aucun quiz disponible pour le moment.</p>
             <p className="text-gray-500 mt-2">Connectez-vous pour créer le premier !</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quizzes.map((quiz) => {
+            {sortedQuizzes.map((quiz) => {
               const score = myScores.find((s) => s.quiz.id === quiz.id);
               const totalPoints = quizPoints[quiz.id] || 0;
 

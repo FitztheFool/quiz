@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, isPublic, randomizeQuestions, questions } = body;
+    const { title, description, isPublic, randomizeQuestions, categoryId, questions } = body;
 
     const quiz = await prisma.quiz.create({
       data: {
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
         description: description || '',
         isPublic: isPublic ?? true,
         randomizeQuestions: randomizeQuestions ?? false,
+        categoryId: categoryId || null,
         creatorId: session.user.id,
         questions: {
           create: questions.map((q: any) => ({
