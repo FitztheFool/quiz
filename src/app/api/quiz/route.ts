@@ -3,21 +3,22 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+    const categoryId = searchParams.get('categoryId') || '';
 
     const quizzes = await prisma.quiz.findMany({
       where: {
         AND: [
           search ? { title: { contains: search, mode: 'insensitive' } } : {},
+          categoryId ? { categoryId } : {},
           {
             OR: [
               { isPublic: true },
-              { creatorId: session?.user?.id ?? '' }, // ← quiz privés du créateur
+              { creatorId: session?.user?.id ?? '' },
             ],
           },
         ],
@@ -29,6 +30,7 @@ export async function GET(request: Request) {
         isPublic: true,
         creatorId: true,
         creator: { select: { username: true } },
+        category: { select: { name: true } },
         _count: { select: { questions: true } },
         createdAt: true,
       },
@@ -54,7 +56,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    // Créer le quiz avec ses questions et réponses
     const { title, description, isPublic, randomizeQuestions, questions } = body;
 
     const quiz = await prisma.quiz.create({
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
         title,
         description: description || '',
         isPublic: isPublic ?? true,
-        randomizeQuestions: randomizeQuestions ?? false, // ← ajouter
+        randomizeQuestions: randomizeQuestions ?? false,
         creatorId: session.user.id,
         questions: {
           create: questions.map((q: any) => ({

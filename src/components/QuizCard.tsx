@@ -10,6 +10,9 @@ interface QuizCardProps {
       questions: number;
     };
     creatorId?: string;
+    category?: {
+      name: string;
+    } | null;
   };
   currentUserId?: string;
   score?: number;
@@ -84,6 +87,12 @@ export default function QuizCard({
         <span className="flex items-center gap-1">
           📝 {quiz._count.questions} questions
         </span>
+
+        {quiz.category && (
+          <span className="flex items-center gap-1 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+            🏷️ {quiz.category.name}
+          </span>
+        )}
 
         {hasPlayed && (
           <span

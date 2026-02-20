@@ -14,6 +14,7 @@ interface Quiz {
   creator: {
     username: string;
   };
+  category?: { name: string } | null;
   _count: {
     questions: number;
   };

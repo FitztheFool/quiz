@@ -42,6 +42,8 @@ model Quiz {
   description String?  @db.Text
   randomizeQuestions Boolean @default(false)
   isPublic    Boolean  @default(true)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -53,6 +55,7 @@ model Quiz {
   scores    Score[]
   attempts  Attempt[]
 
+  @@index([categoryId])
   @@index([creatorId])
   @@index([isPublic])
   @@map("quizzes")
@@ -89,6 +92,17 @@ model Answer {
 
   @@index([questionId])
   @@map("answers")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  quizzes Quiz[]
+
+  @@map("categories")
 }
 
 model Attempt {
