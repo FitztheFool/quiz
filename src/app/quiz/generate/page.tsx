@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
@@ -20,6 +20,7 @@ export default function GenerateQuizPage() {
     const [provider, setProvider] = useState(`groq`);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(``);
+    const submitting = useRef(false); // ← verrou anti-spam
 
     useEffect(() => {
         fetch(`/api/categories`)
@@ -41,6 +42,10 @@ export default function GenerateQuizPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Bloquer si déjà en cours
+        if (submitting.current) return;
+        submitting.current = true;
         setLoading(true);
         setError(``);
 
@@ -69,6 +74,7 @@ export default function GenerateQuizPage() {
             setError(`Une erreur est survenue`);
         } finally {
             setLoading(false);
+            submitting.current = false; // ← libérer le verrou seulement en cas d'erreur
         }
     };
 
@@ -158,7 +164,7 @@ export default function GenerateQuizPage() {
                         <button
                             type="submit"
                             disabled={loading || loadingCategories}
-                            className="btn-primary w-full"
+                            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? `⏳ Génération en cours...` : `✨ Générer le quiz`}
                         </button>

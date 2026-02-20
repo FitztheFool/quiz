@@ -260,8 +260,8 @@ async function main() {
   const quizMytho = await prisma.quiz.create({
     data: {
       title: `Mythologie`,
-      description: `Un quiz privé pour tester les cracks.`,
-      creatorId: admin.id,
+      description: `Un quiz mythologie.`,
+      creatorId: alice.id,
       isPublic: true,
       randomizeQuestions: true,
       questions: {

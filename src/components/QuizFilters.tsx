@@ -99,19 +99,6 @@ export default function QuizFilters({
         </select>
       </div>
 
-      <div className="flex-1 min-w-[160px]">
-        <label className="block text-xs font-medium text-gray-500 mb-1">↕️ Trier par</label>
-        <select
-          value={sort}
-          onChange={(e) => onSortChange(e.target.value as SortOption)}
-          className="input-field w-full"
-        >
-          <option value="name_asc">Nom (A → Z)</option>
-          <option value="name_desc">Nom (Z → A)</option>
-          <option value="category">Catégorie</option>
-        </select>
-      </div>
-
       {hasFilters && (
         <button
           onClick={handleReset}

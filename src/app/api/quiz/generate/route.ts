@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getClient, getModel } from '@/lib/openai';
 import prisma from '@/lib/prisma';
+import { Role } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
@@ -94,13 +95,15 @@ Utilise uniquement le type MCQ ou TRUE_FALSE. Pour TRUE_FALSE, mets exactement 2
         );
     }
 
-    const botUser = await prisma.user.findUnique({ where: { username: `RANDOM` } });
+    const botUser = await prisma.user.findFirst({
+        where: { role: Role.RANDOM }
+    });
 
     const quiz = await prisma.quiz.create({
         data: {
             title: generated.title,
             description: generated.description,
-            creatorId: botUser?.id ?? session.user.id,
+            creatorId: botUser!.id,
             categoryId,
             isPublic: true,
             randomizeQuestions: true,
