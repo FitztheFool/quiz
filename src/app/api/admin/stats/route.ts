@@ -57,12 +57,15 @@ export async function GET() {
         const scores = quiz.scores.map((s) => s.totalScore);
         const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
         const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
+        const maxPossibleScore = quiz.questions.reduce((sum, q) => sum + q.points, 0);
+
         return {
             id: quiz.id,
             title: quiz.title,
             playCount: quiz._count.scores,
             avgScore,
             maxScore,
+            maxPossibleScore,
             questionCount: quiz.questions.length,
         };
     });

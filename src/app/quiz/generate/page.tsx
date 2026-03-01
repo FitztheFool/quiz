@@ -24,7 +24,8 @@ export default function GenerateQuizPage() {
     const [categoryId, setCategoryId] = useState('');
     const [difficulty, setDifficulty] = useState('normal');
     const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loadingMode, setLoadingMode] = useState<'play' | 'edit' | null>(null);
+    const loading = loadingMode !== null;
     const [error, setError] = useState<string | null>(null);
     const [generatedData, setGeneratedData] = useState<any | null>(null);
 
@@ -51,15 +52,15 @@ export default function GenerateQuizPage() {
         );
     }
 
-    const setLoadingState = (value: boolean) => {
-        isLoadingRef.current = value;
-        setLoading(value);
+    const setLoadingState = (value: 'play' | 'edit' | null) => {
+        isLoadingRef.current = value !== null;
+        setLoadingMode(value);
     };
 
     async function handleGenerate(mode: 'play' | 'edit') {
         if (isLoadingRef.current || !subject.trim()) return;
 
-        setLoadingState(true);
+        setLoadingState(mode);
         setError(null);
 
         try {
@@ -116,7 +117,7 @@ export default function GenerateQuizPage() {
 
         } catch (e: any) {
             setError(e.message);
-            setLoadingState(false);
+            setLoadingState(null);
         }
     }
 
@@ -225,7 +226,7 @@ export default function GenerateQuizPage() {
                                 : 'bg-blue-600 text-white hover:bg-blue-700'
                                 }`}
                         >
-                            {loading ? (
+                            {loadingMode === 'play' ? (
                                 <span className="flex items-center justify-center gap-2">
                                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                                     Génération en cours...
@@ -240,7 +241,7 @@ export default function GenerateQuizPage() {
                                 : 'border-blue-600 text-blue-600 hover:bg-blue-50'
                                 }`}
                         >
-                            {loading ? (
+                            {loadingMode === 'edit' ? (
                                 <span className="flex items-center justify-center gap-2">
                                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent" />
                                     Génération en cours...

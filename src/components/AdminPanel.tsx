@@ -32,7 +32,7 @@ interface AdminCategory {
 
 interface AdminStats {
     totals: { users: number; quizzes: number; scores: number; pointsScored: number };
-    topQuizzes: { id: string; title: string; playCount: number; avgScore: number; maxScore: number; questionCount: number }[];
+    topQuizzes: { id: string; title: string; playCount: number; avgScore: number; maxScore: number; maxPossibleScore: number; questionCount: number }[];
     recentActivity: { completedAt: string; totalScore: number; quiz: { title: string }; user: { username: string } }[];
 }
 
@@ -201,9 +201,11 @@ export default function AdminPanel() {
                                         <thead>
                                             <tr className="bg-gray-50 text-gray-600 text-left">
                                                 <th className="px-4 py-3 rounded-l-lg">Quiz</th>
+                                                <th className="px-4 py-3 text-center">Questions</th>
                                                 <th className="px-4 py-3 text-center">Parties</th>
                                                 <th className="px-4 py-3 text-center">Score moyen</th>
-                                                <th className="px-4 py-3 text-center rounded-r-lg">Score max</th>
+                                                <th className="px-4 py-3 text-center">Score max joueur</th>
+                                                <th className="px-4 py-3 text-center rounded-r-lg">Score max quiz</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -214,9 +216,11 @@ export default function AdminPanel() {
                                                             {i + 1}. {quiz.title}
                                                         </Link>
                                                     </td>
+                                                    <td className="px-4 py-3 text-center text-gray-500">{quiz.questionCount}</td>
                                                     <td className="px-4 py-3 text-center">{quiz.playCount}</td>
                                                     <td className="px-4 py-3 text-center text-orange-600 font-semibold">{quiz.avgScore} pts</td>
                                                     <td className="px-4 py-3 text-center text-green-600 font-semibold">{quiz.maxScore} pts</td>
+                                                    <td className="px-4 py-3 text-center text-purple-600 font-semibold">{quiz.maxPossibleScore} pts</td>
                                                 </tr>
                                             ))}
                                         </tbody>
