@@ -10,7 +10,7 @@ interface QuizCardProps {
     _count: {
       questions: number;
     };
-    creatorId?: string;
+    creator?: { id: string; username: string } | null;
     category?: {
       name: string;
     } | null;
@@ -32,7 +32,7 @@ export default function QuizCard({
   onEdit,
   onDelete,
 }: QuizCardProps) {
-  const isMyQuiz = quiz.creatorId === currentUserId;
+  const isMyQuiz = quiz.creator?.id === currentUserId;
   const isLocked = !quiz.isPublic && !isMyQuiz;
 
   const isPerfect =
@@ -84,11 +84,11 @@ export default function QuizCard({
 
       {/* Contenu — flex-1 pousse le bouton en bas */}
       <div className="flex-1">
-        <h3 className="text-xl font-bold text-gray-900 mb-3 pr-32">
+        <h3 className="text-lg font-bold text-gray-900 line-clamp-2 min-h-[3.5rem]">
           {quiz.title}
         </h3>
 
-        <p className="text-gray-600 mb-4 text-sm line-clamp-2">
+        <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
           {quiz.description || 'Aucune description'}
         </p>
 
@@ -114,6 +114,18 @@ export default function QuizCard({
           </p>
         )}
       </div>
+
+      {quiz.creator?.username && (
+        <p className="text-xs text-gray-500 mb-4">
+          👤 Créé par{' '}
+          <Link
+            href={currentUserId === quiz.creator.id ? '/dashboard' : `/profil/${quiz.creator.id}`}
+            className="font-semibold text-blue-600 hover:underline transition-colors"
+          >
+            {quiz.creator.username}
+          </Link>
+        </p>
+      )}
 
       {/* Bouton toujours en bas */}
       {showActions ? (

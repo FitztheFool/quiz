@@ -37,7 +37,7 @@ export async function GET(request: Request) {
           description: true,
           isPublic: true,
           creatorId: true,
-          creator: { select: { username: true } },
+          creator: { select: { id: true, username: true } },
           category: { select: { name: true } },
           _count: { select: { questions: true } },
           createdAt: true,
