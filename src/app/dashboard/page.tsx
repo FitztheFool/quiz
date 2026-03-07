@@ -467,115 +467,241 @@ export default function DashboardPage() {
             )}
 
             {activeTab === 'uno-score' && (
-                <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Mes scores UNO</h2>
+                <div className="rounded-3xl border border-slate-200 bg-white/90 shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur-sm p-6 md:p-8">
+                    <div className="mb-6 flex items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+                                Mes scores UNO
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                                Résumé de tes performances et de tes dernières parties
+                            </p>
+                        </div>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 mb-6 text-sm text-gray-600">
-                        <p className="font-semibold text-gray-700 mb-2">Système de points</p>
-                        <div className="flex flex-wrap gap-3">
-                            <span className="flex items-center gap-1.5">
-                                🥇 <span className="font-bold text-gray-800">1ère place</span> — 20 pts
-                            </span>
-                            <span className="text-gray-300">|</span>
-                            <span className="flex items-center gap-1.5">
-                                🥈 <span className="font-bold text-gray-800">2ème place</span> — 13 pts
-                            </span>
-                            <span className="text-gray-300">|</span>
-                            <span className="flex items-center gap-1.5">
-                                🥉 <span className="font-bold text-gray-800">3ème place</span> — 6 pts
-                            </span>
-                            <span className="text-gray-300">|</span>
-                            <span className="flex items-center gap-1.5">
-                                🎴 <span className="font-bold text-gray-800">Autres</span> — 2 pts
-                            </span>
+                        <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 text-2xl shadow-lg shadow-orange-200">
+                            🎴
+                        </div>
+                    </div>
+
+                    <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+                        <div className="border-b border-slate-200 px-5 py-4">
+                            <p className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+                                Système de points
+                            </p>
+                        </div>
+
+                        <div className="grid gap-3 p-4 md:grid-cols-4">
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                                    <span>🥇</span>
+                                    <span>1ère place</span>
+                                </div>
+                                <p className="mt-2 text-2xl font-bold text-slate-900">20</p>
+                                <p className="text-xs text-slate-500">points</p>
+                            </div>
+
+                            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+                                    <span>🥈</span>
+                                    <span>2ème place</span>
+                                </div>
+                                <p className="mt-2 text-2xl font-bold text-slate-900">13</p>
+                                <p className="text-xs text-slate-500">points</p>
+                            </div>
+
+                            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-rose-700">
+                                    <span>🥉</span>
+                                    <span>3ème place</span>
+                                </div>
+                                <p className="mt-2 text-2xl font-bold text-slate-900">6</p>
+                                <p className="text-xs text-slate-500">points</p>
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                    <span>🎴</span>
+                                    <span>Autres</span>
+                                </div>
+                                <p className="mt-2 text-2xl font-bold text-slate-900">2</p>
+                                <p className="text-xs text-slate-500">points</p>
+                            </div>
                         </div>
                     </div>
 
                     {!unoStats || unoStats.gamesPlayed === 0 ? (
-                        <div className="text-center py-16">
-                            <p className="text-gray-600 text-lg mb-2">Aucune partie UNO jouée</p>
-                            <p className="text-gray-500">Créez un lobby et lancez une partie !</p>
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
+                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-200 text-2xl">
+                                🎴
+                            </div>
+                            <p className="text-lg font-semibold text-slate-700">Aucune partie UNO jouée</p>
+                            <p className="mt-1 text-sm text-slate-500">Créez un lobby et lancez une partie !</p>
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-3 gap-4 mb-4">
-                                <div className="bg-orange-50 rounded-xl p-4 text-center">
-                                    <p className="text-xs text-orange-600 font-medium mb-1">Points totaux</p>
-                                    <p className="text-2xl font-bold text-orange-700">{unoStats.totalScore ?? 0}</p>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5 mb-8">
+                                <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 to-white p-5 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
+                                                Points totaux
+                                            </p>
+                                            <p className="mt-3 text-3xl font-bold text-slate-900">
+                                                {unoStats.totalScore ?? 0}
+                                            </p>
+                                        </div>
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-xl">
+                                            🔥
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="bg-yellow-50 rounded-xl p-4 text-center">
-                                    <p className="text-xs text-yellow-600 font-medium mb-1">🥇 1ère place</p>
-                                    <p className="text-2xl font-bold text-yellow-700">
-                                        {unoStats.top1 ?? unoStats.wins}
+                                <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                                                1ère place
+                                            </p>
+                                            <p className="mt-3 text-3xl font-bold text-slate-900">
+                                                {unoStats.top1 ?? unoStats.wins}
+                                            </p>
+                                        </div>
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-xl">
+                                            🥇
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                                                2ème place
+                                            </p>
+                                            <p className="mt-3 text-3xl font-bold text-slate-900">
+                                                {unoStats.top2 ?? 0}
+                                            </p>
+                                        </div>
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-100 text-xl">
+                                            🥈
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-3xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-5 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
+                                                3ème place
+                                            </p>
+                                            <p className="mt-3 text-3xl font-bold text-slate-900">
+                                                {unoStats.top3 ?? 0}
+                                            </p>
+                                        </div>
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100 text-xl">
+                                            🥉
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-3xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-5 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+                                                Participations
+                                            </p>
+                                            <p className="mt-3 text-3xl font-bold text-slate-900">
+                                                {unoStats.gamesPlayed}
+                                            </p>
+                                        </div>
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-xl">
+                                            🎮
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mb-4 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                        Parties récentes
+                                    </h3>
+                                    <p className="mt-1 text-sm text-slate-400">
+                                        Tes dernières performances sur UNO
                                     </p>
                                 </div>
-
-                                <div className="bg-amber-50 rounded-xl p-4 text-center">
-                                    <p className="text-xs text-amber-600 font-medium mb-1">🥈 2ème place</p>
-                                    <p className="text-2xl font-bold text-amber-700">{unoStats.top2 ?? 0}</p>
-                                </div>
                             </div>
 
-                            <div className="flex justify-center gap-4 mb-8">
-                                <div className="bg-stone-50 rounded-xl p-4 text-center w-1/3">
-                                    <p className="text-xs text-stone-600 font-medium mb-1">🥉 3ème place</p>
-                                    <p className="text-2xl font-bold text-stone-700">{unoStats.top3 ?? 0}</p>
-                                </div>
-
-                                <div className="bg-blue-50 rounded-xl p-4 text-center w-1/3">
-                                    <p className="text-xs text-blue-600 font-medium mb-1">Participations</p>
-                                    <p className="text-2xl font-bold text-blue-700">{unoStats.gamesPlayed}</p>
-                                </div>
-                            </div>
-
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                                Parties récentes
-                            </h3>
-
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {unoStats.recentGames.map((game, i) => {
                                     const p = game.placement;
+                                    const isTop1 = p === 1;
+                                    const isTop2 = p === 2;
+                                    const isTop3 = p === 3;
                                     const isPodium = p !== null && p <= 3;
+
+                                    const cardClass = isTop1
+                                        ? 'border-amber-200 bg-gradient-to-r from-amber-50 to-white'
+                                        : isTop2
+                                            ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-white'
+                                            : isTop3
+                                                ? 'border-rose-200 bg-gradient-to-r from-rose-50 to-white'
+                                                : 'border-slate-200 bg-white';
 
                                     return (
                                         <div
                                             key={`${game.createdAt}-${i}`}
-                                            className={`flex items-center justify-between px-4 py-3 rounded-lg border ${isPodium
-                                                ? 'bg-yellow-50 border-yellow-200'
-                                                : 'bg-gray-50 border-gray-200'
-                                                }`}
+                                            className={`group flex items-center justify-between rounded-2xl border px-4 py-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${cardClass}`}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-xl w-8 text-center">
-                                                    {p !== null ? (PLACEMENT_EMOJI[p] ?? `#${p}`) : '—'}
-                                                </span>
+                                            <div className="flex items-center gap-4 min-w-0">
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-xl">
+                                                    {p !== null ? (PLACEMENT_EMOJI[p] ?? `#${p}`) : '🎴'}
+                                                </div>
 
-                                                <span className="text-sm font-medium text-gray-700">
-                                                    {p === 1 ? 'Victoire' : p !== null ? `${p}ème place` : 'Partie terminée'}
-                                                </span>
+                                                <div className="min-w-0">
+                                                    <p className="font-semibold text-slate-900">
+                                                        {p === 1
+                                                            ? 'Victoire'
+                                                            : p !== null
+                                                                ? `${p}ème place`
+                                                                : 'Partie terminée'}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-slate-500">
+                                                        {isPodium
+                                                            ? 'Très belle performance'
+                                                            : 'Continue, la prochaine est peut-être la bonne'}
+                                                    </p>
+                                                </div>
                                             </div>
 
-                                            <span className="text-xs text-gray-400">
-                                                {new Date(game.createdAt).toLocaleString('fr-FR', {
-                                                    day: '2-digit',
-                                                    month: '2-digit',
-                                                    year: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    second: '2-digit',
-                                                })}
-                                            </span>
+                                            <div className="text-right ml-4 flex-shrink-0">
+                                                <p className="text-sm font-medium text-slate-700">
+                                                    {new Date(game.createdAt).toLocaleDateString('fr-FR', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric',
+                                                    })}
+                                                </p>
+                                                <p className="mt-1 text-xs text-slate-400">
+                                                    {new Date(game.createdAt).toLocaleTimeString('fr-FR', {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        second: '2-digit',
+                                                    })}
+                                                </p>
+                                            </div>
                                         </div>
                                     );
                                 })}
                             </div>
 
-                            <Pagination
-                                currentPage={unoPage}
-                                totalPages={unoStats.recentGamesTotalPages}
-                                onPageChange={handleUnoPageChange}
-                            />
+                            <div className="mt-6">
+                                <Pagination
+                                    currentPage={unoPage}
+                                    totalPages={unoStats.recentGamesTotalPages}
+                                    onPageChange={handleUnoPageChange}
+                                />
+                            </div>
                         </>
                     )}
                 </div>

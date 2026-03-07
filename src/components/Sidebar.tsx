@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { randomLobbyId } from '@/lib/utils';
 import CreateLobbyButton from '@/components/CreateLobbyButton';
-
-type TabType = 'available' | 'my-quizzes' | 'admin' | 'quiz-score' | 'uno-score';
+import type { TabType } from '@/types/dashboard';
 
 const QUIZ_NAV_ITEMS: { tab?: TabType; label: string; icon: string; href?: string }[] = [
     { tab: 'available', label: 'Quiz disponibles', icon: '🎯' },

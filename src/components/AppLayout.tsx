@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import type { TabType } from '@/types/dashboard';
 
-type TabType = 'available' | 'my-quizzes' | 'scores' | 'admin';
 const NO_SIDEBAR_PATHS = ['/login', '/register'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (pathname.startsWith('/dashboard')) {
             const hash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
-            const validTabs: TabType[] = ['available', 'my-quizzes', 'scores', 'admin'];
+            const validTabs: TabType[] = ['available', 'my-quizzes', 'quiz-score', 'admin'];
             setActiveTab(validTabs.includes(hash as TabType) ? (hash as TabType) : 'available');
         } else {
             // Sur les autres pages, aucun tab actif (les liens href gèrent leur propre état via usePathname)

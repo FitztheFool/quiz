@@ -13,9 +13,15 @@ type PlayerInfo = {
     username: string;
     cardCount: number;
     saidUno: boolean;
+    team: 0 | 1 | null;
 };
 
-type UnoOptions = { stackable: boolean; jumpIn: boolean };
+type UnoOptions = {
+    stackable: boolean;
+    jumpIn: boolean;
+    teamMode: 'none' | '2v2';
+    teamWinMode: 'one' | 'both';
+};
 
 type FinalScore = {
     userId: string;
@@ -25,6 +31,7 @@ type FinalScore = {
     score: number;
     rank: number;
     kicked: boolean;
+    team: 0 | 1 | null;
 };
 
 type GameState = {
@@ -41,7 +48,11 @@ type GameState = {
     options: UnoOptions;
     isMyTurn: boolean;
     spectator: boolean;
-    gameId?: string; // ✅ identifiant unique de la partie
+    gameId?: string;
+    teams: Record<string, 0 | 1> | null;
+    teammateHand: Card[] | null;
+    teammateId: string | null;
+    myTeam: 0 | 1 | null;
 };
 
 type LobbyState = {
@@ -49,6 +60,7 @@ type LobbyState = {
     status: string;
     players: { userId: string; username: string }[];
     options: UnoOptions;
+    teams: Record<string, 0 | 1> | null;
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -69,11 +81,26 @@ const VALUE_LABEL: Record<string, string> = {
 
 const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
-function UnoCard({ card, playable, selected, onClick }: {
-    card: Card; playable?: boolean; selected?: boolean; onClick?: () => void;
+// Couleurs des équipes
+const TEAM_COLORS: Record<number, { ring: string; bg: string; text: string; badge: string }> = {
+    0: { ring: 'ring-blue-400', bg: 'bg-blue-500/20', text: 'text-blue-300', badge: 'bg-blue-500 text-white' },
+    1: { ring: 'ring-red-400', bg: 'bg-red-500/20', text: 'text-red-300', badge: 'bg-red-500 text-white' },
+};
+const TEAM_NAMES: Record<number, string> = { 0: 'Équipe Bleue', 1: 'Équipe Rouge' };
+
+function UnoCard({ card, playable, selected, onClick, small }: {
+    card: Card; playable?: boolean; selected?: boolean; onClick?: () => void; small?: boolean;
 }) {
     const label = VALUE_LABEL[card.value] ?? card.value;
     const bg = COLOR_MAP[card.color] ?? 'bg-gray-400';
+    if (small) {
+        return (
+            <div className={`w-9 h-14 ${bg} rounded-lg border-2 border-white/50 shadow
+                flex items-center justify-center font-bold text-white text-sm select-none opacity-80`}>
+                {label}
+            </div>
+        );
+    }
     return (
         <div onClick={onClick} className={`
             w-16 h-24 ${bg} rounded-xl border-4 border-white shadow-md
@@ -111,7 +138,6 @@ export default function UnoPage() {
         username: session?.user?.username ?? session?.user?.email ?? 'Joueur',
     }), [session]);
 
-    // ✅ Enregistre le résultat UNO côté serveur une seule fois
     const saveResult = useCallback(async (finalScores: FinalScore[], gameId?: string) => {
         if (resultSavedRef.current || !me.userId) return;
         resultSavedRef.current = true;
@@ -140,7 +166,6 @@ export default function UnoPage() {
                 clearInterval(inactivityIntervalRef.current);
                 inactivityIntervalRef.current = null;
             }
-            // ✅ Appel dès que la partie est finie et qu'on a les scores
             if (s.status === 'FINISHED' && s.finalScores && !s.spectator) {
                 saveResult(s.finalScores, s.gameId);
             }
@@ -225,65 +250,113 @@ export default function UnoPage() {
         return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Chargement...</div>;
     }
 
+    const is2v2 = gameState?.options?.teamMode === '2v2';
+
     // ── Fin de partie ──────────────────────────────────────────────────────────
     if (gameState?.status === 'FINISHED') {
         const scores = gameState.finalScores ?? [];
+        const winnerTeam = gameState.teams && gameState.winner
+            ? gameState.teams[gameState.winner.userId]
+            : null;
+
+        // Grouper par équipe en 2v2
+        const renderScores = () => {
+            if (!is2v2 || winnerTeam === null || winnerTeam === undefined) {
+                return scores.map(s => renderScoreRow(s));
+            }
+
+            const team0 = scores.filter(s => s.team === 0);
+            const team1 = scores.filter(s => s.team === 1);
+
+            return (
+                <>
+                    {[0, 1].map(teamIdx => {
+                        const teamScores = teamIdx === 0 ? team0 : team1;
+                        const isWinner = winnerTeam === teamIdx;
+                        const tc = TEAM_COLORS[teamIdx];
+                        return (
+                            <div key={teamIdx} className={`rounded-xl border p-3 mb-3 ${isWinner ? `${tc.bg} border-${teamIdx === 0 ? 'blue' : 'red'}-500/50` : 'bg-gray-700/50 border-gray-600'}`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tc.badge}`}>
+                                        {TEAM_NAMES[teamIdx]}
+                                    </span>
+                                    {isWinner && <span className="text-yellow-400 text-sm font-bold">🏆 Vainqueurs</span>}
+                                </div>
+                                <div className="space-y-2">
+                                    {teamScores.map(s => renderScoreRow(s, true))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </>
+            );
+        };
+
+        const renderScoreRow = (s: FinalScore, inTeam = false) => (
+            <div key={s.userId} className={`flex items-center justify-between rounded-lg px-4 py-3
+                ${!inTeam && s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : inTeam ? '' : 'bg-gray-700'}
+                ${s.kicked ? 'opacity-60' : ''}`}>
+                <div className="flex items-center gap-3">
+                    <span className="text-xl w-7 text-center">
+                        {RANK_MEDAL[s.rank] ?? `#${s.rank}`}
+                    </span>
+                    <div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-semibold">{s.username}</span>
+                            {s.userId === me.userId && !gameState.spectator && (
+                                <span className="text-gray-400 text-xs">(moi)</span>
+                            )}
+                            {s.kicked && (
+                                <span className="text-xs bg-red-500/30 text-red-400 px-1.5 py-0.5 rounded">AFK</span>
+                            )}
+                        </div>
+                        <span className="text-xs text-gray-400">
+                            {s.cardsLeft === 0
+                                ? '0 carte restante'
+                                : `${s.cardsLeft} carte${s.cardsLeft > 1 ? 's' : ''} — ${s.pointsInHand} pts en main`}
+                        </span>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                        {s.score > 0 ? `+${s.score}` : '0'}
+                    </span>
+                    <div className="text-xs text-gray-500">pts</div>
+                </div>
+            </div>
+        );
+
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
                 <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md text-white text-center">
                     <div className="text-6xl mb-2">🏆</div>
-                    <h1 className="text-2xl font-bold mb-1">{gameState.winner?.username} a gagné !</h1>
-                    <p className="text-gray-400 text-sm mb-6">
-                        {gameState.spectator ? 'Vous avez observé cette partie' : 'Classement final'}
-                    </p>
+                    {is2v2 && winnerTeam !== null && winnerTeam !== undefined ? (
+                        <>
+                            <h1 className="text-2xl font-bold mb-1">
+                                <span className={TEAM_COLORS[winnerTeam].text}>{TEAM_NAMES[winnerTeam]}</span> a gagné !
+                            </h1>
+                            <p className="text-gray-400 text-sm mb-6">Mode 2v2 · Classement final</p>
+                        </>
+                    ) : (
+                        <>
+                            <h1 className="text-2xl font-bold mb-1">{gameState.winner?.username} a gagné !</h1>
+                            <p className="text-gray-400 text-sm mb-6">
+                                {gameState.spectator ? 'Vous avez observé cette partie' : 'Classement final'}
+                            </p>
+                        </>
+                    )}
 
-                    <div className="space-y-2 text-left">
-                        {scores.map(s => (
-                            <div key={s.userId} className={`flex items-center justify-between rounded-lg px-4 py-3
-                            ${s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-gray-700'}
-                            ${s.kicked ? 'opacity-60' : ''}`}>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xl w-7 text-center">
-                                        {RANK_MEDAL[s.rank] ?? `#${s.rank}`}
-                                    </span>
-                                    <div>
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="font-semibold">{s.username}</span>
-                                            {s.userId === me.userId && !gameState.spectator && (
-                                                <span className="text-gray-400 text-xs">(moi)</span>
-                                            )}
-                                            {s.kicked && (
-                                                <span className="text-xs bg-red-500/30 text-red-400 px-1.5 py-0.5 rounded">AFK</span>
-                                            )}
-                                        </div>
-                                        <span className="text-xs text-gray-400">
-                                            {s.cardsLeft === 0
-                                                ? '0 carte restante'
-                                                : `${s.cardsLeft} carte${s.cardsLeft > 1 ? 's' : ''} — ${s.pointsInHand} pts en main`}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
-                                        {s.score > 0 ? `+${s.score}` : '0'}
-                                    </span>
-                                    <div className="text-xs text-gray-500">pts</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <div className="text-left">{renderScores()}</div>
 
                     <div className="mt-4 text-xs text-gray-500 text-left space-y-0.5">
                         <p>0–9 = valeur faciale · Skip/Reverse/+2 = 20 pts · Wild/+4 = 50 pts</p>
                     </div>
 
-                    <button
-                        onClick={() => router.push(`/lobby/${lobbyId}`)}
+                    <button onClick={() => router.push(`/lobby/${lobbyId}`)}
                         className="mt-5 w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
                         🔄 Retour au lobby
                     </button>
-                    <button
-                        onClick={() => router.push('/dashboard')}
+                    <button onClick={() => router.push('/dashboard')}
                         className="mt-3 w-full py-3 rounded-xl bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition">
                         🏠 Retour au dashboard
                     </button>
@@ -295,11 +368,15 @@ export default function UnoPage() {
     // ── Attente ────────────────────────────────────────────────────────────────
     if (!gameState || gameState.status === 'WAITING') {
         const joined = lobbyState?.players.length ?? 0;
+        const required = lobbyState?.options?.teamMode === '2v2' ? 4 : 2;
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
                 <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md text-white text-center">
                     <div className="text-5xl mb-4 animate-pulse">🃏</div>
                     <h1 className="text-xl font-bold mb-1">Démarrage de la partie…</h1>
+                    {lobbyState?.options?.teamMode === '2v2' && (
+                        <p className="text-blue-400 text-xs font-semibold mb-2">Mode 2v2 · {joined}/{required} joueurs</p>
+                    )}
                     <p className="text-gray-400 text-sm mb-6">
                         {joined} joueur{joined > 1 ? 's' : ''} connecté{joined > 1 ? 's' : ''}…
                     </p>
@@ -313,13 +390,11 @@ export default function UnoPage() {
                             </div>
                         ))}
                     </div>
-                    <button
-                        onClick={() => router.push(`/lobby/${lobbyId}`)}
+                    <button onClick={() => router.push(`/lobby/${lobbyId}`)}
                         className="w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
                         🔄 Retour au lobby
                     </button>
-                    <button
-                        onClick={() => router.push('/dashboard')}
+                    <button onClick={() => router.push('/dashboard')}
                         className="mt-3 w-full py-3 rounded-xl bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition">
                         🏠 Retour au dashboard
                     </button>
@@ -331,6 +406,58 @@ export default function UnoPage() {
     // ── Jeu en cours ───────────────────────────────────────────────────────────
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     const isMeInactive = inactivityUserId === me.userId;
+    const myTeam = gameState.myTeam;
+    const myTeamColor = myTeam !== null && myTeam !== undefined ? TEAM_COLORS[myTeam] : null;
+
+    // Séparer coéquipiers et adversaires pour l'affichage 2v2
+    const otherPlayers = gameState.spectator
+        ? gameState.players
+        : gameState.players.filter(p => p.userId !== me.userId);
+
+    const teammates = is2v2 ? otherPlayers.filter(p => gameState.teams && gameState.teams[p.userId] === myTeam) : [];
+    const opponents = is2v2 ? otherPlayers.filter(p => gameState.teams && gameState.teams[p.userId] !== myTeam) : otherPlayers;
+
+    const renderPlayer = (p: PlayerInfo) => {
+        const isActive = gameState.players[gameState.currentPlayerIndex]?.userId === p.userId;
+        const isInactive = inactivityUserId === p.userId && inactivitySeconds !== null;
+        const pTeam = gameState.teams?.[p.userId];
+        const tc = pTeam !== undefined && pTeam !== null ? TEAM_COLORS[pTeam] : null;
+
+        return (
+            <div key={p.userId} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all
+                ${isActive ? 'bg-yellow-500/20 ring-2 ring-yellow-400' : tc ? `${tc.bg} ring-1 ${tc.ring}` : 'bg-gray-800'}
+                ${isInactive ? 'ring-2 ring-orange-400' : ''}`}>
+                <div className="flex items-center gap-1.5">
+                    {tc && is2v2 && (
+                        <span className={`w-2 h-2 rounded-full ${pTeam === 0 ? 'bg-blue-400' : 'bg-red-400'}`} />
+                    )}
+                    <span className="text-sm font-semibold">{p.username}</span>
+                    {isInactive && (
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded
+                            ${inactivitySeconds! <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-500 text-white'}`}>
+                            ⏰ {inactivitySeconds}s
+                        </span>
+                    )}
+                </div>
+                <div className="flex gap-0.5">
+                    {Array.from({ length: Math.min(p.cardCount, 10) }).map((_, i) => (
+                        <div key={i} className="w-3 h-5 bg-red-600 rounded-sm border border-white/20" />
+                    ))}
+                    {p.cardCount > 10 && <span className="text-xs text-gray-400">+{p.cardCount - 10}</span>}
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-400">{p.cardCount} carte{p.cardCount > 1 ? 's' : ''}</span>
+                    {p.cardCount === 1 && !p.saidUno && !gameState.spectator && (
+                        <button onClick={() => socket?.emit('uno:callUno', { targetId: p.userId })}
+                            className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-400 transition">
+                            UNO !
+                        </button>
+                    )}
+                    {p.saidUno && <span className="text-xs text-yellow-400 font-bold">UNO!</span>}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col select-none">
@@ -356,6 +483,11 @@ export default function UnoPage() {
                 <div className="flex items-center gap-3">
                     <span className="font-bold text-lg">🃏 UNO</span>
                     <span className="text-gray-400 font-mono text-sm">{lobbyId}</span>
+                    {is2v2 && myTeamColor && (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${myTeamColor.badge}`}>
+                            {TEAM_NAMES[myTeam!]}
+                        </span>
+                    )}
                     {gameState.spectator && (
                         <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded-full font-semibold">
                             👁 Spectateur
@@ -374,47 +506,27 @@ export default function UnoPage() {
                 </div>
             </div>
 
-            {/* Joueurs */}
-            <div className="flex justify-center gap-4 px-4 py-3 flex-wrap">
-                {(gameState.spectator
-                    ? gameState.players
-                    : gameState.players.filter(p => p.userId !== me.userId)
-                ).map(p => {
-                    const isActive = gameState.players[gameState.currentPlayerIndex]?.userId === p.userId;
-                    const isInactive = inactivityUserId === p.userId && inactivitySeconds !== null;
-                    return (
-                        <div key={p.userId} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all
-                            ${isActive ? 'bg-yellow-500/20 ring-2 ring-yellow-400' : 'bg-gray-800'}
-                            ${isInactive ? 'ring-2 ring-orange-400' : ''}`}>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-sm font-semibold">{p.username}</span>
-                                {isInactive && (
-                                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded
-                                        ${inactivitySeconds! <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-500 text-white'}`}>
-                                        ⏰ {inactivitySeconds}s
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex gap-0.5">
-                                {Array.from({ length: Math.min(p.cardCount, 10) }).map((_, i) => (
-                                    <div key={i} className="w-3 h-5 bg-red-600 rounded-sm border border-white/20" />
-                                ))}
-                                {p.cardCount > 10 && <span className="text-xs text-gray-400">+{p.cardCount - 10}</span>}
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-400">{p.cardCount} carte{p.cardCount > 1 ? 's' : ''}</span>
-                                {p.cardCount === 1 && !p.saidUno && !gameState.spectator && (
-                                    <button onClick={() => socket?.emit('uno:callUno', { targetId: p.userId })}
-                                        className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-400 transition">
-                                        UNO !
-                                    </button>
-                                )}
-                                {p.saidUno && <span className="text-xs text-yellow-400 font-bold">UNO!</span>}
-                            </div>
+            {/* Joueurs — affichage différent en 2v2 */}
+            {is2v2 && !gameState.spectator ? (
+                <div className="px-4 py-3 space-y-2">
+                    {/* Adversaires */}
+                    <div className="flex justify-center gap-3 flex-wrap">
+                        <span className="text-xs text-red-400 font-semibold self-center">⚔️ Adversaires</span>
+                        {opponents.map(renderPlayer)}
+                    </div>
+                    {/* Coéquipiers */}
+                    {teammates.length > 0 && (
+                        <div className="flex justify-center gap-3 flex-wrap">
+                            <span className="text-xs text-blue-400 font-semibold self-center">🤝 Équipe</span>
+                            {teammates.map(renderPlayer)}
                         </div>
-                    );
-                })}
-            </div>
+                    )}
+                </div>
+            ) : (
+                <div className="flex justify-center gap-4 px-4 py-3 flex-wrap">
+                    {otherPlayers.map(renderPlayer)}
+                </div>
+            )}
 
             {/* Zone centrale */}
             <div className="flex-1 flex items-center justify-center gap-8">
@@ -456,9 +568,27 @@ export default function UnoPage() {
                 )}
             </div>
 
-            {/* Main */}
+            {/* Main du joueur + cartes coéquipier en 2v2 */}
             {!gameState.spectator && (
                 <div className="bg-gray-800 border-t border-gray-700 px-4 py-4">
+
+                    {/* Cartes du coéquipier */}
+                    {is2v2 && gameState.teammateHand && gameState.teammateHand.length > 0 && (
+                        <div className="mb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className={`text-xs font-semibold ${myTeamColor?.text ?? 'text-gray-400'}`}>
+                                    🤝 Main de ton coéquipier ({gameState.teammateHand.length} cartes)
+                                </span>
+                            </div>
+                            <div className="flex gap-1.5 overflow-x-auto pb-1 flex-wrap">
+                                {gameState.teammateHand.map((card, i) => (
+                                    <UnoCard key={`${card.id}-${i}`} card={card} small />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Ma main */}
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-400">Ma main ({gameState.hand.length} cartes)</span>
                         {gameState.hand.length === 1 && (

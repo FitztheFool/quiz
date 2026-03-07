@@ -417,48 +417,75 @@ export default function AdminPanel() {
                                     </select>
 
                                     <div className="space-y-2 max-h-64 overflow-y-auto mt-3">
-                                        {stats.recentActivity.map((activity, i) => {
-                                            const isUno = activity.type === 'uno';
-                                            const userHref = session?.user?.username === activity.user.username
-                                                ? '/dashboard'
-                                                : `/profil/${activity.user.username}`;
+                                        {stats.recentActivity.length === 0 ? (
+                                            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-500 text-center">
+                                                Aucune activité récente pour cette période.
+                                            </div>
+                                        ) : (
+                                            stats.recentActivity.map((activity, i) => {
+                                                const isUno = activity.type === 'uno';
+                                                const userHref =
+                                                    session?.user?.username === activity.user.username
+                                                        ? '/dashboard'
+                                                        : `/profil/${activity.user.username}`;
 
-                                            return (
-                                                <div key={i} className="flex justify-between items-center rounded-lg px-4 py-2 text-sm bg-gray-50">
-                                                    <div className="flex items-center gap-2 min-w-0">
-                                                        <span className="flex-shrink-0">{isUno ? '🎴' : '🎯'}</span>
-                                                        <Link href={userHref} className="font-medium text-blue-600 hover:underline truncate">
-                                                            {activity.user.username}
-                                                        </Link>
-                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${isUno ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                            {isUno ? 'UNO' : 'Quiz'}
-                                                        </span>
-                                                    </div>
-
-                                                    <span className="text-gray-500 truncate mx-4">
-                                                        {isUno
-                                                            ? `UNO — ${activity.playerCount ?? '?'} joueurs`
-                                                            : activity.quiz?.title ?? '—'}
-                                                    </span>
-
-                                                    <div className="flex items-center gap-3 flex-shrink-0">
-                                                        {isUno ? (
-                                                            <span className="font-semibold text-orange-600">
-                                                                {activity.placement !== null && activity.placement !== undefined
-                                                                    ? (PLACEMENT_EMOJI[activity.placement] ?? `#${activity.placement}`)
-                                                                    : '—'}
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className="flex justify-between items-center rounded-lg px-4 py-2 text-sm bg-gray-50"
+                                                    >
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <span className="flex-shrink-0">{isUno ? '🎴' : '🎯'}</span>
+                                                            <Link
+                                                                href={userHref}
+                                                                className="font-medium text-blue-600 hover:underline truncate"
+                                                            >
+                                                                {activity.user.username}
+                                                            </Link>
+                                                            <span
+                                                                className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${isUno
+                                                                        ? 'bg-orange-100 text-orange-700'
+                                                                        : 'bg-blue-100 text-blue-700'
+                                                                    }`}
+                                                            >
+                                                                {isUno ? 'UNO' : 'Quiz'}
                                                             </span>
-                                                        ) : (
-                                                            <span className="text-orange-600 font-semibold">{activity.totalScore} pts</span>
-                                                        )}
-                                                        <span className="text-gray-400 whitespace-nowrap">
-                                                            {new Date(activity.completedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}{' '}
-                                                            {new Date(activity.completedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                                        </div>
+
+                                                        <span className="text-gray-500 truncate mx-4">
+                                                            {isUno
+                                                                ? `UNO — ${activity.playerCount ?? '?'} joueurs`
+                                                                : activity.quiz?.title ?? '—'}
                                                         </span>
+
+                                                        <div className="flex items-center gap-3 flex-shrink-0">
+                                                            {isUno ? (
+                                                                <span className="font-semibold text-orange-600">
+                                                                    {activity.placement !== null && activity.placement !== undefined
+                                                                        ? PLACEMENT_EMOJI[activity.placement] ?? `#${activity.placement}`
+                                                                        : '—'}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-orange-600 font-semibold">
+                                                                    {activity.totalScore} pts
+                                                                </span>
+                                                            )}
+                                                            <span className="text-gray-400 whitespace-nowrap">
+                                                                {new Date(activity.completedAt).toLocaleDateString('fr-FR', {
+                                                                    day: 'numeric',
+                                                                    month: 'short',
+                                                                })}{' '}
+                                                                {new Date(activity.completedAt).toLocaleTimeString('fr-FR', {
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    second: '2-digit',
+                                                                })}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })
+                                        )}
                                     </div>
                                 </div>
                             </div>

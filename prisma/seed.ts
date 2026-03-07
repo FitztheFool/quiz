@@ -1,14 +1,34 @@
 // prisma/seed.ts
 import dotenv from 'dotenv';
 dotenv.config();
+console.log('A - dotenv ok');
+
+import crypto from 'node:crypto';
+console.log('B - crypto ok');
+
 import { PrismaClient, QuestionType } from '@prisma/client';
+console.log('C - prisma import ok');
+
 import bcrypt from 'bcrypt';
-import { computeUnoScore } from '../src/lib/unoRewards';
+console.log('D - bcrypt ok');
+
+// remplace temporairement l'import par une fonction locale
+function computeUnoScore(rank: number) {
+  if (rank === 1) return 20;
+  if (rank === 2) return 13;
+  if (rank === 3) return 6;
+  return 2;
+}
+console.log('E - uno score ok');
 
 const prisma = new PrismaClient();
+console.log('F - prisma client ok');
+
 
 async function main() {
+  console.log('1 - entrée dans main');
   console.log('🌱 Début du seed...');
+
 
   // ─── 1. Nettoyage ─────────────────────────────────────────────────────────
   await prisma.answer.deleteMany();
@@ -45,6 +65,21 @@ async function main() {
     update: {},
     create: { email: 'user@quiz.app', username: 'User', role: 'USER', passwordHash: defaultPasswordHash },
   });
+  const anonUser1 = await prisma.user.upsert({
+    where: { email: 'user1@quiz.app' },
+    update: {},
+    create: { email: 'user1@quiz.app', username: 'User1', role: 'USER', passwordHash: defaultPasswordHash },
+  });
+  const anonUser2 = await prisma.user.upsert({
+    where: { email: 'user2@quiz.app' },
+    update: {},
+    create: { email: 'user2@quiz.app', username: 'User2', role: 'USER', passwordHash: defaultPasswordHash },
+  });
+  const anonUser3 = await prisma.user.upsert({
+    where: { email: 'user3@quiz.app' },
+    update: {},
+    create: { email: 'user3@quiz.app', username: 'User3', role: 'USER', passwordHash: defaultPasswordHash },
+  });
   const farosUser = await prisma.user.upsert({
     where: { email: 'faros@quiz.app' },
     update: {},
@@ -53,7 +88,9 @@ async function main() {
 
   console.log(`✅ Utilisateur créé: ${adminUser.username}`);
   console.log(`✅ Utilisateur créé: ${randomUser.username}`);
-  console.log(`✅ Utilisateur créé: ${anonUser.username}`);
+  console.log(`✅ Utilisateur créé: ${anonUser1.username}`);
+  console.log(`✅ Utilisateur créé: ${anonUser2.username}`);
+  console.log(`✅ Utilisateur créé: ${anonUser3.username}`);
   console.log(`✅ Utilisateur créé: ${farosUser.username}`);
 
   // ─── 4. Quiz — ordre alterné (CG → SC → SP → AC → TE → CG → SC → ...) ───
@@ -923,34 +960,85 @@ async function main() {
   // ─── Parties UNO ──────────────────────────────────────────────────────────
   console.log('\n🎴 Création des parties UNO...');
 
-  const unoPlayers = [farosUser, anonUser, adminUser, randomUser];
+  const unoPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3];
 
-  for (let g = 0; g < 10; g++) {
+  // Mélange Fisher-Yates
+  function shufflePlayers<T>(arr: T[]): T[] {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  // Date aléatoire sur une plage plus large
+  function getRandomDateInLastDays(daysBack: number) {
+    const now = Date.now();
+    const min = now - daysBack * 24 * 60 * 60 * 1000;
+    const timestamp = Math.floor(Math.random() * (now - min)) + min;
+    return new Date(timestamp);
+  }
+
+  // Pour créer des parties plus espacées et plus réalistes
+  const totalUnoGames = 80;
+  const unoGameDates: Date[] = [];
+
+  for (let g = 0; g < totalUnoGames; g++) {
+    // On répartit les parties sur ~120 jours avec un peu d'aléatoire
+    const baseDaysAgo = Math.floor((g / totalUnoGames) * 120);
+    const jitterHours = Math.floor(Math.random() * 48); // variation jusqu'à 48h
+    const gameDate = new Date(
+      Date.now() -
+      baseDaysAgo * 24 * 60 * 60 * 1000 -
+      jitterHours * 60 * 60 * 1000
+    );
+
+    unoGameDates.push(gameDate);
+  }
+
+  // On trie du plus ancien au plus récent puis on rejoue un peu l'aléatoire
+  unoGameDates.sort((a, b) => a.getTime() - b.getTime());
+
+  for (let g = 0; g < totalUnoGames; g++) {
     const gameId = crypto.randomUUID();
-    const playerCount = Math.floor(Math.random() * 6) + 2; // 2 à 8 joueurs
-    const participants = [...unoPlayers].sort(() => Math.random() - 0.5).slice(0, playerCount);
 
-    for (let p = 0; p < participants.length; p++) {
+    // Avec 5 joueurs dispo, on borne correctement entre 2 et 5
+    const playerCount = Math.floor(Math.random() * (unoPlayers.length - 1)) + 2;
+
+    const participants = shufflePlayers(unoPlayers).slice(0, playerCount);
+
+    // On remélange pour que le classement change
+    const rankedParticipants = shufflePlayers(participants);
+
+    const gameDate = unoGameDates[g];
+
+    for (let p = 0; p < rankedParticipants.length; p++) {
       const rank = p + 1;
+
+      // petite différence de quelques secondes entre les joueurs d'une même partie
+      const attemptDate = new Date(gameDate.getTime() + p * 1000);
+
       await prisma.attempt.create({
         data: {
-          userId: participants[p].id,
+          userId: rankedParticipants[p].id,
           score: computeUnoScore(rank),
           gameType: 'UNO',
           placement: rank,
           gameId,
           quizId: null,
-          createdAt: getDaysAgo(Math.floor(Math.random() * 30)),
+          createdAt: attemptDate,
         },
       });
     }
 
-    console.log(`  ✅ Partie UNO ${g + 1}/10 — ${playerCount} joueurs`);
+    console.log(
+      `  ✅ Partie UNO ${g + 1}/${totalUnoGames} — ${playerCount} joueurs — ${gameDate.toLocaleString('fr-FR')}`
+    );
   }
 
-  console.log('✅ 10 parties UNO créées');
+  console.log(`✅ ${totalUnoGames} parties UNO créées`);
 }
-
 main()
   .catch((e) => {
     console.error('❌ Erreur lors du seed:', e);
