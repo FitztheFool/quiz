@@ -1,22 +1,37 @@
 import { io, Socket } from "socket.io-client";
 
-let socket: Socket | null = null;
+let lobbySocket: Socket | null = null;
+let quizSocket: Socket | null = null;
+let unoSocket: Socket | null = null;
 
-export function getSocket() {
-    if (!socket) {
-        socket = io(process.env.NEXT_PUBLIC_SOCKET_URL ?? "", {
-            transports: ["websocket"],
-            withCredentials: true,
-        });
-
-        socket.on("connect", () => {
-            console.log("✅ Socket connecté", socket?.id);
-        });
-
-        socket.on("connect_error", (err) => {
-            console.error("❌ Socket error:", err);
-        });
-    }
-
+function createSocket(url: string, name: string): Socket {
+    const socket = io(url, {
+        transports: ["websocket"],
+        withCredentials: true,
+        autoConnect: false,
+    });
+    socket.on("connect", () => console.log(`✅ ${name} connecté`, socket.id));
+    socket.on("connect_error", (err) => console.error(`❌ ${name} error:`, err));
     return socket;
+}
+
+export function getLobbySocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!lobbySocket) lobbySocket = createSocket(process.env.NEXT_PUBLIC_LOBBY_SOCKET_URL ?? "", "Lobby Socket");
+    if (!lobbySocket.connected) lobbySocket.connect();
+    return lobbySocket;
+}
+
+export function getQuizSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!quizSocket) quizSocket = createSocket(process.env.NEXT_PUBLIC_QUIZ_SOCKET_URL ?? "", "Quiz Socket");
+    if (!quizSocket.connected) quizSocket.connect();
+    return quizSocket;
+}
+
+export function getUnoSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!unoSocket) unoSocket = createSocket(process.env.NEXT_PUBLIC_UNO_SOCKET_URL ?? "", "UNO Socket");
+    if (!unoSocket.connected) unoSocket.connect();
+    return unoSocket;
 }

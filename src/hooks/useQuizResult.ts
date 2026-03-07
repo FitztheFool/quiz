@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { getSocket } from '@/lib/socket';
+import { getQuizSocket } from '@/lib/socket';
 import { QuestionResult } from '@/components/QuizResults';
 
 export interface ResultPayload {
@@ -71,15 +71,13 @@ export function useQuizResult() {
     const [allFinished, setAllFinished] = useState(false);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-    const [redirectTo, setRedirectTo] = useState<string | null>(null);
-
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const timeModeRef = useRef(timeMode);
     const timePerQuestionRef = useRef(timePerQuestion);
     timeModeRef.current = timeMode;
     timePerQuestionRef.current = timePerQuestion;
 
-    const socket = useMemo(() => getSocket(), []);
+    const socket = useMemo(() => getQuizSocket(), []);
 
     const startCountdown = (initialSeconds: number) => {
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -146,7 +144,8 @@ export function useQuizResult() {
             router.push(`/lobby/${newLobbyId}`);
         });
 
-        socket.emit('lobby:rejoin', {
+        // ✅ quiz:rejoin (était lobby:rejoin)
+        socket.emit('quiz:rejoin', {
             lobbyId: lobbyCode,
             userId: session.user.id,
             username: session.user.username ?? session.user.email ?? 'User',

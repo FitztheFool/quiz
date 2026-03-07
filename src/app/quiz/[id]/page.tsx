@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { getSocket } from '@/lib/socket';
+import { getQuizSocket } from '@/lib/socket';
 import { QuestionResult } from '@/components/QuizResults';
 
 interface Answer {
@@ -61,7 +61,6 @@ export default function QuizPage() {
     const [freeTextAnswer, setFreeTextAnswer] = useState('');
     const [multiTextAnswers, setMultiTextAnswers] = useState<string[]>([]);
 
-    // Refs pour accéder aux valeurs courantes dans les callbacks de timer
     const selectedAnswerRef = useRef('');
     const selectedAnswersRef = useRef<string[]>([]);
     const freeTextAnswerRef = useRef('');
@@ -72,7 +71,7 @@ export default function QuizPage() {
     const [isCorrect, setIsCorrect] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const socket = useMemo(() => getSocket(), []);
+    const socket = useMemo(() => getQuizSocket(), []);
 
     const [timeMode, setTimeMode] = useState<'per_question' | 'total' | 'none' | null>(null);
     const [timePerQuestion, setTimePerQuestion] = useState(15);
@@ -110,6 +109,19 @@ export default function QuizPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [quizId, status]);
 
+    // ✅ quiz:join au montage (une fois le quiz chargé et lobbyCode présent)
+    useEffect(() => {
+        if (!lobbyCode || !quizId || !session?.user?.id || !timeMode) return;
+        socket.emit('quiz:join', {
+            lobbyId: lobbyCode,
+            quizId,
+            userId: session.user.id,
+            username: session.user.username ?? session.user.email ?? 'User',
+            timeMode,
+            timePerQuestion: timePerQuestionRef.current,
+        });
+    }, [lobbyCode, quizId, session?.user?.id, timeMode, socket]);
+
     const checkMultiText = (userTexts: string[], correctTexts: string[], strictOrder: boolean) => {
         const u = userTexts.map(t => t.trim().toLowerCase());
         const c = correctTexts.map(t => t.trim().toLowerCase());
@@ -117,7 +129,6 @@ export default function QuizPage() {
         return strictOrder ? u.every((t, i) => t === c[i]) : u.every(t => c.includes(t));
     };
 
-    // Construit la réponse courante à partir des refs (utilisé par le timer)
     const buildCurrentAnswer = useCallback((q: Question): UserAnswer => {
         const answer: UserAnswer = { questionId: q.id };
         if (q.type === 'TEXT') answer.freeText = freeTextAnswerRef.current.trim();
@@ -199,7 +210,8 @@ export default function QuizPage() {
             sessionStorage.setItem(`quiz_result_${quizId}`, JSON.stringify(payload));
 
             if (lobbyCode) {
-                socket.emit('lobby:playerFinished', { totalScore: result.score, questionResults });
+                // ✅ quiz:playerFinished (était lobby:playerFinished)
+                socket.emit('quiz:playerFinished', { totalScore: result.score, questionResults });
             }
 
             router.push(`/quiz/${quizId}/result${lobbyCode ? `?lobby=${lobbyCode}` : ''}`);
@@ -211,7 +223,6 @@ export default function QuizPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [quizId, lobbyCode, session?.user?.id, socket, router]);
 
-    // Avance à la question suivante (ou soumet) en capturant la réponse courante via les refs
     const handleNextQuestionFromTimer = useCallback(() => {
         const currentQuiz = quizRef.current;
         if (!currentQuiz) return;
@@ -234,9 +245,9 @@ export default function QuizPage() {
             setShowFeedback(false);
             setIsCorrect(false);
 
-            // ✅ Progression via timer
+            // ✅ quiz:playerProgress (était lobby:playerProgress)
             if (lobbyCode) {
-                socket.emit('lobby:playerProgress', {
+                socket.emit('quiz:playerProgress', {
                     currentQuestion: nextIndex + 1,
                     totalQuestions: currentQuiz.questions.length,
                 });
@@ -244,7 +255,6 @@ export default function QuizPage() {
         }
     }, [buildCurrentAnswer, submitQuiz]);
 
-    // ✅ Timer — dépendances propres sans expression ternaire
     useEffect(() => {
         if (!lobbyCode || !timeMode || timeMode === 'none' || !quiz) return;
         if (timeMode === 'total' && timerStartedRef.current) return;
@@ -281,9 +291,9 @@ export default function QuizPage() {
             }
             setQuiz(data);
 
-            // ✅ Émet la progression initiale (question 1) dès le chargement
+            // ✅ quiz:playerProgress (était lobby:playerProgress)
             if (lobbyCode) {
-                socket.emit('lobby:playerProgress', {
+                socket.emit('quiz:playerProgress', {
                     currentQuestion: 1,
                     totalQuestions: data.questions.length,
                 });
@@ -343,9 +353,9 @@ export default function QuizPage() {
             setShowFeedback(false);
             setIsCorrect(false);
 
-            // ✅ Émet la progression en temps réel aux autres joueurs du lobby
+            // ✅ quiz:playerProgress (était lobby:playerProgress)
             if (lobbyCode) {
-                socket.emit('lobby:playerProgress', {
+                socket.emit('quiz:playerProgress', {
                     currentQuestion: nextIndex + 1,
                     totalQuestions: quiz.questions.length,
                 });
@@ -395,9 +405,9 @@ export default function QuizPage() {
 
     const canProceed =
         currentQuestion.type === 'TEXT' ? freeTextAnswer.trim().length > 0
-        : currentQuestion.type === 'MULTI_TEXT' ? multiTextAnswers.length === (currentQuestion.answers?.length ?? 0) && multiTextAnswers.every(t => t.trim().length > 0)
-        : currentQuestion.type === 'MCQ' ? selectedAnswers.length > 0
-        : selectedAnswer !== '';
+            : currentQuestion.type === 'MULTI_TEXT' ? multiTextAnswers.length === (currentQuestion.answers?.length ?? 0) && multiTextAnswers.every(t => t.trim().length > 0)
+                : currentQuestion.type === 'MCQ' ? selectedAnswers.length > 0
+                    : selectedAnswer !== '';
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">

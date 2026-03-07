@@ -249,11 +249,11 @@ export default function DashboardPage() {
               <p className="text-2xl font-bold text-blue-700">{totalScore} pts</p>
             </div>
             <div className="bg-green-50 rounded-xl p-4">
-              <p className="text-xs text-green-600 font-medium mb-1">Quiz complétés</p>
+              <p className="text-xs text-green-600 font-medium mb-1">{plural(myScores.length, 'Quiz complété', 'Quizzes complétés')}</p>
               <p className="text-2xl font-bold text-green-700">{myScores.length}</p>
             </div>
             <div className="bg-purple-50 rounded-xl p-4">
-              <p className="text-xs text-purple-600 font-medium mb-1">Mes créations</p>
+              <p className="text-xs text-purple-600 font-medium mb-1">{plural(myQuizzesTotal, 'Quiz créé', 'Quizzes créés')}</p>
               <p className="text-2xl font-bold text-purple-700">{myQuizzesTotal}</p>
             </div>
           </div>

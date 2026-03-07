@@ -139,6 +139,15 @@ export default function Sidebar({
                     )}
                 </div>
 
+                {/* ── Uno ── */}
+                <button
+                    title="Uno"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                >
+                    <span className="text-base flex-shrink-0">🎴</span>
+                    {!collapsed && 'Uno'}
+                </button>
+
                 {/* ── Skyjow ── */}
                 <button
                     title="Skyjow"

@@ -5,7 +5,7 @@ import { useRef, useEffect, useMemo } from 'react';
 import QuizResults from '@/components/QuizResults';
 import { useRouter } from 'next/navigation';
 import { useQuizResult, LeaderboardEntry } from '@/hooks/useQuizResult';
-import { getSocket } from '@/lib/socket';
+import { getQuizSocket } from '@/lib/socket';
 
 // ✅ #9 — Exported type decoupled from hook internals
 export type PlayerProgress = {
@@ -48,7 +48,7 @@ export default function QuizResultPage() {
         handleRestart,
     } = useQuizResult();
 
-    const socket = useMemo(() => getSocket(), []);
+    const socket = useMemo(() => getQuizSocket(), []);
 
     // ✅ #2 — Single mode variable instead of three chained conditional returns
     const mode = !lobbyCode ? 'solo' : !allFinished ? 'waiting' : 'podium';
