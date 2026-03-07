@@ -233,6 +233,9 @@ export default function GenerateQuizPage() {
                                 </span>
                             ) : '🎮 Générer et jouer'}
                         </button>
+                        <p className="text-xs text-gray-400 text-center -mt-1">
+                            ⚠️ Le quiz ne vous appartiendra pas. Utilisez <span className="font-medium">Générer et modifier</span> pour en être propriétaire.
+                        </p>
                         <button
                             onClick={() => handleGenerate('edit')}
                             disabled={isDisabled}

@@ -3,41 +3,25 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { plural } from '@/lib/utils';
 import QuizCard from '@/components/QuizCard';
 import QuizFilters from '@/components/QuizFilters';
 import Pagination from '@/components/Pagination';
 import AdminPanel from '@/components/AdminPanel';
 import ScoreList from '@/components/ScoreList';
-import CreateLobbyButton from '@/components/CreateLobbyButton';
 
 const PAGE_SIZE = 6;
 
-interface Category {
-  id: string;
-  name: string;
-}
-
+interface Category { id: string; name: string; }
 interface Quiz {
-  id: string;
-  title: string;
-  description: string | null;
-  isPublic: boolean;
-  createdAt?: string;
-  _count: { questions: number };
-  creatorId?: string;
-  category?: { name: string } | null;
-  questions?: { points: number }[];
+  id: string; title: string; description: string | null; isPublic: boolean;
+  createdAt?: string; _count: { questions: number }; creatorId?: string;
+  category?: { name: string } | null; questions?: { points: number }[];
 }
-
 interface UserScore {
-  quiz: { id: string; title: string };
-  totalScore: number;
-  completedAt: string;
-  maxScore: number;
-  attempts: number;
+  quiz: { id: string; title: string }; totalScore: number;
+  completedAt: string; maxScore: number; attempts: number;
 }
-
 type TabType = 'available' | 'my-quizzes' | 'scores' | 'admin';
 
 const computePoints = (quizzesList: Quiz[]) => {
@@ -47,7 +31,6 @@ const computePoints = (quizzesList: Quiz[]) => {
   });
   return map;
 };
-
 const isTab = (v: string): v is TabType => ['available', 'my-quizzes', 'scores', 'admin'].includes(v);
 
 export default function DashboardPage() {
@@ -63,7 +46,6 @@ export default function DashboardPage() {
 
   const [activeTab, setActiveTab] = useState<TabType>(getTabFromHash);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [quizzesTotal, setQuizzesTotal] = useState(0);
   const [quizzesTotalPages, setQuizzesTotalPages] = useState(0);
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -79,13 +61,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [quizPoints, setQuizPoints] = useState<Record<string, number>>({});
   const [categories, setCategories] = useState<Category[]>([]);
-
-  const setTab = (tab: TabType) => {
-    setActiveTab(tab);
-    if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', `#${tab}`);
-    }
-  };
+  const totalScore = myScores.reduce((sum, s) => sum + s.totalScore, 0);
 
   useEffect(() => {
     const handleHashChange = () => { setActiveTab(getTabFromHash()); };
@@ -103,32 +79,26 @@ export default function DashboardPage() {
       const data = await res.json();
       const list = Array.isArray(data) ? data : data.quizzes;
       setQuizzes(list);
-      setQuizzesTotal(Array.isArray(data) ? list.length : data.total);
       setQuizzesTotalPages(Array.isArray(data) ? Math.ceil(list.length / PAGE_SIZE) : data.totalPages);
-      setQuizPoints((prev) => ({ ...prev, ...computePoints(list) }));
+      setQuizPoints(prev => ({ ...prev, ...computePoints(list) }));
     }
   }, []);
 
-  const fetchMyQuizzes = useCallback(
-    async (p = 1, s = mySearch, cat = myCategoryId) => {
-      const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
-      if (s) params.set('search', s);
-      if (cat) params.set('categoryId', cat);
-      if (session?.user?.id) params.set('creatorId', session.user.id);
-      const res = await fetch(`/api/quiz?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        const list = (Array.isArray(data) ? data : data.quizzes).filter(
-          (q: Quiz) => q.creatorId === session?.user?.id
-        );
-        setMyQuizzes(list);
-        setMyQuizzesTotal(Array.isArray(data) ? list.length : data.total);
-        setMyQuizzesTotalPages(Array.isArray(data) ? Math.ceil(list.length / PAGE_SIZE) : data.totalPages);
-        setQuizPoints((prev) => ({ ...prev, ...computePoints(list) }));
-      }
-    },
-    [session?.user?.id]
-  );
+  const fetchMyQuizzes = useCallback(async (p = 1, s = mySearch, cat = myCategoryId) => {
+    const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
+    if (s) params.set('search', s);
+    if (cat) params.set('categoryId', cat);
+    if (session?.user?.id) params.set('creatorId', session.user.id);
+    const res = await fetch(`/api/quiz?${params}`);
+    if (res.ok) {
+      const data = await res.json();
+      const list = (Array.isArray(data) ? data : data.quizzes).filter((q: Quiz) => q.creatorId === session?.user?.id);
+      setMyQuizzes(list);
+      setMyQuizzesTotal(Array.isArray(data) ? list.length : data.total);
+      setMyQuizzesTotalPages(Array.isArray(data) ? Math.ceil(list.length / PAGE_SIZE) : data.totalPages);
+      setQuizPoints(prev => ({ ...prev, ...computePoints(list) }));
+    }
+  }, [session?.user?.id]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -165,14 +135,10 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`/api/quiz/${quizId}`, { method: 'DELETE' });
       if (res.ok) {
-        setMyQuizzes(myQuizzes.filter((q) => q.id !== quizId));
-        setQuizzes(quizzes.filter((q) => q.id !== quizId));
-      } else {
-        alert('Erreur lors de la suppression du quiz');
-      }
-    } catch {
-      alert('Erreur lors de la suppression du quiz');
-    }
+        setMyQuizzes(myQuizzes.filter(q => q.id !== quizId));
+        setQuizzes(quizzes.filter(q => q.id !== quizId));
+      } else { alert('Erreur lors de la suppression du quiz'); }
+    } catch { alert('Erreur lors de la suppression du quiz'); }
   };
 
   if (status === 'loading' || loading) {
@@ -188,203 +154,123 @@ export default function DashboardPage() {
 
   if (!session) return null;
 
-  const totalScore = myScores.reduce((sum, score) => sum + score.totalScore, 0);
   const scoreTotalPages = Math.ceil(myScores.length / PAGE_SIZE);
   const paginatedScores = myScores.slice((scorePage - 1) * PAGE_SIZE, scorePage * PAGE_SIZE);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm flex items-center justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
-            <p className="text-sm opacity-70">Gère tes quiz et lance un lobby</p>
-          </div>
-          <CreateLobbyButton />
-        </div>
+    <main className="flex-1 p-4 md:p-8">
 
-        {/* Stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-            <div className="text-sm opacity-90 mb-2">Score Total</div>
-            <div className="text-4xl font-bold">{totalScore}</div>
-            <div className="text-xs opacity-80 mt-1">points gagnés</div>
+      {activeTab === 'available' && (
+        <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Quiz disponibles</h2>
+          <div className="mb-6">
+            <QuizFilters
+              search={search} onSearchChange={handleSearchChange}
+              categoryId={categoryId} onCategoryChange={handleCategoryChange}
+              categories={categories}
+              onQuizzesChange={(data) => {
+                setQuizzes(data); setPage(1);
+                setQuizPoints(prev => ({ ...prev, ...computePoints(data) }));
+              }}
+            />
           </div>
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
-            <div className="text-sm opacity-90 mb-2">Quiz Complétés</div>
-            <div className="text-4xl font-bold">{myScores.length}</div>
-            <div className="text-xs opacity-80 mt-1">sur {quizzesTotal} disponibles</div>
-          </div>
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-            <div className="text-sm opacity-90 mb-2">Mes Quiz Créés</div>
-            <div className="text-4xl font-bold">{myQuizzesTotal}</div>
-            <div className="text-xs opacity-80 mt-1">quiz personnalisés</div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="mt-8 border-b-2 border-gray-200">
-          <div className="flex gap-6">
-            {(['available', 'my-quizzes', 'scores'] as TabType[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setTab(tab)}
-                className={`pb-4 px-2 font-semibold text-base transition-colors border-b-4 ${activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab === 'available' ? 'Quiz disponibles' : tab === 'my-quizzes' ? 'Mes quiz' : 'Mes scores'}
-              </button>
-            ))}
-            {session.user?.role === 'ADMIN' && (
-              <button
-                onClick={() => setTab('admin')}
-                className={`pb-4 px-2 font-semibold text-base transition-colors border-b-4 ${activeTab === 'admin'
-                  ? 'border-red-600 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                🛡️ Admin
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Tab: Quiz disponibles */}
-        {activeTab === 'available' && (
-          <div id="available" className="bg-white rounded-xl shadow-lg p-6 md:p-8 mt-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Quiz disponibles</h2>
-            <div className="mb-6">
-              <QuizFilters
-                search={search}
-                onSearchChange={handleSearchChange}
-                categoryId={categoryId}
-                onCategoryChange={handleCategoryChange}
-                categories={categories}
-                onQuizzesChange={(data) => {
-                  setQuizzes(data);
-                  setPage(1);
-                  setQuizPoints((prev) => ({ ...prev, ...computePoints(data) }));
-                }}
-              />
+          {quizzes.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 text-lg">Aucun quiz disponible</p>
             </div>
-            {quizzes.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-gray-600 text-lg mb-2">Aucun quiz disponible</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                {quizzes.map((quiz) => {
+                  const userScore = myScores.find(s => s.quiz.id === quiz.id);
+                  return (
+                    <QuizCard key={quiz.id} quiz={quiz} currentUserId={session?.user?.id}
+                      score={userScore?.totalScore} totalPoints={quizPoints[quiz.id] || 0} />
+                  );
+                })}
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-                  {quizzes.map((quiz) => {
-                    const userScore = myScores.find((s) => s.quiz.id === quiz.id);
-                    return (
-                      <QuizCard
-                        key={quiz.id}
-                        quiz={quiz}
-                        currentUserId={session?.user?.id}
-                        score={userScore?.totalScore}
-                        totalPoints={quizPoints[quiz.id] || 0}
-                      />
-                    );
-                  })}
-                </div>
-                <Pagination currentPage={page} totalPages={quizzesTotalPages} onPageChange={handlePageChange} />
-              </>
-            )}
-          </div>
-        )}
+              <Pagination currentPage={page} totalPages={quizzesTotalPages} onPageChange={handlePageChange} />
+            </>
+          )}
+        </div>
+      )}
 
-        {/* Tab: Panel Admin */}
-        {activeTab === 'admin' && session.user?.role === 'ADMIN' && (
-          <div id="admin" className="mt-6">
-            <AdminPanel />
-          </div>
-        )}
+      {activeTab === 'admin' && session.user?.role === 'ADMIN' && (
+        <AdminPanel />
+      )}
 
-        {/* Tab: Mes quiz */}
-        {activeTab === 'my-quizzes' && (
-          <div id="my-quizzes" className="bg-white rounded-xl shadow-lg p-6 md:p-8 mt-6">
-            {/* ── Header avec CTA sur la même ligne ── */}
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Mes quiz</h2>
-              <div className="flex gap-2">
-                <Link
-                  href="/quiz/generate"
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm hover:shadow-md"
-                >
-                  ✨ Générer
-                </Link>
-                <Link
-                  href="/quiz/create"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm hover:shadow-md"
-                >
-                  + Créer
-                </Link>
-              </div>
+      {activeTab === 'my-quizzes' && (
+        <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">{plural(myQuizzesTotal, 'Mon quiz', 'Mes quizzes')}</h2>
+            <span className="text-xs font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">{myQuizzesTotal}</span>
+          </div>
+          <div className="mb-6">
+            <QuizFilters
+              search={mySearch} onSearchChange={handleMySearchChange}
+              categoryId={myCategoryId} onCategoryChange={handleMyCategoryChange}
+              categories={categories}
+              onQuizzesChange={(data) => {
+                setMyQuizzes(data.filter(q => q.creatorId === session?.user?.id));
+                setMyPage(1);
+                setQuizPoints(prev => ({ ...prev, ...computePoints(data) }));
+              }}
+            />
+          </div>
+          {myQuizzes.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 text-lg mb-2">Aucun quiz créé</p>
+              <p className="text-gray-500">Créez votre premier quiz personnalisé</p>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                {myQuizzes.map(quiz => (
+                  <QuizCard key={quiz.id} quiz={quiz} currentUserId={session?.user?.id}
+                    showActions={true}
+                    onEdit={() => router.push(`/quiz/${quiz.id}/edit`)}
+                    onDelete={() => handleDeleteQuiz(quiz.id)} />
+                ))}
+              </div>
+              <Pagination currentPage={myPage} totalPages={myQuizzesTotalPages} onPageChange={handleMyPageChange} />
+            </>
+          )}
+        </div>
+      )}
 
-            <div className="mb-6">
-              <QuizFilters
-                search={mySearch}
-                onSearchChange={handleMySearchChange}
-                categoryId={myCategoryId}
-                onCategoryChange={handleMyCategoryChange}
-                categories={categories}
-                onQuizzesChange={(data) => {
-                  setMyQuizzes(data.filter((q) => q.creatorId === session?.user?.id));
-                  setMyPage(1);
-                  setQuizPoints((prev) => ({ ...prev, ...computePoints(data) }));
-                }}
-              />
+      {activeTab === 'scores' && (
+        <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Mes scores</h2>
+
+          {/* Cards stats */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-blue-50 rounded-xl p-4">
+              <p className="text-xs text-blue-600 font-medium mb-1">Score total</p>
+              <p className="text-2xl font-bold text-blue-700">{totalScore} pts</p>
             </div>
-
-            {myQuizzes.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-gray-600 text-lg mb-2">Aucun quiz créé</p>
-                <p className="text-gray-500 mb-6">Créez votre premier quiz personnalisé</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-                  {myQuizzes.map((quiz) => (
-                    <QuizCard
-                      key={quiz.id}
-                      quiz={quiz}
-                      currentUserId={session?.user?.id}
-                      showActions={true}
-                      onEdit={() => router.push(`/quiz/${quiz.id}/edit`)}
-                      onDelete={() => handleDeleteQuiz(quiz.id)}
-                    />
-                  ))}
-                </div>
-                <Pagination currentPage={myPage} totalPages={myQuizzesTotalPages} onPageChange={handleMyPageChange} />
-              </>
-            )}
+            <div className="bg-green-50 rounded-xl p-4">
+              <p className="text-xs text-green-600 font-medium mb-1">Quiz complétés</p>
+              <p className="text-2xl font-bold text-green-700">{myScores.length}</p>
+            </div>
+            <div className="bg-purple-50 rounded-xl p-4">
+              <p className="text-xs text-purple-600 font-medium mb-1">Mes créations</p>
+              <p className="text-2xl font-bold text-purple-700">{myQuizzesTotal}</p>
+            </div>
           </div>
-        )}
+          {myScores.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 text-lg mb-2">Aucun score enregistré</p>
+              <p className="text-gray-500">Complétez des quiz pour voir vos scores ici</p>
+            </div>
+          ) : (
+            <>
+              <ScoreList scores={paginatedScores} />
+              <Pagination currentPage={scorePage} totalPages={scoreTotalPages} onPageChange={setScorePage} />
+            </>
+          )}
+        </div>
+      )}
 
-        {/* Tab: Mes scores */}
-        {activeTab === 'scores' && (
-          <div id="scores" className="bg-white rounded-xl shadow-lg p-6 md:p-8 mt-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Mes scores</h2>
-            {myScores.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-gray-600 text-lg mb-2">Aucun score enregistré</p>
-                <p className="text-gray-500">Complétez des quiz pour voir vos scores ici</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  <ScoreList scores={paginatedScores} />
-                </div>
-                <Pagination currentPage={scorePage} totalPages={scoreTotalPages} onPageChange={setScorePage} />
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    </main>
   );
 }
