@@ -1,16 +1,12 @@
 // prisma/seed.ts
 import dotenv from 'dotenv';
 dotenv.config();
-console.log('A - dotenv ok');
 
 import crypto from 'node:crypto';
-console.log('B - crypto ok');
 
 import { PrismaClient, QuestionType } from '@prisma/client';
-console.log('C - prisma import ok');
 
 import bcrypt from 'bcrypt';
-console.log('D - bcrypt ok');
 
 // remplace temporairement l'import par une fonction locale
 function computeUnoScore(rank: number) {
@@ -19,10 +15,8 @@ function computeUnoScore(rank: number) {
   if (rank === 3) return 6;
   return 2;
 }
-console.log('E - uno score ok');
 
 const prisma = new PrismaClient();
-console.log('F - prisma client ok');
 
 
 async function main() {
@@ -92,6 +86,40 @@ async function main() {
   console.log(`✅ Utilisateur créé: ${anonUser2.username}`);
   console.log(`✅ Utilisateur créé: ${anonUser3.username}`);
   console.log(`✅ Utilisateur créé: ${farosUser.username}`);
+
+  // ─── 3. MOTS ────────────────────────────────────────────────────────
+  const words = [
+    // Animaux
+    'ÉLÉPHANT', 'GIRAFE', 'CROCODILE', 'PINGOUIN', 'DAUPHIN', 'PANTHÈRE', 'FLAMANT', 'KANGOUROU',
+    'CAMÉLÉON', 'HIPPOPOTAME', 'AUTRUCHE', 'PERROQUET', 'SCORPION', 'PIEUVRE', 'BALEINE',
+    // Objets
+    'PARAPLUIE', 'TÉLESCOPE', 'MICROSCOPE', 'ACCORDÉON', 'TRAMPOLINE', 'ESCALATOR', 'BOUILLOIRE',
+    'LAMPADAIRE', 'FRIGO', 'ASPIRATEUR', 'CALCULATRICE', 'CHRONOMÈTRE', 'THERMOMÈTRE',
+    // Lieux
+    'BIBLIOTHÈQUE', 'AQUARIUM', 'VOLCAN', 'DÉSERT', 'GLACIER', 'PHARE', 'CATHÉDRALE', 'CASINO',
+    'STADE', 'CIRQUE', 'CIMETIÈRE', 'LABORATOIRE', 'OBSERVATOIRE', 'MANÈGE',
+    // Concepts
+    'GRAVITÉ', 'DÉMOCRATIE', 'RENAISSANCE', 'RÉVOLUTION', 'PHOTOSYNTHÈSE', 'HIBERNATION',
+    'MIGRATION', 'ÉVOLUTION', 'INFLATION', 'PANDÉMIE', 'PROPHÉTIE', 'PARADOXE',
+    // Métiers
+    'ARCHÉOLOGUE', 'ASTRONAUTE', 'POMPIER', 'VÉTÉRINAIRE', 'SOMMELIER', 'CARTOGRAPHE',
+    'CHORÉGRAPHE', 'MARIONNETTISTE', 'APICULTEUR', 'PLONGEUR', 'GLACIOLOGUE',
+    // Sport / Loisirs
+    'SKATEBOARD', 'PARACHUTE', 'PLANCHE À VOILE', 'TRAMPOLINE', 'BOOMERANG', 'CALLIGRAPHIE',
+    'ORIGAMI', 'ESCALADE', 'ESCRIME', 'BOXE', 'NATATION', 'MARATHON',
+    // Nourriture
+    'GUACAMOLE', 'CROISSANT', 'FONDUE', 'SUSHI', 'RAVIOLI', 'MACARON', 'SOUFFLÉ', 'CRÊPE',
+    'COUSCOUS', 'PAELLA', 'TIRAMISU', 'ÉCLAIR', 'MADELEINE',
+  ];
+  for (const word of words) {
+    await prisma.word.upsert({
+      where: { word },
+      update: {},
+      create: { word },
+    });
+  }
+
+  console.log(`✅ ${words.length} mots de 7 catégories ajoutés.`);
 
   // ─── 4. Quiz — ordre alterné (CG → SC → SP → AC → TE → CG → SC → ...) ───
   const quizData = [

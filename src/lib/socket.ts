@@ -3,6 +3,7 @@ import { io, Socket } from "socket.io-client";
 let lobbySocket: Socket | null = null;
 let quizSocket: Socket | null = null;
 let unoSocket: Socket | null = null;
+let tabooSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -34,4 +35,11 @@ export function getUnoSocket(): Socket | null {
     if (!unoSocket) unoSocket = createSocket(process.env.NEXT_PUBLIC_UNO_SOCKET_URL ?? "", "UNO Socket");
     if (!unoSocket.connected) unoSocket.connect();
     return unoSocket;
+}
+
+export function getTabooSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!tabooSocket) tabooSocket = createSocket(process.env.NEXT_PUBLIC_TABOO_SOCKET_URL ?? "", "Taboo Socket");
+    if (!tabooSocket.connected) tabooSocket.connect();
+    return tabooSocket;
 }

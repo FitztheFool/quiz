@@ -127,3 +127,10 @@ model Attempt {
   @@index([userId, gameType])
   @@map("attempts")
 }
+
+model Word {
+  id        String   @id @default(cuid())
+  word      String   @unique
+  description  String?
+  createdAt DateTime @default(now())
+}
