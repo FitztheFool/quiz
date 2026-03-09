@@ -173,8 +173,7 @@ export default function TabooGamePage() {
         ) {
             startGameSentRef.current = true;
             // Round 1 : taboo:startGame | Round 2+ : taboo:startRound (gameStarted est déjà true)
-            const event = game.gameStarted ? 'taboo:startRound' : 'taboo:startGame';
-            socket.emit(event, { lobbyId });
+            socket.emit('taboo:startRound', { lobbyId });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [game?.trapTimeLeft]);
@@ -330,7 +329,7 @@ export default function TabooGamePage() {
                         {game.trapStarted && game.trapTimeLeft !== null
                             ? <span className={`text-sm font-bold tabular-nums ${game.trapTimeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white/60'}`}>
                                 {game.trapTimeLeft}s
-                              </span>
+                            </span>
                             : <span className="text-white/30 text-xs">Démarrage…</span>
                         }
                     </div>
