@@ -37,9 +37,9 @@ export function getUnoSocket(): Socket | null {
     return unoSocket;
 }
 
+// Ne connecte PAS automatiquement — appeler socket.connect() manuellement
 export function getTabooSocket(): Socket | null {
     if (typeof window === "undefined") return null;
     if (!tabooSocket) tabooSocket = createSocket(process.env.NEXT_PUBLIC_TABOO_SOCKET_URL ?? "", "Taboo Socket");
-    if (!tabooSocket.connected) tabooSocket.connect();
     return tabooSocket;
 }

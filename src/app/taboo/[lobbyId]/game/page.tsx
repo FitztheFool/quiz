@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getTabooSocket } from '@/lib/socket';
@@ -8,7 +8,7 @@ import { getTabooSocket } from '@/lib/socket';
 type Attempt = { word: string; userId: string; username: string };
 
 type TabooState = {
-    phase: 'trap' | 'playing' | 'between_turns' | 'finished';
+    phase: 'trap' | 'playing' | 'between_turns' | 'finished' | 'recap';
     currentTeam: 0 | 1 | null;
     currentWord: string | null;
     currentTraps: string[];
@@ -35,10 +35,11 @@ type TabooState = {
     gameStarted: boolean;
     trapsByPlayer: Record<string, string[]>;
     orators?: { '0': string | null; '1': string | null };
+    lastTurnResult: 'validated' | 'fail' | 'timeout' | null;
+    trapDuration: number;
 };
 
 // ── Composants partagés ───────────────────────────────────────────────────────
-
 
 function ScoreBar({ scores, myTeam, currentTeam }: {
     scores: Record<string, number>;
@@ -97,7 +98,7 @@ export default function TabooGamePage() {
     const router = useRouter();
     const params = useParams<{ lobbyId: string }>();
     const lobbyId = params?.lobbyId ?? '';
-    const socket = useMemo(() => getTabooSocket(), []);
+    const socketRef = useRef<ReturnType<typeof getTabooSocket>>(null);
 
     const joinedRef = useRef(false);
     const attemptsEndRef = useRef<HTMLDivElement>(null);
@@ -110,25 +111,23 @@ export default function TabooGamePage() {
 
     const myId = session?.user?.id ?? '';
 
-    // Sync pièges depuis serveur (sauf slot en cours d'édition)
     useEffect(() => {
         if (!game || !myId) return;
         const myTeamVal = game.teams?.[myId];
         if (myTeamVal === undefined || myTeamVal === null) return;
         const allTeamPlayers = game.players.filter(p => p.team === myTeamVal);
-        const merged = Array.from({ length: game.trapWordCount }, (_, i) => {
-            if (focusedSlot.current === i) return localTraps[i] ?? '';
+        setLocalTraps(prev => Array.from({ length: game.trapWordCount }, (_, i) => {
+            if (focusedSlot.current === i) return prev[i] ?? '';
             for (const p of allTeamPlayers) {
+                if (p.userId === myId) continue;
                 const val = game.trapsByPlayer?.[p.userId]?.[i];
                 if (val && val.trim()) return val;
             }
-            return '';
-        });
-        setLocalTraps(merged);
+            return prev[i] ?? '';
+        }));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [game?.trapsByPlayer]);
 
-    // Reset pièges locaux à chaque nouvelle phase trap
     useEffect(() => {
         if (game?.phase === 'trap') {
             setLocalTraps([]);
@@ -136,31 +135,26 @@ export default function TabooGamePage() {
         }
     }, [game?.round, game?.phase]);
 
-    // Garder isHostRef à jour
     useEffect(() => {
         isHostRef.current = !!game && game.hostId === myId;
     }, [game?.hostId, myId]);
 
-    // Auto-start chrono piège dès que les deux mots arrivent (host)
     useEffect(() => {
-        if (!socket || !game) return;
+        if (!socketRef.current || !game) return;
         if (game.phase === 'trap' && !game.trapStarted && game.team0Word && game.team1Word && isHostRef.current) {
-            socket.emit('taboo:startTrap', { lobbyId });
+            socketRef.current.emit('taboo:startTrap', { lobbyId });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [game?.phase, game?.trapStarted, game?.team0Word, game?.team1Word]);
 
-    // Ref pour éviter d'envoyer startGame plusieurs fois de suite (trapTimeLeft passe -1, -2...)
     const startGameSentRef = useRef(false);
 
-    // Reset la ref quand on entre dans une nouvelle phase trap
     useEffect(() => {
         if (game?.phase === 'trap') startGameSentRef.current = false;
     }, [game?.round, game?.phase]);
 
-    // Auto-startGame quand le chrono piège atteint 0 (host)
     useEffect(() => {
-        if (!socket || !game) return;
+        if (!socketRef.current || !game) return;
         if (
             game.phase === 'trap' &&
             game.trapStarted &&
@@ -172,26 +166,24 @@ export default function TabooGamePage() {
             !startGameSentRef.current
         ) {
             startGameSentRef.current = true;
-            // Round 1 : taboo:startGame | Round 2+ : taboo:startRound (gameStarted est déjà true)
-            socket.emit('taboo:startRound', { lobbyId });
+            const event = game.gameStarted ? 'taboo:startRound' : 'taboo:startGame';
+            socketRef.current.emit(event, { lobbyId });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [game?.trapTimeLeft]);
 
-    // Connexion socket
     useEffect(() => {
-        if (!socket || !lobbyId || status !== 'authenticated' || !myId) return;
+        if (!lobbyId || status !== 'authenticated' || !myId) return;
         const username = session.user.username ?? session.user.email ?? 'User';
+
+        const socket = getTabooSocket();
+        if (!socket) return;
+        socketRef.current = socket;
 
         const join = () => {
             if (joinedRef.current) return;
             joinedRef.current = true;
-            const teamsRaw = sessionStorage.getItem(`taboo_teams_${lobbyId}`);
-            const teams = teamsRaw ? JSON.parse(teamsRaw) : null;
-            const hostId = sessionStorage.getItem(`taboo_hostId_${lobbyId}`) ?? undefined;
-            const oratorsRaw = sessionStorage.getItem(`taboo_orators_${lobbyId}`);
-            const orators = oratorsRaw ? JSON.parse(oratorsRaw) : null;
-            socket.emit('taboo:join', { lobbyId, userId: myId, username, teams, hostId, orators });
+            socket.emit('taboo:join', { lobbyId, userId: myId, username });
         };
 
         socket.on('taboo:state', (state: TabooState) => setGame(state));
@@ -215,6 +207,7 @@ export default function TabooGamePage() {
             });
         });
 
+        if (!socket.connected) socket.connect();
         if (socket.connected) join();
         else socket.once('connect', join);
 
@@ -225,7 +218,7 @@ export default function TabooGamePage() {
             socket.off('taboo:needWords');
             joinedRef.current = false;
         };
-    }, [socket, lobbyId, status, myId]);
+    }, [lobbyId, status, myId]);
 
     useEffect(() => {
         if (attemptsEndRef.current) {
@@ -233,7 +226,6 @@ export default function TabooGamePage() {
         }
     }, [game?.attempts]);
 
-    // ── Loading ───────────────────────────────────────────────────────────────
     if (status === 'loading' || !game) return (
         <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
@@ -241,7 +233,6 @@ export default function TabooGamePage() {
     );
     if (status !== 'authenticated') return null;
 
-    // ── Dérivations ───────────────────────────────────────────────────────────
     const isHost = game.hostId === myId;
     const myTeam = game.teams?.[myId] ?? null;
     const currentOratorId = game.currentTeam !== null
@@ -250,7 +241,6 @@ export default function TabooGamePage() {
     const isOrator = currentOratorId !== null && currentOratorId === myId;
     const isCurrentTeam = myTeam === game.currentTeam;
     const isGuesser = isCurrentTeam && !isOrator;
-    // Adversaire = dans l'équipe qui surveille (pas celle qui joue ce tour)
     const isAdversary = myTeam !== null && myTeam !== game.currentTeam;
 
     const timerPct = game.turnDuration > 0 ? game.turnTimeLeft / game.turnDuration : 0;
@@ -260,17 +250,16 @@ export default function TabooGamePage() {
     const sendAttempt = () => {
         const w = attemptInput.trim();
         if (!w) return;
-        socket?.emit('taboo:attempt', { lobbyId, word: w });
+        socketRef.current?.emit('taboo:attempt', { lobbyId, word: w });
         setAttemptInput('');
     };
 
     const handleTrapChange = (i: number, value: string) => {
         if (myTeam === null || !game) return;
-        const next = Array.from({ length: game.trapWordCount }, (_, idx) =>
-            idx === i ? value.toUpperCase() : (localTraps[idx] ?? '')
-        );
+        const next = [...localTraps];
+        next[i] = value.toUpperCase();
         setLocalTraps(next);
-        socket?.emit('taboo:submitTraps', { lobbyId, traps: next });
+        socketRef.current?.emit('taboo:submitTraps', { lobbyId, index: i, value: value.toUpperCase() });
     };
 
     const FONTS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');`;
@@ -297,33 +286,33 @@ export default function TabooGamePage() {
                         </div>
                     ))}
                 </div>
-                <button onClick={() => router.push('/dashboard')}
-                    className="px-8 py-3 rounded-xl bg-white/10 hover:bg-white/20 font-semibold transition-colors">
-                    Retour au dashboard
-                </button>
+                <div className="flex flex-col gap-3 w-full max-w-xs">
+                    <button onClick={() => router.push(`/lobby/${lobbyId}`)}
+                        className="w-full px-8 py-3 rounded-xl bg-green-500 hover:bg-green-400 font-bold text-lg transition-colors shadow-lg shadow-green-500/20">
+                        🔄 Rejouer
+                    </button>
+                    <button onClick={() => router.push('/dashboard')}
+                        className="w-full px-8 py-3 rounded-xl bg-white/10 hover:bg-white/20 font-semibold transition-colors">
+                        🏠 Retour au dashboard
+                    </button>
+                </div>
             </div>
         );
     }
 
     // ── Phase trap ────────────────────────────────────────────────────────────
     if (game.phase === 'trap') {
-        // Chaque équipe piège le mot ADVERSE (le mot que l'adversaire devra faire deviner)
         const wordToPiege = myTeam === 0 ? game.team1Word : myTeam === 1 ? game.team0Word : null;
-        const trapPct = game.trapTimeLeft !== null ? (game.trapTimeLeft / 60) * 100 : 100;
+        const trapPct = game.trapTimeLeft !== null ? (game.trapTimeLeft / game.trapDuration) * 100 : 100;
         const trapColor = (game.trapTimeLeft ?? 60) <= 10 ? '#ef4444' : (game.trapTimeLeft ?? 60) <= 20 ? '#f97316' : '#f59e0b';
 
         return (
             <div className="min-h-screen bg-[#0d0d0d] text-white flex flex-col items-center justify-center px-4 gap-5 text-center pt-10"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 <style>{FONTS}</style>
-
-                {/* Scores toujours visibles */}
                 <ScoreBar scores={game.scores} myTeam={myTeam} currentTeam={game.currentTeam} />
-
                 <div className={`border rounded-2xl p-6 max-w-md w-full
                     ${myTeam === 0 ? 'bg-blue-500/10 border-blue-500/20' : myTeam === 1 ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'}`}>
-
-                    {/* Header chrono */}
                     <div className="flex items-center justify-between mb-2">
                         <p className="text-orange-400 font-bold text-sm">⏳ Phase des pièges</p>
                         {game.trapStarted && game.trapTimeLeft !== null
@@ -337,8 +326,6 @@ export default function TabooGamePage() {
                         <div className="h-full rounded-full transition-all duration-1000"
                             style={{ width: `${trapPct}%`, backgroundColor: trapColor }} />
                     </div>
-
-                    {/* Mot à piéger */}
                     {myTeam !== null && wordToPiege ? (
                         <div className="mb-5 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                             <p className="text-xs text-white/40 uppercase tracking-widest mb-1">
@@ -353,8 +340,6 @@ export default function TabooGamePage() {
                             <p className="text-white/30 text-sm animate-pulse">Chargement du mot…</p>
                         </div>
                     )}
-
-                    {/* Inputs pièges partagés entre coéquipiers */}
                     {myTeam !== null && (
                         <div className="space-y-2 text-left">
                             <p className="text-xs text-white/30 mb-2">
@@ -388,9 +373,84 @@ export default function TabooGamePage() {
                             })}
                         </div>
                     )}
-
-
                     <p className="text-white/20 text-xs mt-4">La partie démarre automatiquement à la fin du chrono…</p>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Récap du tour ─────────────────────────────────────────────────────────
+    if (game.phase === 'recap') {
+        const teamWhoJustPlayed = game.currentTeam;
+        const teamColor = teamWhoJustPlayed === 0 ? 'text-blue-400' : 'text-red-400';
+        const teamLabel = teamWhoJustPlayed === 0 ? '🔵 Équipe Bleue' : '🔴 Équipe Rouge';
+
+        const resultLabel = game.lastTurnResult === 'validated'
+            ? '✅ Mot trouvé !'
+            : game.lastTurnResult === 'fail'
+                ? '❌ Mot interdit !'
+                : '⏱ Temps écoulé';
+        const resultColor = game.lastTurnResult === 'validated'
+            ? 'text-green-400'
+            : game.lastTurnResult === 'fail'
+                ? 'text-red-400'
+                : 'text-orange-400';
+
+        // Le mot mystère et les pièges du tour qui vient de se terminer
+        const wordJustPlayed = teamWhoJustPlayed === 0 ? game.team0Word : game.team1Word;
+        const trapsUsed = teamWhoJustPlayed === 0 ? game.team1Traps : game.team0Traps;
+
+        return (
+            <div className="min-h-screen bg-[#0d0d0d] text-white flex flex-col items-center justify-center px-4 gap-5 text-center pt-10"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <style>{FONTS}</style>
+
+                <ScoreBar scores={game.scores} myTeam={myTeam} currentTeam={game.currentTeam} />
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 max-w-sm w-full space-y-4">
+                    <p className="text-xs text-white/30 uppercase tracking-widest">Fin du tour</p>
+                    <p style={{ fontFamily: "'Bebas Neue'" }} className={`text-3xl tracking-widest ${teamColor}`}>{teamLabel}</p>
+                    <p className={`text-xl font-bold ${resultColor}`}>{resultLabel}</p>
+                    <p className="text-white/30 text-xs">Round {game.round}/{game.totalRounds}</p>
+
+                    {/* Mot mystère du tour */}
+                    <div className="rounded-2xl border-2 border-yellow-500/30 bg-yellow-500/5 p-4 text-center">
+                        <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Mot mystère 👁</p>
+                        <p style={{ fontFamily: "'Bebas Neue'" }} className="text-4xl tracking-widest text-yellow-300">
+                            {wordJustPlayed ?? '???'}
+                        </p>
+                    </div>
+
+                    {/* Mots piégés utilisés */}
+                    {trapsUsed.filter(t => t).length > 0 && (
+                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                            <p className="text-xs text-white/40 uppercase tracking-widest mb-2">🚫 Mots piégés</p>
+                            <div className="flex flex-wrap gap-1 justify-center">
+                                {trapsUsed.filter(t => t).map((t, i) => (
+                                    <span key={i} className="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-1 rounded-full">
+                                        🚫 {t}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Tentatives du tour */}
+                    {game.attempts.length > 0 && (
+                        <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-left">
+                            <p className="text-xs text-white/30 mb-2 uppercase tracking-widest">Tentatives du tour</p>
+                            <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} />
+                        </div>
+                    )}
+
+                    {isHost ? (
+                        <button onClick={() => socketRef.current?.emit('taboo:nextTurn', { lobbyId })}
+                            className="mt-2 w-full px-8 py-4 rounded-2xl bg-green-500 hover:bg-green-400 font-bold text-lg transition-all shadow-lg shadow-green-500/20">
+                            ➡ Tour suivant
+                        </button>
+                    ) : (
+                        <p className="text-white/30 text-sm mt-2">En attente du host…</p>
+                    )}
                 </div>
             </div>
         );
@@ -409,32 +469,43 @@ export default function TabooGamePage() {
                 style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 <style>{FONTS}</style>
 
-                {/* Scores toujours visibles */}
                 <ScoreBar scores={game.scores} myTeam={myTeam} currentTeam={game.currentTeam} />
 
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 max-w-sm w-full space-y-3">
                     <p className="text-xs text-white/30 uppercase tracking-widest">Prochain tour</p>
                     <p style={{ fontFamily: "'Bebas Neue'" }} className={`text-3xl tracking-widest ${teamColor}`}>{teamLabel}</p>
                     <p className="text-white/60 text-sm">Orateur : <span className="text-white font-bold">🎤 {currentOratorName}</span></p>
+
+                    {/* Membres de l'équipe */}
+                    <div className="flex flex-wrap gap-1 justify-center">
+                        <p className="text-white/60 text-sm">Mon équipe :
+                            {game.players
+                                .filter(p => p.team === myTeam)
+                                .map((p, i) => (
+                                    <span key={p.userId} className={`font-bold ${p.userId === myId ? 'text-white' : 'text-white'}`}>
+                                        {i > 0 ? ', ' : ' '}{p.username}
+                                    </span>
+                                ))
+                            }
+                        </p>
+                    </div>
+
                     <p className="text-white/30 text-xs">Round {game.round}/{game.totalRounds}</p>
 
-                    {/* Orateur : son mot uniquement — PAS les mots piégés */}
-                    {isOrator && game.currentWord && (
-                        <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                            <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Votre mot à faire deviner</p>
-                            <p style={{ fontFamily: "'Bebas Neue'" }} className="text-4xl tracking-widest text-green-400">
-                                {game.currentWord}
-                            </p>
+                    {isCurrentTeam && (
+                        <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                            <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Mot à trouver</p>
+                            <p style={{ fontFamily: "'Bebas Neue'" }} className="text-3xl tracking-widest text-white/20">???</p>
+                            <p className="text-xs text-white/30 mt-2">{isOrator ? 'Le mot vous sera révélé une fois prêt !' : 'Écoutez l\'orateur !'}</p>
                         </div>
                     )}
 
-                    {/* Adversaires : voient le mot + leurs pièges actifs (pour surveiller) */}
-                    {isAdversary && !isOrator && game.currentWord && (
-                        <div className="space-y-2">
-                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                                <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Mot à deviner par l'adversaire</p>
-                                <p style={{ fontFamily: "'Bebas Neue'" }} className="text-3xl tracking-widest text-white/80">
-                                    {game.currentWord}
+                    {isAdversary && (
+                        <>
+                            <div className="rounded-2xl border-2 border-yellow-500/30 bg-yellow-500/5 p-4 text-center">
+                                <p className="text-xs text-white/30 uppercase tracking-widest mb-2">Mot mystère 👁</p>
+                                <p style={{ fontFamily: "'Bebas Neue'" }} className="text-4xl tracking-widest text-yellow-300">
+                                    {game.currentWord ?? '???'}
                                 </p>
                             </div>
                             {game.currentTraps.length > 0 && (
@@ -449,21 +520,35 @@ export default function TabooGamePage() {
                                     </div>
                                 </div>
                             )}
+                        </>
+                    )}
+
+                    {isCurrentTeam && (
+                        <div className="mt-2 space-y-1">
+                            <p className="text-xs text-white/30 uppercase tracking-widest mb-1">🎤 Choisir l'orateur</p>
+                            <div className="flex flex-wrap gap-2 justify-center">
+                                {game.players
+                                    .filter(p => p.team === game.currentTeam)
+                                    .map(p => {
+                                        const isSelected = currentOratorId === p.userId;
+                                        return (
+                                            <button
+                                                key={p.userId}
+                                                onClick={() => socketRef.current?.emit('taboo:changeOrator', { lobbyId, userId: p.userId })}
+                                                className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all
+                                                    ${isSelected
+                                                        ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                                                        : 'bg-white/5 border-white/10 text-white/50 hover:border-white/30 hover:text-white/80'}`}>
+                                                {isSelected ? '🎤 ' : ''}{p.username}
+                                            </button>
+                                        );
+                                    })}
+                            </div>
                         </div>
                     )}
 
-                    {/* Guessers : ne voient pas le mot */}
-                    {isGuesser && (
-                        <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                            <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Mot à trouver</p>
-                            <p style={{ fontFamily: "'Bebas Neue'" }} className="text-3xl tracking-widest text-white/20">???</p>
-                            <p className="text-xs text-white/30 mt-2">Écoutez l'orateur !</p>
-                        </div>
-                    )}
-
-                    {/* Seul l'orateur démarre son tour */}
                     {isOrator ? (
-                        <button onClick={() => socket?.emit('taboo:startTurn', { lobbyId })}
+                        <button onClick={() => socketRef.current?.emit('taboo:startTurn', { lobbyId })}
                             className="mt-2 w-full px-8 py-4 rounded-2xl bg-green-500 hover:bg-green-400 font-bold text-lg transition-all shadow-lg shadow-green-500/20">
                             ▶ Je suis prêt !
                         </button>
@@ -486,7 +571,6 @@ export default function TabooGamePage() {
         <div className="min-h-screen bg-[#0d0d0d] text-white flex flex-col pt-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             <style>{FONTS}</style>
 
-            {/* Header avec scores toujours visibles */}
             <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <span className={`text-xs font-bold px-3 py-1 rounded-full ${game.currentTeam === 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-red-500/20 text-red-300'}`}>
@@ -509,7 +593,6 @@ export default function TabooGamePage() {
 
             <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
 
-                {/* Timer */}
                 <div className="relative w-32 h-32">
                     <svg className="w-32 h-32 -rotate-90" viewBox="0 0 130 130">
                         <circle cx="65" cy="65" r="56" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" />
@@ -527,7 +610,6 @@ export default function TabooGamePage() {
                     </div>
                 </div>
 
-                {/* ── Orateur : mot + mots interdits + tentatives + bouton valider ── */}
                 {isOrator && (
                     <div className="w-full max-w-sm space-y-3">
                         <div className="rounded-3xl border-2 border-green-500/30 bg-green-500/5 p-6 text-center">
@@ -536,21 +618,18 @@ export default function TabooGamePage() {
                                 {game.currentWord ?? '???'}
                             </p>
                         </div>
-
-                        {/* Tentatives visibles par l'orateur aussi */}
                         <div className="rounded-xl bg-white/5 border border-white/10 p-3">
                             <p className="text-xs text-white/30 mb-2 uppercase tracking-widest">
                                 Tentatives {game.attempts.length}/{game.maxAttempts}
                             </p>
                             <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} refEl={attemptsEndRef} />
                         </div>
-
                         <div className="flex gap-3 justify-center">
-                            <button onClick={() => socket?.emit('taboo:pause', { lobbyId })}
+                            <button onClick={() => socketRef.current?.emit('taboo:pause', { lobbyId })}
                                 className="px-4 py-2 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 font-semibold text-sm transition-colors">
                                 {game.paused ? '▶ Reprendre' : '⏸ Pause'}
                             </button>
-                            <button onClick={() => socket?.emit('taboo:validate', { lobbyId })}
+                            <button onClick={() => socketRef.current?.emit('taboo:validate', { lobbyId })}
                                 className="px-6 py-2 rounded-xl bg-green-500 hover:bg-green-400 font-bold text-sm transition-colors shadow-lg shadow-green-500/20">
                                 ✅ Validé !
                             </button>
@@ -558,14 +637,12 @@ export default function TabooGamePage() {
                     </div>
                 )}
 
-                {/* ── Devineurs : input + tentatives + pause ── */}
                 {isGuesser && (
                     <div className="w-full max-w-sm space-y-3">
                         <div className="rounded-3xl border-2 border-white/10 bg-white/3 p-6 text-center">
                             <p className="text-xs text-white/30 uppercase tracking-widest mb-2">Mot à trouver</p>
                             <p style={{ fontFamily: "'Bebas Neue'" }} className="text-5xl tracking-widest text-white/20">???</p>
                         </div>
-
                         {!game.paused && (
                             <div className="flex gap-2">
                                 <input
@@ -579,25 +656,27 @@ export default function TabooGamePage() {
                                     className="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">↵</button>
                             </div>
                         )}
-
                         <div className="rounded-xl bg-white/5 border border-white/10 p-3">
                             <p className="text-xs text-white/30 mb-2 uppercase tracking-widest">
                                 Tentatives {game.attempts.length}/{game.maxAttempts}
                             </p>
                             <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} refEl={attemptsEndRef} />
                         </div>
-
-                        <button onClick={() => socket?.emit('taboo:pause', { lobbyId })}
+                        <button onClick={() => socketRef.current?.emit('taboo:pause', { lobbyId })}
                             className="w-full px-4 py-2 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 font-semibold text-sm transition-colors">
                             {game.paused ? '▶ Reprendre' : '⏸ Pause'}
                         </button>
                     </div>
                 )}
 
-                {/* ── Adversaires : mots piégés + tentatives + bouton échec ── */}
                 {isAdversary && (
                     <div className="w-full max-w-sm space-y-3">
-                        {/* Mots piégés — l'équipe qui surveille DOIT les voir */}
+                        <div className="rounded-3xl border-2 border-yellow-500/30 bg-yellow-500/5 p-6 text-center">
+                            <p className="text-xs text-white/30 uppercase tracking-widest mb-2">Mot mystère 👁</p>
+                            <p style={{ fontFamily: "'Bebas Neue'" }} className="text-5xl tracking-widest text-yellow-300">
+                                {game.currentWord ?? '???'}
+                            </p>
+                        </div>
                         {game.currentTraps.length > 0 && (
                             <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
                                 <p className="text-xs text-white/40 uppercase tracking-widest mb-3">🚫 Vos mots piégés</p>
@@ -610,20 +689,18 @@ export default function TabooGamePage() {
                                 </div>
                             </div>
                         )}
-
                         <div className="rounded-xl bg-white/5 border border-white/10 p-3">
                             <p className="text-xs text-white/30 mb-2 uppercase tracking-widest">
                                 Tentatives {game.attempts.length}/{game.maxAttempts}
                             </p>
                             <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} refEl={attemptsEndRef} />
                         </div>
-
                         <div className="flex gap-3 justify-center">
-                            <button onClick={() => socket?.emit('taboo:pause', { lobbyId })}
+                            <button onClick={() => socketRef.current?.emit('taboo:pause', { lobbyId })}
                                 className="px-4 py-2 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 font-semibold text-sm transition-colors">
                                 {game.paused ? '▶ Reprendre' : '⏸ Pause'}
                             </button>
-                            <button onClick={() => socket?.emit('taboo:fail', { lobbyId })}
+                            <button onClick={() => socketRef.current?.emit('taboo:fail', { lobbyId })}
                                 className="px-6 py-2 rounded-xl bg-red-500/80 hover:bg-red-500 font-bold text-sm transition-colors">
                                 ❌ Mot interdit !
                             </button>

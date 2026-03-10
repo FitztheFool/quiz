@@ -20,6 +20,7 @@ type TabooOptions = {
     totalRounds: number;
     trapWordCount: number;
     maxAttempts: number;
+    trapDuration: number;
 };
 
 type LobbyState = {
@@ -33,7 +34,6 @@ type LobbyState = {
     unoOptions: UnoOptions;
     tabooOptions: TabooOptions;
     teams: Record<string, 0 | 1> | null;
-    orators: { '0': string | null; '1': string | null };
 };
 
 type ChatMessage = { userId: string; username: string; text: string; sentAt: number };
@@ -51,9 +51,8 @@ export default function LobbyPage() {
         hostId: null, quizId: null, status: 'WAITING', timePerQuestion: 15, timeMode: 'per_question',
         players: [], gameType: 'quiz',
         unoOptions: { stackable: false, jumpIn: false, teamMode: 'none', teamWinMode: 'one' },
-        tabooOptions: { turnDuration: 60, totalRounds: 3, trapWordCount: 5, maxAttempts: 10 },
+        tabooOptions: { turnDuration: 60, totalRounds: 3, trapWordCount: 5, maxAttempts: 10, trapDuration: 60 },
         teams: null,
-        orators: { '0': null, '1': null },
     });
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -103,27 +102,19 @@ export default function LobbyPage() {
                 totalRounds: state.tabooOptions?.totalRounds ?? 3,
                 trapWordCount: state.tabooOptions?.trapWordCount ?? 5,
                 maxAttempts: state.tabooOptions?.maxAttempts ?? 10,
+                trapDuration: state.tabooOptions?.trapDuration ?? 60,
             },
             teams: state.teams ?? null,
-            orators: state.orators ?? { '0': null, '1': null },
         });
 
         socket.on('lobby:teamFull', ({ team }: { team: number }) => alert(`L'équipe ${team === 0 ? 'Bleue' : 'Rouge'} est complète !`));
         socket.on('lobby:kicked', () => { alert('Vous avez été expulsé du lobby.'); router.push('/dashboard'); });
-        socket.on('lobby:oratorTaken', () => alert('Un orateur a déjà été désigné pour cette équipe !'));
 
         const onChatNew = (m: ChatMessage) => setMessages(prev => [...prev, m]);
         const onGameStart = (payload: { gameType: GameType; quizId?: string; timeMode?: string; timePerQuestion?: number; lobbyId?: string }) => {
-            if (payload.gameType === 'uno') router.push(`/uno/${lobbyId}`);
-            else if (payload.gameType === 'taboo') {
-                // Sauvegarder les équipes et le hostId pour le taboo server
-                setLobby(currentLobby => {
-                    sessionStorage.setItem(`taboo_teams_${lobbyId}`, JSON.stringify(currentLobby.teams ?? {}));
-                    sessionStorage.setItem(`taboo_hostId_${lobbyId}`, currentLobby.hostId ?? '');
-                    sessionStorage.setItem(`taboo_orators_${lobbyId}`, JSON.stringify(currentLobby.orators ?? { '0': null, '1': null }));
-
-                    return currentLobby;
-                });
+            if (payload.gameType === 'uno') {
+                router.push(`/uno/${lobbyId}`);
+            } else if (payload.gameType === 'taboo') {
                 router.push(`/taboo/${lobbyId}/game`);
             } else {
                 sessionStorage.setItem(`lobby_timeMode_${lobbyId}`, payload.timeMode ?? 'none');
@@ -148,7 +139,6 @@ export default function LobbyPage() {
             socket.off('game:start', onGameStart);
             socket.off('lobby:kicked');
             socket.off('lobby:teamFull');
-            socket.off('lobby:oratorTaken');
             joinedRef.current = false;
         };
     }, [socket, lobbyId, status, session?.user?.id, session?.user?.username, session?.user?.email]);
@@ -164,17 +154,10 @@ export default function LobbyPage() {
     const team0Count = lobby.teams ? Object.values(lobby.teams).filter(t => t === 0).length : 0;
     const team1Count = lobby.teams ? Object.values(lobby.teams).filter(t => t === 1).length : 0;
     const unoTeamsReady = is2v2 && team0Count === 2 && team1Count === 2;
-
     const tabooTeamsValid = lobby.gameType === 'taboo' && team0Count >= 2 && team1Count >= 2;
-
-    const orator0 = lobby.orators?.['0'] ?? null;
-    const orator1 = lobby.orators?.['1'] ?? null;
-    const amIOratorOf = (team: 0 | 1) => lobby.orators?.[String(team) as '0' | '1'] === me.userId;
-    const teamHasOrator = (team: 0 | 1) => lobby.orators?.[String(team) as '0' | '1'] !== null;
 
     const setTeam = (team: 0 | 1) => socket?.emit('lobby:setTeam', { team });
     const shuffleTeams = () => socket?.emit('lobby:shuffleTeams');
-    const toggleOrator = () => socket?.emit('lobby:setOrator', { targetUserId: me.userId });
     const kickPlayer = (targetUserId: string, targetUsername: string) => {
         if (!isHost || !confirm(`Expulser ${targetUsername} ?`)) return;
         socket?.emit('lobby:kick', { targetUserId });
@@ -219,9 +202,6 @@ export default function LobbyPage() {
         return playerCount < 2 ? '⏳ Min. 2 joueurs' : '🎯 Choisir un quiz';
     };
 
-    const oratorUsername = (userId: string | null) =>
-        userId ? (lobby.players.find(p => p.userId === userId)?.username ?? '?') : null;
-
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
@@ -256,12 +236,6 @@ export default function LobbyPage() {
                                     const pTeam = lobby.teams ? lobby.teams[p.userId] : undefined;
                                     const isMe = p.userId === me.userId;
                                     const isPlayerHost = p.userId === lobby.hostId;
-                                    const isOrator = pTeam !== undefined && lobby.orators?.[String(pTeam) as '0' | '1'] === p.userId;
-                                    const isTaboo = lobby.gameType === 'taboo';
-
-                                    const canClickOrator = isMe && isTaboo && pTeam !== undefined;
-                                    const oratorSlotFree = pTeam !== undefined && !teamHasOrator(pTeam as 0 | 1);
-                                    const oratorClickable = canClickOrator && (isOrator || oratorSlotFree);
 
                                     return (
                                         <div key={p.userId} className={`flex items-center justify-between border rounded-lg p-2
@@ -269,23 +243,7 @@ export default function LobbyPage() {
                                             <div className="flex items-center gap-2 min-w-0">
                                                 {pTeam === 0 && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
                                                 {pTeam === 1 && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />}
-
-                                                <button
-                                                    onClick={() => { if (oratorClickable) toggleOrator(); }}
-                                                    title={
-                                                        !canClickOrator ? undefined
-                                                            : isOrator ? 'Cliquer pour retirer le rôle d\'orateur'
-                                                                : oratorSlotFree ? 'Cliquer pour devenir orateur'
-                                                                    : 'Un orateur est déjà désigné dans votre équipe'
-                                                    }
-                                                    className={`font-semibold text-sm truncate text-left
-                                                        ${canClickOrator ? 'cursor-pointer hover:underline' : 'cursor-default'}
-                                                        ${isOrator ? 'text-purple-700' : ''}`}
-                                                >
-                                                    {isOrator && <span className="mr-1">🎤</span>}
-                                                    {p.username}
-                                                </button>
-
+                                                <span className="font-semibold text-sm truncate">{p.username}</span>
                                                 {isPlayerHost && <span title="Host">👑</span>}
                                                 {isMe && <span className="text-xs opacity-60 flex-shrink-0">(moi)</span>}
                                             </div>
@@ -321,22 +279,13 @@ export default function LobbyPage() {
                             {lobby.gameType === 'taboo' && (
                                 <div className="mt-3 space-y-1">
                                     <div className="flex justify-between text-xs">
-                                        <span className={`font-semibold ${team0Count >= 2 ? 'text-blue-500' : 'text-gray-400'}`}>
-                                            🔵 Équipe Bleue : {team0Count}
-                                            {orator0 && <span className="ml-1 text-purple-600">· 🎤 {oratorUsername(orator0)}</span>}
-                                        </span>
-                                        <span className={`font-semibold ${team1Count >= 2 ? 'text-red-500' : 'text-gray-400'}`}>
-                                            🔴 Équipe Rouge : {team1Count}
-                                            {orator1 && <span className="ml-1 text-purple-600">· 🎤 {oratorUsername(orator1)}</span>}
-                                        </span>
+                                        <span className={`font-semibold ${team0Count >= 2 ? 'text-blue-500' : 'text-gray-400'}`}>🔵 Équipe Bleue : {team0Count}</span>
+                                        <span className={`font-semibold ${team1Count >= 2 ? 'text-red-500' : 'text-gray-400'}`}>🔴 Équipe Rouge : {team1Count}</span>
                                     </div>
                                     {tabooTeamsValid
                                         ? <p className="text-xs text-green-500">✅ Équipes prêtes !</p>
                                         : <p className="text-xs text-orange-400">⚠️ Minimum 2 joueurs par équipe</p>
                                     }
-                                    {myTeam !== undefined && !amIOratorOf(myTeam as 0 | 1) && !teamHasOrator(myTeam as 0 | 1) && (
-                                        <p className="text-xs text-purple-500 italic">💡 Clique sur ton pseudo pour devenir orateur</p>
-                                    )}
                                     {isHost && (
                                         <button onClick={shuffleTeams} className="text-xs text-gray-400 hover:text-gray-600 underline mt-1">
                                             🔀 Mélanger aléatoirement
@@ -443,6 +392,12 @@ export default function LobbyPage() {
                                     </select>
                                 </div>
                                 <div>
+                                    <label className="block text-xs text-gray-500 mb-1">Temps chercher mots piégés</label>
+                                    <select value={lobby.tabooOptions.trapDuration} onChange={e => isHost && setTabooOption({ trapDuration: Number(e.target.value) })} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white text-sm disabled:opacity-60">
+                                        {[15, 30, 45, 60, 90, 120, 180].map(t => <option key={t} value={t}>{t}s</option>)}
+                                    </select>
+                                </div>
+                                <div>
                                     <label className="block text-xs text-gray-500 mb-1">Tentatives max par tour</label>
                                     <select value={lobby.tabooOptions.maxAttempts} onChange={e => isHost && setTabooOption({ maxAttempts: Number(e.target.value) })} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white text-sm disabled:opacity-60">
                                         {[3, 5, 7, 10, 15, 20, 30].map(n => <option key={n} value={n}>{n} tentatives</option>)}
@@ -518,12 +473,6 @@ export default function LobbyPage() {
                                     ? <span>🔵 {team0Count} · 🔴 {team1Count} — {tabooTeamsValid ? '✅ Prêt !' : 'Min. 2 par équipe'}</span>
                                     : 'Choisissez votre équipe →'}
                             </div>
-                            {(orator0 || orator1) && (
-                                <div className="flex gap-4 text-xs text-purple-600 font-semibold">
-                                    {orator0 && <span>🎤 Bleu : {oratorUsername(orator0)}</span>}
-                                    {orator1 && <span>🎤 Rouge : {oratorUsername(orator1)}</span>}
-                                </div>
-                            )}
                         </div>
                     ) : (
                         <div className="bg-white rounded-xl p-6 shadow-sm lg:col-span-2 flex flex-col items-center justify-center text-center gap-4">

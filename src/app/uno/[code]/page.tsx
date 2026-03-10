@@ -162,7 +162,11 @@ export default function UnoPage() {
         const onLobbyState = (s: LobbyState) => setLobbyState(s);
         const onGameState = (s: GameState) => {
             setGameState(s);
-            if (!s.isMyTurn) { setUnoReady(false); }
+            setUnoReady(prev => {
+                // Reset seulement si on n'est plus en situation UNO (main > 1 carte)
+                if (s.hand.length !== 1) return false;
+                return prev;
+            });
             setInactivitySeconds(null);
             setInactivityUserId(null);
             if (inactivityIntervalRef.current) {
@@ -608,12 +612,14 @@ export default function UnoPage() {
                                 </div>
                             </label>
                         )}
-                        {gameState.hand.length === 1 && (
-                            <span className={`text-xs px-3 py-1 rounded-full font-bold
-            ${unoReady ? 'bg-yellow-400 text-gray-900' : 'bg-red-500 text-white animate-pulse'}`}>
-                                {unoReady ? '✅ UNO déclaré' : '⚠️ UNO non déclaré !'}
-                            </span>
-                        )}
+                        {gameState.hand.length === 1 && gameState.isMyTurn &&
+                            !gameState.players.find(p => p.userId === me.userId)?.saidUno && (
+                                <span className={`text-xs px-3 py-1 rounded-full font-bold
+            ${unoReady ? 'bg-yellow-400 text-gray-900 animate-bounce' : 'bg-red-500 text-white animate-pulse'}
+`}>
+                                    {unoReady ? '✅ UNO déclaré' : '⚠️ UNO non déclaré !'}
+                                </span>
+                            )}
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
                         {gameState.hand.map(card => (

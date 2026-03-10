@@ -58,15 +58,15 @@ export default function TabooGamePage() {
     useEffect(() => {
         if (!game || myTeam === null) return;
         const allPlayers = game.players.filter(p => p.team === myTeam);
-        const merged = Array.from({ length: game.trapWordCount }, (_, i) => {
-            if (focusedSlot.current === i) return localTraps[i] ?? '';
+        setLocalTraps(prev => Array.from({ length: game.trapWordCount }, (_, i) => {
+            if (focusedSlot.current === i) return prev[i] ?? '';
             for (const p of allPlayers) {
+                if (p.userId === myId) continue;
                 const val = game.trapsByPlayer?.[p.userId]?.[i];
                 if (val && val.trim()) return val;
             }
-            return '';
-        });
-        setLocalTraps(merged);
+            return prev[i] ?? '';
+        }));
     }, [game?.trapsByPlayer]);
 
     useEffect(() => {
@@ -80,7 +80,7 @@ export default function TabooGamePage() {
                 const teamsRaw = sessionStorage.getItem(`taboo_teams_${lobbyId}`);
                 const teams = teamsRaw ? JSON.parse(teamsRaw) : null;
                 const hostId = sessionStorage.getItem(`taboo_hostId_${lobbyId}`) ?? undefined;
-                socket.emit('taboo:join', { lobbyId, userId: myId, username, teams, hostId });
+                socket.emit('taboo:join', { lobbyId, userId: myId, username });
             }
         };
 
