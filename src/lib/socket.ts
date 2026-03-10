@@ -4,6 +4,7 @@ let lobbySocket: Socket | null = null;
 let quizSocket: Socket | null = null;
 let unoSocket: Socket | null = null;
 let tabooSocket: Socket | null = null;
+let skyjowSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -18,28 +19,36 @@ function createSocket(url: string, name: string): Socket {
 
 export function getLobbySocket(): Socket | null {
     if (typeof window === "undefined") return null;
-    if (!lobbySocket) lobbySocket = createSocket(process.env.NEXT_PUBLIC_LOBBY_SOCKET_URL ?? "", "Lobby Socket");
+    if (!lobbySocket) lobbySocket = createSocket(process.env.NEXT_PUBLIC_LOBBY_SOCKET_URL ?? "http://localhost:10000", "Lobby Socket");
     if (!lobbySocket.connected) lobbySocket.connect();
     return lobbySocket;
 }
 
-export function getQuizSocket(): Socket | null {
-    if (typeof window === "undefined") return null;
-    if (!quizSocket) quizSocket = createSocket(process.env.NEXT_PUBLIC_QUIZ_SOCKET_URL ?? "", "Quiz Socket");
-    if (!quizSocket.connected) quizSocket.connect();
-    return quizSocket;
-}
-
 export function getUnoSocket(): Socket | null {
     if (typeof window === "undefined") return null;
-    if (!unoSocket) unoSocket = createSocket(process.env.NEXT_PUBLIC_UNO_SOCKET_URL ?? "", "UNO Socket");
+    if (!unoSocket) unoSocket = createSocket(process.env.NEXT_PUBLIC_UNO_SOCKET_URL ?? "http://localhost:10001", "UNO Socket");
     if (!unoSocket.connected) unoSocket.connect();
     return unoSocket;
+}
+
+export function getQuizSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!quizSocket) quizSocket = createSocket(process.env.NEXT_PUBLIC_QUIZ_SOCKET_URL ?? "http://localhost:10002", "Quiz Socket");
+    if (!quizSocket.connected) quizSocket.connect();
+    return quizSocket;
 }
 
 // Ne connecte PAS automatiquement — appeler socket.connect() manuellement
 export function getTabooSocket(): Socket | null {
     if (typeof window === "undefined") return null;
-    if (!tabooSocket) tabooSocket = createSocket(process.env.NEXT_PUBLIC_TABOO_SOCKET_URL ?? "", "Taboo Socket");
+    if (!tabooSocket) tabooSocket = createSocket(process.env.NEXT_PUBLIC_TABOO_SOCKET_URL ?? "http://localhost:10003", "Taboo Socket");
+    if (!tabooSocket.connected) tabooSocket.connect();
     return tabooSocket;
+}
+
+export function getSkyjowSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!skyjowSocket) skyjowSocket = createSocket(process.env.NEXT_PUBLIC_SKYJOW_SERVER_URL ?? "http://localhost:10004", "Skyjow Socket");
+    if (!skyjowSocket.connected) skyjowSocket.connect();
+    return skyjowSocket;
 }

@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { getLobbySocket } from '@/lib/socket';
 
 type Player = { userId: string; username: string };
-type GameType = 'quiz' | 'uno' | 'taboo';
+type GameType = 'quiz' | 'uno' | 'taboo' | 'skyjow';
 
 type UnoOptions = {
     stackable: boolean;
@@ -23,6 +23,10 @@ type TabooOptions = {
     trapDuration: number;
 };
 
+type SkyjowOptions = {
+    eliminateRows: boolean;
+};
+
 type LobbyState = {
     hostId: string | null;
     quizId: string | null;
@@ -33,6 +37,7 @@ type LobbyState = {
     gameType: GameType;
     unoOptions: UnoOptions;
     tabooOptions: TabooOptions;
+    skyjowOptions: SkyjowOptions;
     teams: Record<string, 0 | 1> | null;
 };
 
@@ -52,6 +57,7 @@ export default function LobbyPage() {
         players: [], gameType: 'quiz',
         unoOptions: { stackable: false, jumpIn: false, teamMode: 'none', teamWinMode: 'one' },
         tabooOptions: { turnDuration: 60, totalRounds: 3, trapWordCount: 5, maxAttempts: 10, trapDuration: 60 },
+        skyjowOptions: { eliminateRows: false },
         teams: null,
     });
 
@@ -116,6 +122,8 @@ export default function LobbyPage() {
                 router.push(`/uno/${lobbyId}`);
             } else if (payload.gameType === 'taboo') {
                 router.push(`/taboo/${lobbyId}/game`);
+            } else if (payload.gameType === 'skyjow') {
+                router.push(`/skyjow/${payload.lobbyId ?? lobbyId}`);
             } else {
                 sessionStorage.setItem(`lobby_timeMode_${lobbyId}`, payload.timeMode ?? 'none');
                 sessionStorage.setItem(`lobby_timePerQuestion_${lobbyId}`, String(payload.timePerQuestion ?? 15));
@@ -186,10 +194,17 @@ export default function LobbyPage() {
         ? is2v2 ? playerCount === 4 && unoTeamsReady : playerCount >= 2 && playerCount <= 8
         : lobby.gameType === 'taboo'
             ? tabooTeamsValid
-            : playerCount >= 2 && !!lobby.quizId;
+            : lobby.gameType === 'skyjow'
+                ? playerCount >= 2 && playerCount <= 8
+                : playerCount >= 2 && !!lobby.quizId;
 
     const startLabel = () => {
         if (!isHost) return 'En attente du host…';
+        if (lobby.gameType === 'skyjow') {
+            if (playerCount < 2) return '⏳ Min. 2 joueurs';
+            if (playerCount > 8) return '⛔ Max. 8 joueurs';
+            return '🂠 Lancer Skyjow !';
+        }
         if (canStart) return `🚀 Lancer ${lobby.gameType === 'uno' ? 'UNO' : lobby.gameType === 'taboo' ? 'Taboo' : 'le quiz'} !`;
         if (lobby.gameType === 'taboo') {
             if (playerCount < 4) return `⏳ Min. 4 joueurs (${playerCount}/4)`;
@@ -311,17 +326,37 @@ export default function LobbyPage() {
                         {/* Choix du jeu */}
                         <div>
                             <h2 className="font-bold text-sm text-gray-500 uppercase mb-2">Jeu</h2>
-                            <div className="grid grid-cols-3 gap-2">
-                                {(['quiz', 'uno', 'taboo'] as GameType[]).map((g) => (
+                            <div className="grid grid-cols-2 gap-2">
+                                {(['quiz', 'uno', 'taboo', 'skyjow'] as GameType[]).map((g) => (
                                     <button key={g} onClick={() => isHost && setGameType(g)} disabled={!isHost}
                                         className={`py-2 rounded-lg border-2 font-semibold text-xs transition-all
                                             ${lobby.gameType === g ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}
                                             ${!isHost ? 'cursor-default opacity-70' : 'cursor-pointer'}`}>
-                                        {g === 'quiz' ? '🎯 Quiz' : g === 'uno' ? '🃏 UNO' : '🚫 Taboo'}
+                                        {g === 'quiz' ? '🎯 Quiz' : g === 'uno' ? '🃏 UNO' : g === 'taboo' ? '🚫 Taboo' : '🂠 Skyjow'}
                                     </button>
                                 ))}
                             </div>
                         </div>
+
+                        {/* Options Skyjow */}
+                        {lobby.gameType === 'skyjow' && (
+                            <div>
+                                <h2 className="font-bold text-sm text-gray-500 uppercase mb-2">Options Skyjow</h2>
+                                <label className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${isHost ? 'cursor-pointer hover:border-blue-300' : 'cursor-default opacity-70'} ${lobby.skyjowOptions?.eliminateRows ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={lobby.skyjowOptions?.eliminateRows ?? false}
+                                        onChange={e => isHost && socket?.emit('lobby:setSkyjowOptions', { eliminateRows: e.target.checked })}
+                                        disabled={!isHost}
+                                        className="w-4 h-4 accent-blue-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-700">Éliminer les lignes</p>
+                                        <p className="text-xs text-gray-400">4 cartes identiques sur une même ligne → ligne éliminée</p>
+                                    </div>
+                                </label>
+                            </div>
+                        )}
 
                         {/* Options Quiz */}
                         {lobby.gameType === 'quiz' && (
@@ -472,6 +507,30 @@ export default function LobbyPage() {
                                 {team0Count > 0 || team1Count > 0
                                     ? <span>🔵 {team0Count} · 🔴 {team1Count} — {tabooTeamsValid ? '✅ Prêt !' : 'Min. 2 par équipe'}</span>
                                     : 'Choisissez votre équipe →'}
+                            </div>
+                        </div>
+                    ) : lobby.gameType === 'skyjow' ? (
+                        <div className="bg-white rounded-xl p-6 shadow-sm lg:col-span-2 flex flex-col items-center justify-center text-center gap-4">
+                            <div className="text-6xl">🂠</div>
+                            <h2 className="text-xl font-bold">Skyjow</h2>
+                            <div className="text-sm text-gray-500 space-y-2 max-w-sm">
+                                <p>Chaque joueur reçoit <strong>12 cartes</strong> face cachée en grille 3×4. Retournez-en <strong>2 au choix</strong> pour commencer.</p>
+                                <p>À votre tour : piochez ou prenez la défausse, puis échangez avec une de vos cartes — ou jetez la carte piochée et <strong>retournez une carte cachée</strong>.</p>
+                                <p>Si vous avez <strong>3 cartes identiques dans une colonne</strong>, elle est éliminée du plateau !{lobby.skyjowOptions?.eliminateRows ? ' Idem pour les lignes (4 identiques) !' : ''}</p>
+                                <p>Dès qu'un joueur retourne toutes ses cartes, tout le monde joue <strong>un dernier tour</strong>. Si le déclencheur n'a pas le score le plus bas, son score est <strong>doublé</strong>.</p>
+                                <p className="font-semibold text-gray-700">Le jeu s'arrête quand un joueur atteint <strong>100 pts</strong>. Le moins de points gagne ! 🏆</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 justify-center text-xs mt-1">
+                                <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold">🟢 -2 pts (×5)</span>
+                                <span className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-semibold">🔵 -1 pt (×10)</span>
+                                <span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full font-semibold">⚪ 0 pt (×15)</span>
+                                <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-semibold">🟡 1–12 pts (×10)</span>
+                            </div>
+                            <div className="mt-1 text-xs text-gray-400">
+                                2 à 8 joueurs ·{' '}
+                                {playerCount >= 2
+                                    ? <span className="text-green-500 font-semibold">✅ {playerCount} joueurs — prêt à jouer !</span>
+                                    : <span className="text-orange-400">⏳ {playerCount}/2 — min. 2 joueurs</span>}
                             </div>
                         </div>
                     ) : (
