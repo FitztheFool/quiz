@@ -31,6 +31,7 @@ async function main() {
   await prisma.quiz.deleteMany();
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.word.deleteMany();
 
   // ─── 2. Catégories ────────────────────────────────────────────────────────
   const cultureGenerale = await prisma.category.create({ data: { name: 'Culture Générale', slug: 'culture-generale' } });
@@ -1066,6 +1067,139 @@ async function main() {
   }
 
   console.log(`✅ ${totalUnoGames} parties UNO créées`);
+
+  // ─── Parties SKYJOW ───────────────────────────────────────────────────────
+  console.log('\n🂠 Création des parties Skyjow...');
+
+  const skyjowPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3];
+  const totalSkyjowGames = 60;
+  const skyjowGameDates: Date[] = [];
+
+  for (let g = 0; g < totalSkyjowGames; g++) {
+    const baseDaysAgo = Math.floor((g / totalSkyjowGames) * 90);
+    const jitterHours = Math.floor(Math.random() * 24);
+    skyjowGameDates.push(new Date(
+      Date.now() - baseDaysAgo * 24 * 60 * 60 * 1000 - jitterHours * 60 * 60 * 1000
+    ));
+  }
+  skyjowGameDates.sort((a, b) => a.getTime() - b.getTime());
+
+  for (let g = 0; g < totalSkyjowGames; g++) {
+    const gameId = crypto.randomUUID();
+    const playerCount = Math.floor(Math.random() * (skyjowPlayers.length - 1)) + 2;
+    const participants = shufflePlayers(skyjowPlayers).slice(0, playerCount);
+    const gameDate = skyjowGameDates[g];
+
+    // Simuler des scores réalistes :
+    // - Chaque joueur cumule des points manche par manche jusqu'à ce que quelqu'un dépasse 100
+    // - Le score final = somme des cartes restantes à la main au moment de l'arrêt
+    // - Score typique par manche : 0-30 pts (cartes restantes en main)
+    // - Vainqueur (~meilleur) : score bas (5-25), perdants : score plus élevé (15-60)
+
+    const scores: number[] = participants.map((_, i) => {
+      if (i === 0) return Math.floor(Math.random() * 20) + 5;   // gagnant : 5-25
+      return Math.floor(Math.random() * 45) + 15;               // autres : 15-60
+    });
+
+    // Le "déclencheur" (dernier joueur dans notre simulation) voit son score doublé
+    // s'il n'est pas le meilleur (score min)
+    const minScore = Math.min(...scores);
+    const triggerIndex = participants.length - 1;
+    if (scores[triggerIndex] !== minScore) {
+      scores[triggerIndex] = Math.min(scores[triggerIndex] * 2, 120); // cap cohérent
+    }
+
+    for (let p = 0; p < participants.length; p++) {
+      const rank = p + 1; // rank 1 = meilleur score (le plus bas)
+      await prisma.attempt.create({
+        data: {
+          userId: participants[p].id,
+          score: scores[p],
+          gameType: 'SKYJOW',
+          placement: rank,
+          gameId,
+          quizId: null,
+          createdAt: new Date(gameDate.getTime() + p * 1000),
+        },
+      });
+    }
+
+    console.log(`  ✅ Partie Skyjow ${g + 1}/${totalSkyjowGames} — ${playerCount} joueurs`);
+  }
+
+  console.log(`✅ ${totalSkyjowGames} parties Skyjow créées`);
+
+  // ─── Parties TABOO ────────────────────────────────────────────────────────
+  console.log('\n🚫 Création des parties Taboo...');
+
+  // Taboo se joue en équipes — on simule 2 équipes par partie
+  // Score = nb de mots devinés × 10 par équipe, accumulé sur toutes les parties
+  // On associe chaque joueur à une équipe et on lui attribue le score de son équipe
+
+  const tabooPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3];
+  const totalTabooGames = 40;
+  const tabooGameDates: Date[] = [];
+
+  for (let g = 0; g < totalTabooGames; g++) {
+    const baseDaysAgo = Math.floor((g / totalTabooGames) * 90);
+    const jitterHours = Math.floor(Math.random() * 24);
+    tabooGameDates.push(new Date(
+      Date.now() - baseDaysAgo * 24 * 60 * 60 * 1000 - jitterHours * 60 * 60 * 1000
+    ));
+  }
+  tabooGameDates.sort((a, b) => a.getTime() - b.getTime());
+
+  for (let g = 0; g < totalTabooGames; g++) {
+    const gameId = crypto.randomUUID();
+    const gameDate = tabooGameDates[g];
+
+    // On mélange les joueurs et on les répartit en 2 équipes
+    const shuffled = shufflePlayers(tabooPlayers);
+    const teamA = shuffled.slice(0, Math.ceil(shuffled.length / 2));
+    const teamB = shuffled.slice(Math.ceil(shuffled.length / 2));
+
+    // Score équipe = nb de mots devinés * 10 (entre 3 et 12 mots par équipe)
+    const wordsA = Math.floor(Math.random() * 10) + 3; // 3-12 mots
+    const wordsB = Math.floor(Math.random() * 10) + 3;
+    const scoreA = wordsA * 10;
+    const scoreB = wordsB * 10;
+
+    const teamAWins = scoreA >= scoreB;
+
+    // Créer un attempt par joueur avec le score de son équipe
+    for (let p = 0; p < teamA.length; p++) {
+      await prisma.attempt.create({
+        data: {
+          userId: teamA[p].id,
+          score: scoreA,
+          gameType: 'TABOO',
+          placement: teamAWins ? 1 : 2,
+          gameId,
+          quizId: null,
+          createdAt: new Date(gameDate.getTime() + p * 1000),
+        },
+      });
+    }
+    for (let p = 0; p < teamB.length; p++) {
+      await prisma.attempt.create({
+        data: {
+          userId: teamB[p].id,
+          score: scoreB,
+          gameType: 'TABOO',
+          placement: teamAWins ? 2 : 1,
+          gameId,
+          quizId: null,
+          createdAt: new Date(gameDate.getTime() + (teamA.length + p) * 1000),
+        },
+      });
+    }
+
+    console.log(
+      `  ✅ Partie Taboo ${g + 1}/${totalTabooGames} — Équipe A (${teamA.length}j): ${scoreA}pts · Équipe B (${teamB.length}j): ${scoreB}pts`
+    );
+  }
+
+  console.log(`✅ ${totalTabooGames} parties Taboo créées`);
 }
 main()
   .catch((e) => {

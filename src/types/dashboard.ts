@@ -3,4 +3,6 @@ export type TabType =
     | 'my-quizzes'
     | 'quiz-score'
     | 'uno-score'
+    | 'settings'
+    | 'leaderboard'
     | 'admin';

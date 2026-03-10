@@ -24,6 +24,8 @@ enum QuestionType {
 enum GameType {
   QUIZ
   UNO
+  TABOO
+  SKYJOW
 }
 
 model User {

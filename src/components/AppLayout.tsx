@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import type { TabType } from '@/types/dashboard';
-
-const NO_SIDEBAR_PATHS = ['/login', '/register'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { data: session, status } = useSession();
@@ -16,9 +14,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType | null>(null);
 
-    const showSidebar = status === 'authenticated' &&
-        !NO_SIDEBAR_PATHS.some(p => pathname.startsWith(p));
-
     // Sync activeTab with current path
     useEffect(() => {
         if (pathname.startsWith('/dashboard')) {
@@ -26,12 +21,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             const validTabs: TabType[] = ['available', 'my-quizzes', 'quiz-score', 'admin'];
             setActiveTab(validTabs.includes(hash as TabType) ? (hash as TabType) : 'available');
         } else {
-            // Sur les autres pages, aucun tab actif (les liens href gèrent leur propre état via usePathname)
             setActiveTab(null);
         }
     }, [pathname]);
 
-    if (!showSidebar) return <>{children}</>;
+    if (status === 'loading') return <>{children}</>;
 
     return (
         <div className="min-h-screen bg-gray-50 flex">
@@ -58,6 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 }}
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
+                isAuthenticated={status === 'authenticated'}
                 userRole={session?.user?.role}
                 userName={session?.user?.name}
                 userEmail={session?.user?.email}

@@ -14,6 +14,7 @@ type PlayerPublic = {
     username: string;
     cards: CardState[];
     score: number;
+    liveScore?: number;
 };
 type ScoreEntry = { userId: string; username: string; roundScore: number; totalScore: number };
 
@@ -35,11 +36,12 @@ function cardColor(value: number | null, revealed: boolean, removed: boolean): s
     if (removed) return 'bg-transparent border-transparent';
     if (!revealed) return 'bg-slate-700 border-slate-600 hover:bg-slate-600 cursor-pointer';
     if (value === null) return 'bg-slate-700 border-slate-600';
-    if (value === -2) return 'bg-emerald-400 border-emerald-300 text-slate-900';
-    if (value === -1) return 'bg-teal-400 border-teal-300 text-slate-900';
-    if (value === 0) return 'bg-sky-300 border-sky-200 text-slate-900';
-    if (value <= 4) return 'bg-amber-300 border-amber-200 text-slate-900';
-    if (value <= 8) return 'bg-orange-400 border-orange-300 text-slate-900';
+    if (value === -2) return 'bg-blue-900 border-blue-800 text-white';
+    if (value === -1) return 'bg-blue-600 border-blue-500 text-white';
+    if (value === 0) return 'bg-cyan-400 border-cyan-300 text-slate-900';
+    if (value <= 3) return 'bg-emerald-400 border-emerald-300 text-slate-900';
+    if (value <= 6) return 'bg-yellow-300 border-yellow-200 text-slate-900';
+    if (value <= 9) return 'bg-orange-400 border-orange-300 text-slate-900';
     return 'bg-red-500 border-red-400 text-white';
 }
 
@@ -119,8 +121,6 @@ type PlayerGridProps = {
 
 function PlayerGrid({ player, myCards, isMe, isCurrent, selectableIndices, onCardClick, compact }: PlayerGridProps) {
     const cards = isMe && myCards ? myCards : player.cards;
-    // Grille : 4 colonnes × 3 lignes → index [0..11], col = idx%4, row = floor(idx/4)
-    // skyjow : 3 lignes × 4 colonnes
     const size = compact ? 'sm' : isMe ? 'lg' : 'md';
 
     return (
@@ -138,6 +138,8 @@ function PlayerGrid({ player, myCards, isMe, isCurrent, selectableIndices, onCar
     );
 }
 
+const isPlayingPhase = (p: Phase) => p === 'playing' || p === 'last_round';
+
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function skyjowGamePage() {
@@ -149,7 +151,6 @@ export default function skyjowGamePage() {
     const skyjowRef = useRef<Socket | null>(null);
     const joinedRef = useRef(false);
 
-    // State du jeu
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [myCards, setMyCards] = useState<CardState[]>([]);
     const [phase, setPhase] = useState<Phase>('waiting');
@@ -162,6 +163,7 @@ export default function skyjowGamePage() {
     const [notification, setNotification] = useState<string | null>(null);
     const [roundEndData, setRoundEndData] = useState<{ scores: ScoreEntry[]; players: { userId: string; username: string; cards: CardState[] }[] } | null>(null);
     const [gameEndData, setGameEndData] = useState<{ scores: ScoreEntry[]; winnerId: string; winnerUsername: string } | null>(null);
+    const [drawnAction, setDrawnAction] = useState<'swap' | 'discard_flip' | null>(null);
     const [readyCount, setReadyCount] = useState(0);
     const [flip2Count, setFlip2Count] = useState(0);
 
@@ -170,7 +172,6 @@ export default function skyjowGamePage() {
 
     const isCurrent = players[currentPlayerIndex]?.userId === userId;
 
-    // Déclenchement d'une notification temporaire
     const notify = useCallback((msg: string, duration = 3000) => {
         setNotification(msg);
         setTimeout(() => setNotification(null), duration);
@@ -226,6 +227,7 @@ export default function skyjowGamePage() {
 
         sock.on('skyjow:drawn_card', (data: { value: number; from: 'deck' | 'discard'; mustSwap?: boolean }) => {
             setDrawnCard(data);
+            setDrawnAction(data.from === 'discard' ? 'swap' : null);
         });
 
         sock.on('skyjow:last_round', ({ triggerUsername }: { triggerUserId: string; triggerUsername: string }) => {
@@ -302,12 +304,12 @@ export default function skyjowGamePage() {
     }, [phase, flip2Count]);
 
     const drawDeck = useCallback(() => {
-        if (!isCurrent || phase !== 'playing' || drawnCard !== null) return;
+        if (!isCurrent || !isPlayingPhase(phase) || drawnCard !== null) return;
         skyjowRef.current?.emit('skyjow:draw_deck');
     }, [isCurrent, phase, drawnCard]);
 
     const takeDiscard = useCallback(() => {
-        if (!isCurrent || phase !== 'playing' || drawnCard !== null) return;
+        if (!isCurrent || !isPlayingPhase(phase) || drawnCard !== null) return;
         skyjowRef.current?.emit('skyjow:take_discard');
     }, [isCurrent, phase, drawnCard]);
 
@@ -316,23 +318,23 @@ export default function skyjowGamePage() {
             flipInitial(cardIndex);
             return;
         }
-        if (!isCurrent || drawnCard === null) return;
-        if (drawnCard.from === 'discard' || drawnCard.mustSwap) {
-            // Doit échanger
+        if (!isCurrent || drawnCard === null || drawnAction === null) return;
+        if (!isPlayingPhase(phase)) return;
+
+        const card = myCards[cardIndex];
+        if (!card || card.removed) return;
+
+        if (drawnAction === 'swap') {
             skyjowRef.current?.emit('skyjow:swap_card', { cardIndex });
             setDrawnCard(null);
-        } else {
-            // Depuis deck : peut échanger ou jeter + retourner
-            const card = myCards[cardIndex];
-            if (card && !card.revealed && !card.removed) {
-                skyjowRef.current?.emit('skyjow:discard_and_flip', { cardIndex });
-                setDrawnCard(null);
-            } else if (!card.removed) {
-                skyjowRef.current?.emit('skyjow:swap_card', { cardIndex });
-                setDrawnCard(null);
-            }
+            setDrawnAction(null);
+        } else if (drawnAction === 'discard_flip') {
+            if (card.revealed) return; // discard_flip only on hidden cards
+            skyjowRef.current?.emit('skyjow:discard_and_flip', { cardIndex });
+            setDrawnCard(null);
+            setDrawnAction(null);
         }
-    }, [phase, isCurrent, drawnCard, myCards, flipInitial]);
+    }, [phase, isCurrent, drawnCard, drawnAction, myCards, flipInitial]);
 
     const swapWithDrawn = useCallback((cardIndex: number) => {
         if (!isCurrent || drawnCard === null) return;
@@ -353,9 +355,8 @@ export default function skyjowGamePage() {
     // ── Computed ───────────────────────────────────────────────────────────────
 
     const myPlayer = players.find(p => p.userId === userId);
-    const myScore = scores.find(s => s.userId === userId)?.totalScore ?? 0;
+    const myScore = myPlayer?.liveScore ?? scores.find(s => s.userId === userId)?.totalScore ?? 0;
 
-    // Indices sélectionnables pour mes cartes
     const selectableIndices: number[] = [];
     if (phase === 'flip2') {
         if (flip2Count < 2) {
@@ -511,13 +512,13 @@ export default function skyjowGamePage() {
             {/* ── Corps principal ── */}
             <main className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
 
-                {/* ── Zone adversaires (haut ou gauche) ── */}
+                {/* ── Zone adversaires ── */}
                 <div className="lg:w-72 bg-slate-800/50 border-b lg:border-b-0 lg:border-r border-slate-700 p-3 overflow-y-auto">
                     <p className="text-xs text-slate-500 uppercase font-semibold mb-3 tracking-wider">Adversaires</p>
                     <div className="space-y-4">
                         {otherPlayers.map((p) => {
                             const isTurn = p.userId === currentPlayerId;
-                            const pScore = scores.find(s => s.userId === p.userId)?.totalScore ?? 0;
+                            const pScore = p.liveScore ?? scores.find(s => s.userId === p.userId)?.totalScore ?? 0;
                             return (
                                 <div key={p.userId}
                                     className={`rounded-xl p-3 border transition-all ${isTurn ? 'bg-slate-700 border-emerald-600 shadow-lg shadow-emerald-900/20' : 'bg-slate-800 border-slate-700'}`}>
@@ -526,7 +527,7 @@ export default function skyjowGamePage() {
                                             {isTurn && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
                                             <span className="font-semibold text-sm text-slate-200">{p.username}</span>
                                         </div>
-                                        <span className={`text-xs font-bold ${pScore >= 80 ? 'text-red-400' : pScore >= 50 ? 'text-orange-400' : 'text-slate-400'}`}>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pScore >= 80 ? 'bg-red-900/50 text-red-400' : pScore >= 50 ? 'bg-orange-900/50 text-orange-400' : 'bg-slate-700 text-slate-400'}`}>
                                             {pScore} pts
                                         </span>
                                     </div>
@@ -545,18 +546,18 @@ export default function skyjowGamePage() {
                 {/* ── Zone centrale ── */}
                 <div className="flex-1 flex flex-col items-center justify-center p-4 gap-6">
 
-                    {/* ── Zone de jeu centrale (pioche + défausse + carte piochée) ── */}
-                    {phase !== 'flip2' && (
+                    {/* ── Zone de jeu centrale ── */}
+                    {isPlayingPhase(phase) && (
                         <div className="flex items-center gap-8">
                             {/* Pioche */}
                             <div className="flex flex-col items-center gap-2">
                                 <p className="text-xs text-slate-500 uppercase tracking-wider">Pioche</p>
                                 <button
                                     onClick={drawDeck}
-                                    disabled={!isCurrent || drawnCard !== null || phase !== 'playing'}
+                                    disabled={!isCurrent || drawnCard !== null}
                                     className={[
                                         'w-14 h-20 rounded-lg border-2 flex items-center justify-center font-bold text-xl transition-all',
-                                        isCurrent && drawnCard === null && phase === 'playing'
+                                        isCurrent && drawnCard === null
                                             ? 'bg-slate-700 border-sky-500 hover:border-sky-300 hover:bg-slate-600 cursor-pointer shadow-lg shadow-sky-900/30 hover:scale-105 active:scale-95'
                                             : 'bg-slate-800 border-slate-600 cursor-not-allowed opacity-50',
                                     ].join(' ')}
@@ -582,7 +583,6 @@ export default function skyjowGamePage() {
                                 </div>
                             )}
 
-                            {/* Flèche séparatrice */}
                             {!drawnCard && (
                                 <div className="text-slate-600 text-2xl">⇄</div>
                             )}
@@ -592,11 +592,11 @@ export default function skyjowGamePage() {
                                 <p className="text-xs text-slate-500 uppercase tracking-wider">Défausse</p>
                                 <button
                                     onClick={takeDiscard}
-                                    disabled={!isCurrent || drawnCard !== null || phase !== 'playing' || discardTop === null}
+                                    disabled={!isCurrent || drawnCard !== null || discardTop === null}
                                     className={[
                                         'w-14 h-20 rounded-lg border-2 flex items-center justify-center font-bold text-xl transition-all',
                                         discardTop !== null ? cardColor(discardTop, true, false) : 'bg-slate-800 border-slate-700',
-                                        isCurrent && drawnCard === null && phase === 'playing' && discardTop !== null
+                                        isCurrent && drawnCard === null && discardTop !== null
                                             ? 'hover:scale-105 active:scale-95 cursor-pointer ring-1 ring-white/20 hover:ring-white/60'
                                             : 'cursor-not-allowed opacity-60',
                                     ].join(' ')}
@@ -629,31 +629,47 @@ export default function skyjowGamePage() {
                                 <p className="text-amber-500 text-sm mt-1">{flip2Count}/2 cartes retournées</p>
                             </div>
                         )}
-                        {phase === 'playing' && isCurrent && drawnCard === null && (
+                        {isPlayingPhase(phase) && isCurrent && drawnCard === null && (
                             <div className="bg-emerald-900/30 border border-emerald-700/50 rounded-xl px-5 py-3">
                                 <p className="text-emerald-300 font-semibold">C'est ton tour !</p>
                                 <p className="text-emerald-500 text-sm mt-1">Pioche dans la pioche ou prends la carte de la défausse</p>
                             </div>
                         )}
-                        {phase === 'playing' && isCurrent && drawnCard !== null && drawnCard.from === 'deck' && (
+                        {isPlayingPhase(phase) && isCurrent && drawnCard !== null && drawnCard.from === 'deck' && (
                             <div className="bg-sky-900/30 border border-sky-700/50 rounded-xl px-5 py-3">
-                                <p className="text-sky-300 font-semibold">Carte piochée : <span className="text-white">{drawnCard.value}</span></p>
-                                <p className="text-sky-500 text-sm mt-1">Clique sur une de tes cartes pour l'échanger, ou sur une carte cachée pour la retourner (jette la carte piochée)</p>
+                                <p className="text-sky-300 font-semibold mb-3">Carte piochée : <span className="text-white font-bold">{drawnCard.value}</span></p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setDrawnAction('swap')}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${drawnAction === 'swap' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-300 hover:border-emerald-500'}`}
+                                    >
+                                        ↔ Échanger
+                                    </button>
+                                    <button
+                                        onClick={() => setDrawnAction('discard_flip')}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${drawnAction === 'discard_flip' ? 'bg-amber-600 border-amber-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-300 hover:border-amber-500'}`}
+                                    >
+                                        🗑 Jeter & retourner
+                                    </button>
+                                </div>
+                                {drawnAction === 'swap' && <p className="text-emerald-400 text-xs mt-2">Clique sur n'importe quelle carte pour l'échanger</p>}
+                                {drawnAction === 'discard_flip' && <p className="text-amber-400 text-xs mt-2">Clique sur une carte cachée pour la retourner</p>}
+                                {drawnAction === null && <p className="text-slate-400 text-xs mt-2">Choisis une action ci-dessus</p>}
                             </div>
                         )}
-                        {phase === 'playing' && isCurrent && drawnCard !== null && drawnCard.from === 'discard' && (
+                        {isPlayingPhase(phase) && isCurrent && drawnCard !== null && drawnCard.from === 'discard' && (
                             <div className="bg-purple-900/30 border border-purple-700/50 rounded-xl px-5 py-3">
                                 <p className="text-purple-300 font-semibold">Carte de la défausse : <span className="text-white">{drawnCard.value}</span></p>
                                 <p className="text-purple-500 text-sm mt-1">Tu dois l'échanger avec une de tes cartes</p>
                             </div>
                         )}
-                        {phase === 'playing' && !isCurrent && (
+                        {isPlayingPhase(phase) && !isCurrent && (
                             <p className="text-slate-500 text-sm">Tour de <span className="text-slate-300 font-semibold">{players[currentPlayerIndex]?.username}</span>…</p>
                         )}
-                        {phase === 'last_round' && (
-                            <div className="bg-red-900/30 border border-red-700/50 rounded-xl px-5 py-3">
+                        {phase === 'last_round' && isCurrent && (
+                            <div className="bg-red-900/30 border border-red-700/50 rounded-xl px-5 py-3 mt-2">
                                 <p className="text-red-300 font-bold">⚡ Dernier tour !</p>
-                                {isCurrent && <p className="text-red-400 text-sm mt-1">C'est encore ton tour — joue normalement</p>}
+                                <p className="text-red-400 text-sm mt-1">C'est encore ton tour — joue normalement</p>
                             </div>
                         )}
                     </div>
@@ -665,7 +681,7 @@ export default function skyjowGamePage() {
                                 {isCurrent && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
                                 <span className="font-bold text-slate-200">{username} <span className="text-slate-400 font-normal text-sm">(moi)</span></span>
                             </div>
-                            <span className={`text-sm font-bold ${myScore >= 80 ? 'text-red-400' : myScore >= 50 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                            <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${myScore >= 80 ? 'bg-red-900/50 text-red-400' : myScore >= 50 ? 'bg-orange-900/50 text-orange-400' : 'bg-slate-700 text-emerald-400'}`}>
                                 {myScore} pts
                             </span>
                         </div>
@@ -681,7 +697,7 @@ export default function skyjowGamePage() {
 
                         {/* Légende des couleurs */}
                         <div className="flex gap-2 mt-3 flex-wrap justify-center">
-                            {[[-2, 'bg-emerald-400'], [-1, 'bg-teal-400'], [0, 'bg-sky-300'], ['1-4', 'bg-amber-300'], ['5-8', 'bg-orange-400'], ['9-12', 'bg-red-500']].map(([v, cls]) => (
+                            {[[-2, 'bg-blue-900'], [-1, 'bg-blue-600'], [0, 'bg-cyan-400'], ['1-3', 'bg-emerald-400'], ['4-6', 'bg-yellow-300'], ['7-9', 'bg-orange-400'], ['10-12', 'bg-red-500']].map(([v, cls]) => (
                                 <div key={String(v)} className="flex items-center gap-1">
                                     <div className={`w-3 h-3 rounded ${cls}`} />
                                     <span className="text-xs text-slate-500">{v}</span>
