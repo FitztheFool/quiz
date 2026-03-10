@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getTabooSocket } from '@/lib/socket';
+import { TrapPhase } from '@/components/TrapPhase';
+import type { TrapSlotData } from '@/components/TrapPhase';
 
 type Attempt = { word: string; userId: string; username: string };
 
@@ -29,6 +31,8 @@ type TabooState = {
     trapStarted: boolean;
     team0Traps: string[];
     team1Traps: string[];
+    team0Slots?: TrapSlotData[];
+    team1Slots?: TrapSlotData[];
     team0Word: string | null;
     team1Word: string | null;
     firstTeam: 0 | 1 | null;
@@ -106,34 +110,8 @@ export default function TabooGamePage() {
 
     const [game, setGame] = useState<TabooState | null>(null);
     const [attemptInput, setAttemptInput] = useState('');
-    const [localTraps, setLocalTraps] = useState<string[]>([]);
-    const focusedSlot = useRef<number | null>(null);
 
     const myId = session?.user?.id ?? '';
-
-    useEffect(() => {
-        if (!game || !myId) return;
-        const myTeamVal = game.teams?.[myId];
-        if (myTeamVal === undefined || myTeamVal === null) return;
-        const allTeamPlayers = game.players.filter(p => p.team === myTeamVal);
-        setLocalTraps(prev => Array.from({ length: game.trapWordCount }, (_, i) => {
-            if (focusedSlot.current === i) return prev[i] ?? '';
-            for (const p of allTeamPlayers) {
-                if (p.userId === myId) continue;
-                const val = game.trapsByPlayer?.[p.userId]?.[i];
-                if (val && val.trim()) return val;
-            }
-            return prev[i] ?? '';
-        }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [game?.trapsByPlayer]);
-
-    useEffect(() => {
-        if (game?.phase === 'trap') {
-            setLocalTraps([]);
-            focusedSlot.current = null;
-        }
-    }, [game?.round, game?.phase]);
 
     useEffect(() => {
         isHostRef.current = !!game && game.hostId === myId;
@@ -254,14 +232,6 @@ export default function TabooGamePage() {
         setAttemptInput('');
     };
 
-    const handleTrapChange = (i: number, value: string) => {
-        if (myTeam === null || !game) return;
-        const next = [...localTraps];
-        next[i] = value.toUpperCase();
-        setLocalTraps(next);
-        socketRef.current?.emit('taboo:submitTraps', { lobbyId, index: i, value: value.toUpperCase() });
-    };
-
     const FONTS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');`;
 
     // ── Fin de partie ─────────────────────────────────────────────────────────
@@ -302,79 +272,22 @@ export default function TabooGamePage() {
 
     // ── Phase trap ────────────────────────────────────────────────────────────
     if (game.phase === 'trap') {
-        const wordToPiege = myTeam === 0 ? game.team1Word : myTeam === 1 ? game.team0Word : null;
-        const trapPct = game.trapTimeLeft !== null ? (game.trapTimeLeft / game.trapDuration) * 100 : 100;
-        const trapColor = (game.trapTimeLeft ?? 60) <= 10 ? '#ef4444' : (game.trapTimeLeft ?? 60) <= 20 ? '#f97316' : '#f59e0b';
-
         return (
             <div className="min-h-screen bg-[#0d0d0d] text-white flex flex-col items-center justify-center px-4 gap-5 text-center pt-10"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 <style>{FONTS}</style>
                 <ScoreBar scores={game.scores} myTeam={myTeam} currentTeam={game.currentTeam} />
-                <div className={`border rounded-2xl p-6 max-w-md w-full
-                    ${myTeam === 0 ? 'bg-blue-500/10 border-blue-500/20' : myTeam === 1 ? 'bg-red-500/10 border-red-500/20' : 'bg-white/5 border-white/10'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-orange-400 font-bold text-sm">⏳ Phase des pièges</p>
-                        {game.trapStarted && game.trapTimeLeft !== null
-                            ? <span className={`text-sm font-bold tabular-nums ${game.trapTimeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white/60'}`}>
-                                {game.trapTimeLeft}s
-                            </span>
-                            : <span className="text-white/30 text-xs">Démarrage…</span>
-                        }
-                    </div>
-                    <div className="w-full h-1 bg-white/10 rounded-full mb-5 overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-1000"
-                            style={{ width: `${trapPct}%`, backgroundColor: trapColor }} />
-                    </div>
-                    {myTeam !== null && wordToPiege ? (
-                        <div className="mb-5 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                            <p className="text-xs text-white/40 uppercase tracking-widest mb-1">
-                                Mot à piéger — équipe {myTeam === 0 ? '🔴 Rouge' : '🔵 Bleue'}
-                            </p>
-                            <p style={{ fontFamily: "'Bebas Neue'" }} className="text-4xl tracking-widest text-yellow-400">
-                                {wordToPiege}
-                            </p>
-                        </div>
-                    ) : myTeam !== null && (
-                        <div className="mb-5 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <p className="text-white/30 text-sm animate-pulse">Chargement du mot…</p>
-                        </div>
-                    )}
-                    {myTeam !== null && (
-                        <div className="space-y-2 text-left">
-                            <p className="text-xs text-white/30 mb-2">
-                                ✏️ Pièges de l'équipe <span className="text-white/20">(partagés)</span>
-                            </p>
-                            {Array.from({ length: game.trapWordCount }).map((_, i) => {
-                                const author = game.players.find(p =>
-                                    p.team === myTeam && game.trapsByPlayer?.[p.userId]?.[i]?.trim()
-                                );
-                                const authoredByMe = author?.userId === myId;
-                                const authoredByOther = author && !authoredByMe;
-                                return (
-                                    <div key={i} className="relative">
-                                        <input
-                                            value={localTraps[i] ?? ''}
-                                            onFocus={() => { focusedSlot.current = i; }}
-                                            onBlur={() => { focusedSlot.current = null; }}
-                                            onChange={e => handleTrapChange(i, e.target.value)}
-                                            placeholder={`Mot piégé ${i + 1}`}
-                                            className={`w-full bg-white/5 border rounded-lg px-3 py-2 text-sm pr-20 focus:outline-none placeholder:text-white/20
-                                                ${authoredByOther ? 'border-purple-500/40 focus:border-purple-400' : 'border-white/10 focus:border-orange-400'}`}
-                                        />
-                                        {author && (
-                                            <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full
-                                                ${authoredByMe ? 'text-orange-300/60' : 'text-purple-300/70 bg-purple-500/10'}`}>
-                                                {authoredByMe ? 'moi' : author.username}
-                                            </span>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                    <p className="text-white/20 text-xs mt-4">La partie démarre automatiquement à la fin du chrono…</p>
-                </div>
+                <TrapPhase
+                    game={{
+                        ...game,
+                        team0Slots: game.team0Slots ?? [],
+                        team1Slots: game.team1Slots ?? [],
+                    }}
+                    myId={myId}
+                    myTeam={myTeam}
+                    lobbyId={lobbyId}
+                    socketRef={socketRef}
+                />
             </div>
         );
     }
@@ -396,7 +309,6 @@ export default function TabooGamePage() {
                 ? 'text-red-400'
                 : 'text-orange-400';
 
-        // Le mot mystère et les pièges du tour qui vient de se terminer
         const wordJustPlayed = teamWhoJustPlayed === 0 ? game.team0Word : game.team1Word;
         const trapsUsed = teamWhoJustPlayed === 0 ? game.team1Traps : game.team0Traps;
 
@@ -413,7 +325,6 @@ export default function TabooGamePage() {
                     <p className={`text-xl font-bold ${resultColor}`}>{resultLabel}</p>
                     <p className="text-white/30 text-xs">Round {game.round}/{game.totalRounds}</p>
 
-                    {/* Mot mystère du tour */}
                     <div className="rounded-2xl border-2 border-yellow-500/30 bg-yellow-500/5 p-4 text-center">
                         <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Mot mystère 👁</p>
                         <p style={{ fontFamily: "'Bebas Neue'" }} className="text-4xl tracking-widest text-yellow-300">
@@ -421,7 +332,6 @@ export default function TabooGamePage() {
                         </p>
                     </div>
 
-                    {/* Mots piégés utilisés */}
                     {trapsUsed.filter(t => t).length > 0 && (
                         <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
                             <p className="text-xs text-white/40 uppercase tracking-widest mb-2">🚫 Mots piégés</p>
@@ -435,7 +345,6 @@ export default function TabooGamePage() {
                         </div>
                     )}
 
-                    {/* Tentatives du tour */}
                     {game.attempts.length > 0 && (
                         <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-left">
                             <p className="text-xs text-white/30 mb-2 uppercase tracking-widest">Tentatives du tour</p>
@@ -476,13 +385,12 @@ export default function TabooGamePage() {
                     <p style={{ fontFamily: "'Bebas Neue'" }} className={`text-3xl tracking-widest ${teamColor}`}>{teamLabel}</p>
                     <p className="text-white/60 text-sm">Orateur : <span className="text-white font-bold">🎤 {currentOratorName}</span></p>
 
-                    {/* Membres de l'équipe */}
                     <div className="flex flex-wrap gap-1 justify-center">
                         <p className="text-white/60 text-sm">Mon équipe :
                             {game.players
                                 .filter(p => p.team === myTeam)
                                 .map((p, i) => (
-                                    <span key={p.userId} className={`font-bold ${p.userId === myId ? 'text-white' : 'text-white'}`}>
+                                    <span key={p.userId} className="font-bold text-white">
                                         {i > 0 ? ', ' : ' '}{p.username}
                                     </span>
                                 ))
@@ -496,7 +404,7 @@ export default function TabooGamePage() {
                         <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                             <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Mot à trouver</p>
                             <p style={{ fontFamily: "'Bebas Neue'" }} className="text-3xl tracking-widest text-white/20">???</p>
-                            <p className="text-xs text-white/30 mt-2">{isOrator ? 'Le mot vous sera révélé une fois prêt !' : 'Écoutez l\'orateur !'}</p>
+                            <p className="text-xs text-white/30 mt-2">{isOrator ? 'Le mot vous sera révélé une fois prêt !' : "Écoutez l'orateur !"}</p>
                         </div>
                     )}
 
