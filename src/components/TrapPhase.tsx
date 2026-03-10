@@ -5,18 +5,14 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 /**
  * TrapPhase
  *
- * MODE A — serveur patché (team0Slots / team1Slots renseignés) :
- *   Slots avec timestamp, last write wins côté serveur.
+ * Le serveur émet désormais trapsByPlayer sous la forme :
+ *   Record<userId, { value: string; updatedAt: number }[]>
  *
- * MODE B — serveur non patché :
- *   Source de vérité des VALEURS  → team0Traps / team1Traps
- *     (c'est ce que le serveur a fusionné et ce qui sera utilisé en jeu)
- *   Source de vérité des BADGES   → trapsByPlayer
- *     (pour savoir qui a écrit quoi, affiché uniquement à titre indicatif)
+ * Ce format permet de savoir avec certitude qui a écrit quoi et quand,
+ * ce qui permet des badges fiables et un "last write wins" correct.
  *
- *   Règle badge par slot : le joueur dont la valeur dans trapsByPlayer[i]
- *   correspond à teamXTraps[i] est affiché comme auteur.
- *   Si plusieurs correspondent, on prend le premier trouvé.
+ * Rétrocompatibilité : si trapsByPlayer contient encore des string[],
+ * on fonctionne sans badges (mode legacy).
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -27,6 +23,9 @@ export type TrapSlotData = {
     ownerUsername: string | null;
     updatedAt: number;
 };
+
+// Format riche envoyé par le serveur patché
+type RichSlot = { value: string; updatedAt: number };
 
 type TrapPhaseProps = {
     game: TabooState;
@@ -45,13 +44,12 @@ export type TabooState = {
     trapStarted: boolean;
     team0Word: string | null;
     team1Word: string | null;
-    // Mode A
     team0Slots: TrapSlotData[];
     team1Slots: TrapSlotData[];
-    // Mode B
     team0Traps: string[];
     team1Traps: string[];
-    trapsByPlayer: Record<string, string[]>;
+    // Peut être string[] (ancien serveur) ou { value, updatedAt }[] (nouveau)
+    trapsByPlayer: Record<string, (string | RichSlot)[]>;
     players: { userId: string; username: string; team: 0 | 1 | null }[];
     scores: Record<string, number>;
     currentTeam: 0 | 1 | null;
@@ -66,16 +64,37 @@ const TEAMMATE_COLORS = [
     { border: 'border-pink-500/40',   bg: 'bg-pink-500/10',   badge: 'bg-pink-500/20 text-pink-300'   },
 ];
 
-// ── Reconstruction des slots en mode B ────────────────────────────────────────
-//
-// Les valeurs viennent de teamXTraps (source de vérité serveur).
-// Les badges viennent de trapsByPlayer (qui a écrit cette valeur ?).
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function buildSlotsFromLegacy(
-    teamTraps: string[],           // team0Traps ou team1Traps — valeurs fusionnées par le serveur
-    trapsByPlayer: Record<string, string[]>,
-    writers: { userId: string; username: string }[],  // joueurs de l'équipe qui écrit
+function getSlotValue(entry: string | RichSlot | undefined): string {
+    if (!entry) return '';
+    if (typeof entry === 'string') return entry;
+    return entry.value ?? '';
+}
+
+function getSlotTimestamp(entry: string | RichSlot | undefined): number {
+    if (!entry || typeof entry === 'string') return 0;
+    return entry.updatedAt ?? 0;
+}
+
+function isRichFormat(trapsByPlayer: TabooState['trapsByPlayer']): boolean {
+    for (const slots of Object.values(trapsByPlayer)) {
+        for (const s of slots) {
+            if (s && typeof s === 'object') return true;
+        }
+    }
+    return false;
+}
+
+// ── Reconstruction des slots depuis trapsByPlayer ─────────────────────────────
+
+function buildSlotsFromTrapsByPlayer(
+    trapsByPlayer: TabooState['trapsByPlayer'],
+    teamTraps: string[],
+    writers: { userId: string; username: string }[],
     trapWordCount: number,
+    myId: string,
+    rich: boolean,
 ): TrapSlotData[] {
     return Array.from({ length: trapWordCount }, (_, i) => {
         const value = (teamTraps[i] ?? '').trim();
@@ -84,17 +103,32 @@ function buildSlotsFromLegacy(
             return { value: '', ownerId: null, ownerUsername: null, updatedAt: 0 };
         }
 
-        // Trouver quel joueur a écrit cette valeur exacte dans trapsByPlayer
-        const author = writers.find(
-            w => (trapsByPlayer[w.userId]?.[i] ?? '').trim().toUpperCase() === value.toUpperCase()
-        );
+        if (rich) {
+            // Format riche : on prend le joueur avec le updatedAt le plus récent
+            // dont la valeur correspond à teamTraps[i]
+            let bestOwner: { userId: string; username: string } | null = null;
+            let bestTs = -1;
 
-        return {
-            value,
-            ownerId: author?.userId ?? null,
-            ownerUsername: author?.username ?? null,
-            updatedAt: 1,
-        };
+            for (const writer of writers) {
+                const entry = trapsByPlayer[writer.userId]?.[i];
+                const v = getSlotValue(entry).trim().toUpperCase();
+                const ts = getSlotTimestamp(entry);
+                if (v === value.toUpperCase() && ts > bestTs) {
+                    bestTs = ts;
+                    bestOwner = writer;
+                }
+            }
+
+            return {
+                value,
+                ownerId: bestOwner?.userId ?? null,
+                ownerUsername: bestOwner?.username ?? null,
+                updatedAt: bestTs > 0 ? bestTs : 1,
+            };
+        }
+
+        // Format legacy (string[]) : pas de timestamp → pas de badge fiable
+        return { value, ownerId: null, ownerUsername: null, updatedAt: 1 };
     });
 }
 
@@ -103,7 +137,6 @@ function buildSlotsFromLegacy(
 function useTrapInputs({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseProps) {
     const [localDraft, setLocalDraft] = useState<Record<number, string>>({});
 
-    // Reset à chaque nouveau round
     const prevRoundRef = useRef<number | null>(null);
     useEffect(() => {
         if (game.round !== prevRoundRef.current) {
@@ -112,55 +145,42 @@ function useTrapInputs({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseProp
         }
     }, [game.round, game.phase]);
 
-    // Mode A détecté si le serveur envoie des slots avec données
-    const serverHasSlots = useMemo(() => {
-        return [...(game.team0Slots ?? []), ...(game.team1Slots ?? [])]
-            .some(s => s.ownerId !== null || s.value !== '');
-    }, [game.team0Slots, game.team1Slots]);
+    const serverHasSlots = useMemo(() =>
+        [...(game.team0Slots ?? []), ...(game.team1Slots ?? [])]
+            .some(s => s.ownerId !== null || s.value !== ''),
+    [game.team0Slots, game.team1Slots]);
+
+    const rich = useMemo(() => isRichFormat(game.trapsByPlayer ?? {}), [game.trapsByPlayer]);
 
     const teammates = game.players.filter(p => p.team === myTeam && p.userId !== myId);
     const teammateColorMap: Record<string, number> = Object.fromEntries(
         teammates.map((tm, idx) => [tm.userId, idx % TEAMMATE_COLORS.length])
     );
 
-    // Tous les writers de mon équipe (moi inclus) pour la résolution des badges
     const myTeamWriters = game.players.filter(p => p.team === myTeam);
 
-    // Slots effectifs
     const mySlots: TrapSlotData[] = useMemo(() => {
         if (myTeam === null) return [];
 
         if (serverHasSlots) {
-            // Mode A : slots directs
-            return myTeam === 0
-                ? (game.team1Slots ?? [])
-                : (game.team0Slots ?? []);
+            return myTeam === 0 ? (game.team1Slots ?? []) : (game.team0Slots ?? []);
         }
 
-        // Mode B : valeurs depuis teamXTraps, badges depuis trapsByPlayer
-        // Mon équipe (myTeam) pose les pièges sur l'équipe adverse
-        // → les pièges que je vois sont ceux posés SUR l'équipe adverse
-        // → team1Traps si je suis équipe 0, team0Traps si je suis équipe 1
-        const teamTraps = myTeam === 0
-            ? (game.team1Traps ?? [])
-            : (game.team0Traps ?? []);
+        const teamTraps = myTeam === 0 ? (game.team1Traps ?? []) : (game.team0Traps ?? []);
 
-        return buildSlotsFromLegacy(
-            teamTraps,
+        return buildSlotsFromTrapsByPlayer(
             game.trapsByPlayer ?? {},
+            teamTraps,
             myTeamWriters,
             game.trapWordCount,
+            myId,
+            rich,
         );
-    }, [
-        serverHasSlots, myTeam,
-        game.team0Slots, game.team1Slots,
-        game.team0Traps, game.team1Traps,
-        game.trapsByPlayer, game.trapWordCount,
-        // myTeamWriters est recalculé à chaque render mais c'est ok,
-        // useMemo se base sur les dépendances primitives ci-dessus
-    ]);
+    }, [serverHasSlots, myTeam, game.team0Slots, game.team1Slots,
+        game.team0Traps, game.team1Traps, game.trapsByPlayer,
+        game.trapWordCount, myId, rich]);
 
-    // Mode A : vider draft quand serveur confirme via slots
+    // Vider draft — mode A
     useEffect(() => {
         if (!serverHasSlots) return;
         setLocalDraft(prev => {
@@ -170,8 +190,7 @@ function useTrapInputs({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseProp
                 const i = Number(idxStr);
                 const slot = mySlots[i];
                 if (slot?.ownerId === myId && slot.value === next[i]) {
-                    delete next[i];
-                    changed = true;
+                    delete next[i]; changed = true;
                 }
             }
             return changed ? next : prev;
@@ -179,37 +198,29 @@ function useTrapInputs({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [game.team0Slots, game.team1Slots]);
 
-    // Mode B : vider draft quand teamXTraps confirme la valeur
+    // Vider draft — mode B
     useEffect(() => {
         if (serverHasSlots) return;
-        const teamTraps = myTeam === 0
-            ? (game.team1Traps ?? [])
-            : (game.team0Traps ?? []);
+        const teamTraps = myTeam === 0 ? (game.team1Traps ?? []) : (game.team0Traps ?? []);
         setLocalDraft(prev => {
             const next = { ...prev };
             let changed = false;
             for (const idxStr of Object.keys(next)) {
                 const i = Number(idxStr);
-                if ((teamTraps[i] ?? '') === next[i]) {
-                    delete next[i];
-                    changed = true;
-                }
+                if ((teamTraps[i] ?? '') === next[i]) { delete next[i]; changed = true; }
             }
             return changed ? next : prev;
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [game.team0Traps, game.team1Traps]);
 
-    const getDisplayValue = useCallback((i: number): string => {
-        if (i in localDraft) return localDraft[i];
-        return mySlots[i]?.value ?? '';
-    }, [localDraft, mySlots]);
+    const getDisplayValue = useCallback((i: number) =>
+        i in localDraft ? localDraft[i] : (mySlots[i]?.value ?? ''),
+    [localDraft, mySlots]);
 
     const getOwnerInfo = useCallback((i: number) => {
-        // Si je suis en train de taper → badge "moi"
-        if (i in localDraft && localDraft[i]) {
+        if (i in localDraft && localDraft[i])
             return { ownerUsername: null, ownerColor: null, isMe: true };
-        }
         const slot = mySlots[i];
         if (!slot?.ownerId) return { ownerUsername: null, ownerColor: null, isMe: false };
         if (slot.ownerId === myId) return { ownerUsername: null, ownerColor: null, isMe: true };
@@ -226,13 +237,13 @@ function useTrapInputs({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseProp
         socketRef.current?.emit('taboo:submitTraps', { lobbyId, index: i, value });
     }, [lobbyId, socketRef]);
 
-    return { mySlots, getDisplayValue, getOwnerInfo, handleChange, teammates };
+    return { mySlots, getDisplayValue, getOwnerInfo, handleChange, teammates, rich };
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseProps) {
-    const { getDisplayValue, getOwnerInfo, handleChange, teammates } =
+    const { getDisplayValue, getOwnerInfo, handleChange, teammates, rich } =
         useTrapInputs({ game, myId, myTeam, lobbyId, socketRef });
 
     const wordToPiege = myTeam === 0 ? game.team1Word : myTeam === 1 ? game.team0Word : null;
@@ -248,8 +259,6 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
 
     return (
         <div className={`border rounded-2xl p-6 max-w-md w-full ${teamBorder}`}>
-
-            {/* Timer */}
             <div className="flex items-center justify-between mb-2">
                 <p className="text-orange-400 font-bold text-sm">⏳ Phase des pièges</p>
                 {game.trapStarted && game.trapTimeLeft !== null ? (
@@ -266,7 +275,6 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
                     style={{ width: `${trapPct}%`, backgroundColor: trapColor }} />
             </div>
 
-            {/* Mot à piéger */}
             {myTeam !== null && wordToPiege ? (
                 <div className="mb-5 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                     <p className="text-xs text-white/40 uppercase tracking-widest mb-1">
@@ -283,12 +291,14 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
                 </div>
             ) : null}
 
-            {/* Inputs */}
             {myTeam !== null && (
                 <div className="space-y-2 text-left">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs text-white/30">✏️ Pièges de l'équipe</p>
-                        {teammates.length > 0 && (
+                        <p className="text-xs text-white/30">
+                            ✏️ Pièges de l'équipe
+                            {!rich && <span className="ml-1 text-white/20">(badges disponibles après mise à jour serveur)</span>}
+                        </p>
+                        {rich && teammates.length > 0 && (
                             <div className="flex gap-1.5">
                                 {teammates.map((tm, idx) => {
                                     const colors = TEAMMATE_COLORS[idx % TEAMMATE_COLORS.length];
@@ -308,7 +318,7 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
                             key={i}
                             index={i}
                             value={getDisplayValue(i)}
-                            ownerInfo={getOwnerInfo(i)}
+                            ownerInfo={rich ? getOwnerInfo(i) : { ownerUsername: null, ownerColor: null, isMe: false }}
                             onChange={handleChange}
                         />
                     ))}
