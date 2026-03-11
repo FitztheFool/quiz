@@ -110,18 +110,17 @@ model Category {
 }
 
 model Attempt {
-  id        String   @id @default(cuid())
-  score     Int
-  gameType  GameType @default(QUIZ)
-  gameId    String
-  // UNO : position finale (1 = gagnant, 2 = 2ème, etc.)
-  placement Int?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  score      Int
+  trapScore  Int      @default(0)   // mots piégés (taboo:fail) — 0 pour les autres jeux
+  gameType   GameType @default(QUIZ)
+  gameId     String
+  placement  Int?
+  createdAt  DateTime @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // nullable pour les parties UNO
   quizId String?
   quiz   Quiz?   @relation(fields: [quizId], references: [id], onDelete: Cascade)
 

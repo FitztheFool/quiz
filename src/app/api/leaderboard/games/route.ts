@@ -1,3 +1,4 @@
+// app/api/leaderboard/games/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
@@ -21,7 +22,7 @@ const GAME_CONFIG = {
         label: 'Taboo',
         higherIsBetter: true,
         scoreLabel: 'Mots devinés',
-        description: 'Le score représente le nombre de mots devinés par ton équipe sur l\'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 10 points à l\'équipe en fin de manche.',
+        description: 'Le score représente le nombre de mots devinés par ton équipe sur l\'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 1 point à l\'équipe.',
     },
     quiz: {
         gameType: 'QUIZ' as const,
@@ -58,7 +59,6 @@ export async function GET(req: NextRequest) {
                 select: { userId: true, quizId: true, score: true },
             });
 
-            // Single pass : userId → quizId → meilleur score
             const bestScores = new Map<string, Map<string, number>>();
             for (const attempt of allAttempts) {
                 if (!attempt.quizId) continue;
@@ -96,24 +96,55 @@ export async function GET(req: NextRequest) {
         // UNO, SKYJOW, TABOO
         const attempts = await prisma.attempt.findMany({
             where: { userId: { in: eligibleUserIds }, gameType: config.gameType },
-            select: { userId: true, score: true, placement: true, createdAt: true },
+            select: { userId: true, score: true, trapScore: true, placement: true, gameId: true, createdAt: true },
+            orderBy: { createdAt: 'asc' },
         });
 
-        const byUser = new Map<string, { scores: number[]; placements: number[] }>();
+        const byUser = new Map<string, { scores: number[]; trapScores: number[]; placements: number[]; turnsPlayed: number }>();
         for (const a of attempts) {
-            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], placements: [] });
+            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], trapScores: [], placements: [], turnsPlayed: 0 });
             const u = byUser.get(a.userId)!;
-            u.scores.push(a.score);
+            if (game === 'taboo') {
+                u.turnsPlayed += 1;
+            } else {
+                u.scores.push(a.score);
+                u.trapScores.push(a.trapScore ?? 0);
+            }
             if (a.placement !== null) u.placements.push(a.placement);
+        }
+
+        // Taboo : prendre uniquement le dernier attempt par (userId, gameId) = score final de la partie
+        if (game === 'taboo') {
+            const lastByUserGame = new Map<string, typeof attempts[0]>();
+            for (const a of attempts) {
+                const key = `${a.userId}__${a.gameId}`;
+                const existing = lastByUserGame.get(key);
+                if (!existing || a.createdAt > existing.createdAt) {
+                    lastByUserGame.set(key, a);
+                }
+            }
+            for (const a of lastByUserGame.values()) {
+                const u = byUser.get(a.userId)!;
+                u.scores.push(a.score);
+                u.trapScores.push(a.trapScore ?? 0);
+            }
         }
 
         const sorted = Array.from(byUser.entries())
             .map(([userId, data]) => {
                 const gamesPlayed = data.scores.length;
+                const turnsPlayed = game === 'taboo' ? data.turnsPlayed : gamesPlayed;
                 const totalScore = data.scores.reduce((s, v) => s + v, 0);
+                const totalTrapScore = data.trapScores.reduce((s, v) => s + v, 0);
                 const avgScore = gamesPlayed > 0 ? Math.round(totalScore / gamesPlayed) : 0;
                 const wins = data.placements.filter(p => p === 1).length;
                 const score = game === 'skyjow' ? avgScore : totalScore;
+
+                const detail = game === 'skyjow'
+                    ? `Moy. ${avgScore} pts · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`
+                    : game === 'taboo'
+                        ? `${totalScore} devinés · ${totalTrapScore} piégés · ${turnsPlayed} manche${turnsPlayed > 1 ? 's' : ''}`
+                        : `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
 
                 return {
                     userId,
@@ -121,9 +152,7 @@ export async function GET(req: NextRequest) {
                     score,
                     gamesPlayed,
                     wins,
-                    detail: game === 'skyjow'
-                        ? `Moy. ${avgScore} pts · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`
-                        : `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`,
+                    detail,
                 };
             })
             .sort((a, b) => config.higherIsBetter ? b.score - a.score : a.score - b.score);
