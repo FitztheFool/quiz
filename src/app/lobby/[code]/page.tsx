@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -153,7 +154,7 @@ export default function LobbyPage() {
         };
     }, [socket, lobbyId, status, session?.user?.id, session?.user?.username, session?.user?.email]);
 
-    if (status === 'loading') return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+    if (status === 'loading') return <LoadingSpinner />;
     if (status !== 'authenticated' || !session?.user?.id) return null;
 
     const me = { userId: session.user.id, username: session.user.username ?? session.user.email ?? 'User' };
@@ -337,7 +338,7 @@ export default function LobbyPage() {
                                 {(['quiz', 'uno', 'taboo', 'skyjow', 'yahtzee'] as GameType[]).map((g) => (
                                     <button key={g} onClick={() => isHost && setGameType(g)} disabled={!isHost}
                                         className={`py-2 rounded-lg border-2 font-semibold text-xs transition-all
-                                            ${lobby.gameType === g ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}
+                                            ${lobby.gameType === g ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700' : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300'}
                                             ${!isHost ? 'cursor-default opacity-70' : 'cursor-pointer'}`}>
                                         {g === 'quiz' ? '🎯 Quiz'
                                             : g === 'uno' ? '🃏 UNO'
@@ -374,7 +375,7 @@ export default function LobbyPage() {
                             <>
                                 <div>
                                     <label className="block text-sm font-semibold mb-2">Mode de temps</label>
-                                    <select value={lobby.timeMode} onChange={(e) => { const m = e.target.value; socket?.emit('lobby:setTimeMode', { timeMode: m }); if (m !== 'none') socket?.emit('lobby:setTimePerQuestion', { timePerQuestion: DEFAULT_TIME[m] ?? 15 }); }} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white disabled:opacity-60">
+                                    <select value={lobby.timeMode} onChange={(e) => { const m = e.target.value; socket?.emit('lobby:setTimeMode', { timeMode: m }); if (m !== 'none') socket?.emit('lobby:setTimePerQuestion', { timePerQuestion: DEFAULT_TIME[m] ?? 15 }); }} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                         <option value="total">Questionnaire</option>
                                         <option value="per_question">Temps par question</option>
                                         <option value="none">Pas de temps</option>
@@ -383,7 +384,7 @@ export default function LobbyPage() {
                                 {lobby.timeMode !== 'none' && (
                                     <div>
                                         <label className="block text-sm font-semibold mb-2">{lobby.timeMode === 'total' ? 'Temps total' : 'Temps par question'}</label>
-                                        <select value={Number(lobby.timePerQuestion)} onChange={(e) => setTime(Number(e.target.value))} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white disabled:opacity-60">
+                                        <select value={Number(lobby.timePerQuestion)} onChange={(e) => setTime(Number(e.target.value))} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                             {(lobby.timeMode === 'total' ? TIME_OPTIONS_TOTAL : TIME_OPTIONS_PER_QUESTION).map(t => <option key={t} value={t}>{lobby.timeMode === 'total' ? formatTotalTime(t) : `${t}s`}</option>)}
                                         </select>
                                     </div>
@@ -460,7 +461,7 @@ export default function LobbyPage() {
 
                         {/* Bouton lancer */}
                         <button disabled={!isHost || !canStart} onClick={() => socket?.emit('lobby:start')}
-                            className={`w-full py-3 rounded-lg font-bold transition-all ${isHost && canStart ? 'bg-green-500 hover:bg-green-600 text-white shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                            className={`w-full py-3 rounded-lg font-bold transition-all ${isHost && canStart ? 'bg-green-500 hover:bg-green-600 text-white shadow-md' : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}>
                             {startLabel()}
                         </button>
                     </div>
@@ -470,8 +471,8 @@ export default function LobbyPage() {
                         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm lg:col-span-2">
                             <h2 className="font-bold text-lg mb-3">Quiz</h2>
                             <div className="flex gap-2 mb-3">
-                                <input type="text" value={quizSearch} onChange={(e) => { setQuizSearch(e.target.value); fetchQuizList(1); }} placeholder="Rechercher un quiz..." className="flex-1 border rounded-lg px-3 py-2 text-sm" />
-                                <select value={quizCategory} onChange={(e) => { setQuizCategory(e.target.value); fetchQuizList(1); }} className="border rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-300">
+                                <input type="text" value={quizSearch} onChange={(e) => { setQuizSearch(e.target.value); fetchQuizList(1); }} placeholder="Rechercher un quiz..." className="flex-1 border rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+                                <select value={quizCategory} onChange={(e) => { setQuizCategory(e.target.value); fetchQuizList(1); }} className="border rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600">
                                     <option value="">Toutes les catégories</option>
                                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
@@ -479,12 +480,12 @@ export default function LobbyPage() {
                             <div className="space-y-2 max-h-96 overflow-y-auto">
                                 {quizList.map(q => (
                                     <div key={q.id} onClick={() => isHost && socket?.emit('lobby:setQuiz', { quizId: lobby.quizId === q.id ? null : q.id })}
-                                        className={`flex items-center justify-between px-4 py-3 rounded-lg border transition-all ${lobby.quizId === q.id ? 'border-green-500 bg-green-50 cursor-pointer' : isHost ? 'border-gray-200 hover:border-blue-300 hover:bg-gray-50 cursor-pointer' : 'border-gray-200 cursor-default'}`}>
+                                        className={`flex items-center justify-between px-4 py-3 rounded-lg border transition-all ${lobby.quizId === q.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20 cursor-pointer' : isHost ? 'border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer' : 'border-gray-200 dark:border-gray-700 cursor-default'}`}>
                                         <div className="flex items-center gap-3">
                                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${lobby.quizId === q.id ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                                                 {lobby.quizId === q.id && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                                             </div>
-                                            <span className={`font-medium text-sm ${lobby.quizId === q.id ? 'text-green-700' : 'text-gray-800'}`}>{q.title}</span>
+                                            <span className={`font-medium text-sm ${lobby.quizId === q.id ? 'text-green-700' : 'text-gray-800 dark:text-gray-100'}`}>{q.title}</span>
                                         </div>
                                         <span className="text-xs text-gray-400">{q._count.questions} questions</span>
                                     </div>
@@ -601,12 +602,12 @@ export default function LobbyPage() {
                     {/* ── Chat ── */}
                     <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm">
                         <h2 className="font-bold text-lg mb-3">Chat</h2>
-                        <div className="h-64 overflow-auto border rounded-lg p-3 bg-gray-50">
+                        <div className="h-64 overflow-auto border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                             {messages.map((m, i) => <div key={i} className="mb-2"><b>{m.username}</b>: {m.text}</div>)}
                             {messages.length === 0 && <div className="text-sm opacity-60">Aucun message…</div>}
                         </div>
                         <div className="mt-3 flex flex-col gap-2">
-                            <input value={chatText} onChange={e => setChatText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendChat(); }} className="w-full border rounded-lg px-3 py-2" placeholder="Écrire un message…" />
+                            <input value={chatText} onChange={e => setChatText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendChat(); }} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Écrire un message…" />
                             <button onClick={sendChat} className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Envoyer</button>
                         </div>
                     </div>

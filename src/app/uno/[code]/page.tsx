@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -256,7 +257,7 @@ export default function UnoPage() {
     };
 
     if (status === 'loading') {
-        return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Chargement...</div>;
+        return <LoadingSpinner />;
     }
 
     const is2v2 = gameState?.options?.teamMode === '2v2';

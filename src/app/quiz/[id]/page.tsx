@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
@@ -366,16 +367,7 @@ export default function QuizPage() {
     // ─── Loading / Error ──────────────────────────────────────────────────────
 
     if (status === 'loading' || loading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-                    <p className="text-gray-600 text-lg">
-                        {status === 'loading' ? "Vérification de l'authentification..." : 'Chargement du quiz...'}
-                    </p>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner message={status === 'loading' ? "Vérification de l'authentification..." : 'Chargement du quiz...'} />;
     }
 
     if (error) {

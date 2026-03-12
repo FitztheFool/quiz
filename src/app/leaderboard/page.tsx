@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -112,8 +113,7 @@ export default function LeaderboardPage() {
         <div className="card">
           {loading ? (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement du classement...</p>
+              <LoadingSpinner message="Chargement du classement..." />
             </div>
           ) : leaderboard.length === 0 ? (
             <div className="text-center py-12">
@@ -218,8 +218,7 @@ export default function LeaderboardPage() {
             <div className="overflow-y-auto flex-1 px-6 py-4">
               {detailLoading ? (
                 <div className="flex flex-col items-center justify-center py-10">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-3"></div>
-                  <p className="text-gray-500 text-sm">Chargement des scores...</p>
+                  <LoadingSpinner message="Chargement des scores..." />
                 </div>
               ) : !selectedUser.quizScores || selectedUser.quizScores.length === 0 ? (
                 <div className="text-center py-10 text-gray-500 dark:text-gray-400">

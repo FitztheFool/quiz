@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -463,7 +464,7 @@ export default function skyjowGamePage() {
             <div className="min-h-screen bg-slate-900 flex items-center justify-center">
                 <div className="text-center">
                     <div className="text-5xl mb-4 animate-bounce">🃏</div>
-                    <p className="text-slate-300 text-lg">Chargement de la partie…</p>
+                    <LoadingSpinner message="Chargement de la partie…" bg="bg-slate-900" color="border-slate-300" />
                 </div>
             </div>
         );

@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
@@ -163,8 +164,7 @@ export default function HomePage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-300">Chargement des quiz...</p>
+            <LoadingSpinner message="Chargement des quiz..." />
           </div>
         ) : quizzes.length === 0 ? (
           <div className="card text-center py-12">

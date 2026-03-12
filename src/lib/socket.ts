@@ -5,6 +5,7 @@ let quizSocket: Socket | null = null;
 let unoSocket: Socket | null = null;
 let tabooSocket: Socket | null = null;
 let skyjowSocket: Socket | null = null;
+let yahtzeeSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -50,4 +51,12 @@ export function getSkyjowSocket(): Socket | null {
     if (!skyjowSocket) skyjowSocket = createSocket(process.env.NEXT_PUBLIC_SKYJOW_SERVER_URL ?? "http://localhost:10004", "Skyjow Socket");
     if (!skyjowSocket.connected) skyjowSocket.connect();
     return skyjowSocket;
+}
+
+
+export function getYahtzeeSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!yahtzeeSocket) yahtzeeSocket = createSocket(process.env.NEXT_PUBLIC_YAHTZEE_SERVER_URL ?? "http://localhost:10005", "Yahtzee Socket");
+    if (!yahtzeeSocket.connected) yahtzeeSocket.connect();
+    return yahtzeeSocket;
 }

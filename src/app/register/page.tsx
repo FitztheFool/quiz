@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -201,27 +202,9 @@ function RegisterForm() {
   );
 }
 
-function RegisterFallback() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="text-4xl font-bold text-gray-900 dark:text-white">🎯 Quiz App</div>
-          <p className="mt-2 text-gray-600 dark:text-gray-300">Chargement...</p>
-        </div>
-        <div className="card">
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<RegisterFallback />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <RegisterForm />
     </Suspense>
   );

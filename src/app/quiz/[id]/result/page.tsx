@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import Link from 'next/link';
 import { useRef, useEffect, useMemo } from 'react';
@@ -60,7 +61,7 @@ export default function QuizResultPage() {
     };
 
     if (authStatus === 'loading') {
-        return <LoadingScreen text="Chargement des résultats..." />;
+        return <LoadingSpinner message="Chargement des résultats..." />;
     }
 
     if (notFound || !payload) {
@@ -198,17 +199,6 @@ export default function QuizResultPage() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function LoadingScreen({ text }: { text: string }) {
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-            <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-                <p className="text-gray-600 text-lg">{text}</p>
-            </div>
-        </div>
-    );
-}
-
 function LobbyWaitingRoom({ score, totalPoints, leaderboard, playerProgress, totalPlayers, currentUserId, timeLeft }: {
     score: number;
     totalPoints: number;
@@ -325,9 +315,7 @@ function LobbyWaitingRoom({ score, totalPoints, leaderboard, playerProgress, tot
                                 : 0;
                             return (
                                 <div key={player.userId} className="flex items-center gap-3">
-                                    <div className="w-6 flex justify-center">
-                                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                                    </div>
+                                    <LoadingSpinner fullScreen={false} />
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center mb-1">
                                             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{player.username}</span>

@@ -76,7 +76,7 @@ export default function SettingsPage() {
               ⚙️
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Paramètres</h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm">Personnalisez votre expérience</p>
             </div>
           </div>
@@ -88,11 +88,10 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`pb-3 px-4 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2 ${
-                    activeTab === tab.id
+                  className={`pb-3 px-4 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2 ${activeTab === tab.id
                       ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                  }`}
+                    }`}
                 >
                   <span>{tab.icon}</span>
                   {tab.label}
@@ -132,11 +131,10 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Modifier votre mot de passe</p>
 
             {pwStatus && (
-              <div className={`mb-4 p-3 rounded-lg text-sm border ${
-                pwStatus.type === 'success'
+              <div className={`mb-4 p-3 rounded-lg text-sm border ${pwStatus.type === 'success'
                   ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300'
                   : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 text-red-700 dark:text-red-300'
-              }`}>
+                }`}>
                 {pwStatus.type === 'success' ? '✅' : '❌'} {pwStatus.msg}
               </div>
             )}
@@ -182,11 +180,10 @@ export default function SettingsPage() {
                   <button
                     key={t.id}
                     onClick={() => setTheme(t.id)}
-                    className={`relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all hover:scale-[1.02] ${
-                      isActive
+                    className={`relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all hover:scale-[1.02] ${isActive
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
+                      }`}
                   >
                     {isActive && (
                       <div className="absolute top-3 right-3 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">

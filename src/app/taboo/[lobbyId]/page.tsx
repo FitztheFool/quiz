@@ -1,4 +1,5 @@
 'use client';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -127,9 +128,7 @@ export default function TabooGamePage() {
     }, [game?.attempts]);
 
     if (status === 'loading' || !game) return (
-        <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <LoadingSpinner />
     );
     if (status !== 'authenticated') return null;
 
