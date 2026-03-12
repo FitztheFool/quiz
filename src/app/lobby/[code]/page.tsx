@@ -161,6 +161,8 @@ export default function LobbyPage() {
     const isHost = lobby.hostId === me.userId;
     const is2v2 = lobby.unoOptions.teamMode === '2v2';
     const playerCount = lobby.players.length;
+    console.log('DEBUG isHost:', isHost, '| hostId:', lobby.hostId, '| me.userId:', me.userId);
+
     const myTeam = lobby.teams ? lobby.teams[me.userId] : undefined;
     const team0Count = lobby.teams ? Object.values(lobby.teams).filter(t => t === 0).length : 0;
     const team1Count = lobby.teams ? Object.values(lobby.teams).filter(t => t === 1).length : 0;
