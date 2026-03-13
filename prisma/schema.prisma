@@ -26,6 +26,7 @@ enum GameType {
   UNO
   TABOO
   SKYJOW
+  YAHTZEE
 }
 
 model User {

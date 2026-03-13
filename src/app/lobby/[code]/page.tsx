@@ -343,7 +343,7 @@ export default function LobbyPage() {
                                             ${!isHost ? 'cursor-default opacity-70' : 'cursor-pointer'}`}>
                                         {g === 'quiz' ? '🎯 Quiz'
                                             : g === 'uno' ? '🃏 UNO'
-                                                : g === 'taboo' ? '🚫 Taboo'
+                                                : g === 'taboo' ? '🗣️ Taboo'
                                                     : g === 'skyjow' ? '🂠 Skyjow'
                                                         : '🎲 Yahtzee'}
                                     </button>
@@ -503,17 +503,17 @@ export default function LobbyPage() {
                         </div>
                     ) : lobby.gameType === 'taboo' ? (
                         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm lg:col-span-2 flex flex-col items-center justify-center text-center gap-4">
-                            <div className="text-6xl">🚫</div>
+                            <div className="text-6xl">🗣️</div>
                             <h2 className="text-xl font-bold">Taboo</h2>
                             <div className="text-sm text-gray-500 space-y-2 max-w-sm">
                                 <p>Chaque équipe reçoit un <strong>mot secret</strong> tiré aléatoirement. L'équipe adverse pose des <strong>mots piégés</strong> que l'orateur ne peut pas prononcer.</p>
-                                <p>L'orateur fait deviner le mot à son équipe sans utiliser les mots piégés. <strong>Valider</strong> = 1 point.</p>
-                                <p>L'équipe adverse peut déclarer <strong>Échec</strong> si l'orateur utilise un mot piégé ou dépasse le temps.</p>
+                                <p>L'orateur fait deviner le mot à son équipe sans utiliser les mots piégés. <strong>Valider</strong> = 10 point.</p>
+                                <p>L'équipe adverse peut déclarer <strong>Échec</strong> si l'orateur utilise un mot piégé ou dépasse le temps. Dans ce cas, elle gagne 10 points.</p>
                             </div>
                             <div className="flex flex-wrap gap-2 justify-center text-xs mt-2">
                                 <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-semibold">⏱ {lobby.tabooOptions.turnDuration}s / tour</span>
                                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">🔄 {lobby.tabooOptions.totalRounds} round{lobby.tabooOptions.totalRounds > 1 ? 's' : ''}</span>
-                                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">🚫 {lobby.tabooOptions.trapWordCount} mots piégés</span>
+                                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">🗣️ {lobby.tabooOptions.trapWordCount} mots piégés</span>
                                 <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-semibold">🎯 {lobby.tabooOptions.maxAttempts} tentatives max</span>
                             </div>
                             <div className="mt-2 text-xs text-gray-400">

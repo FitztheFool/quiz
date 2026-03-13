@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import LeaderboardView from '@/components/LeaderboardView';
 
-type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz';
-const VALID_GAMES: Game[] = ['uno', 'skyjow', 'taboo', 'quiz'];
+type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz' | 'yahtzee';
+const VALID_GAMES: Game[] = ['uno', 'skyjow', 'taboo', 'quiz', 'yahtzee'];
 
 type Props = {
     params: Promise<{ game: string }>;

@@ -440,48 +440,48 @@ export default function QuizForm({
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
           {mode === 'create' ? 'Créer un quiz' : 'Modifier le quiz'}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">Total points : {totalPoints}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Total points : {totalPoints}</p>
 
         {error && (
-          <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">
+          <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
 
         <div className="mt-6 grid gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre</label>
             <input
               ref={titleRef}
               value={form.title}
               onChange={(e) => setQuizField('title', e.target.value)}
-              className={`w-full border rounded-lg p-3 focus:outline-none focus:border-blue-600 ${fieldError('title') ? 'border-red-400' : ''}`}
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-600 dark:border-gray-700 dark:focus:border-blue-500 ${fieldError('title') ? 'border-red-400 dark:border-red-500' : 'border-gray-300'}`}
               placeholder="Titre du quiz"
             />
             {fieldError('title') && (
-              <p className="text-red-500 text-xs mt-1">{fieldError('title')}</p>
+              <p className="text-red-500 dark:text-red-400 text-xs mt-1">{fieldError('title')}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => setQuizField('description', e.target.value)}
-              className="w-full border rounded-lg p-3 focus:outline-none focus:border-blue-600 min-h-24"
+              className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 min-h-24"
               placeholder="Description"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
             <select
               value={form.categoryId ?? ''}
               onChange={(e) => setQuizField('categoryId', e.target.value)}
-              className="w-full border rounded-lg p-3 focus:outline-none focus:border-blue-600"
+              className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500"
             >
               <option value="">Aucune catégorie</option>
               {categories.map((c) => (
@@ -492,19 +492,21 @@ export default function QuizForm({
             </select>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={form.isPublic}
               onChange={(e) => setQuizField('isPublic', e.target.checked)}
+              className="accent-blue-600"
             />
             Quiz public
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={form.randomizeQuestions}
               onChange={(e) => setQuizField('randomizeQuestions', e.target.checked)}
+              className="accent-blue-600"
             />
             Ordre des questions aléatoire
           </label>
@@ -516,33 +518,33 @@ export default function QuizForm({
         {form.questions.map((q, qi) => (
           <div
             key={q.id || q.tempId}
-            className={`bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 transition-all ${hasQuestionErrors(qi) ? 'ring-2 ring-red-400 border border-red-400' : ''}`}
+            className={`bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 transition-all ${hasQuestionErrors(qi) ? 'ring-2 ring-red-400 border border-red-400 dark:ring-red-500 dark:border-red-500' : ''}`}
           >
             {hasQuestionErrors(qi) && (
-              <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600 text-sm font-medium">
+              <div className="mb-4 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-medium">
                 ⚠️ Cette question contient des erreurs à corriger
               </div>
             )}
 
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Question {qi + 1}
                 </label>
                 <input
                   value={q.text}
                   onChange={(e) => updateQuestion(qi, { text: e.target.value })}
-                  className={`w-full border rounded-lg p-3 focus:outline-none focus:border-blue-600 ${fieldError(`q${qi}_text`) ? 'border-red-400' : ''}`}
+                  className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 ${fieldError(`q${qi}_text`) ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
                   placeholder="Texte de la question"
                 />
                 {fieldError(`q${qi}_text`) && (
-                  <p className="text-red-500 text-xs mt-1">{fieldError(`q${qi}_text`)}</p>
+                  <p className="text-red-500 dark:text-red-400 text-xs mt-1">{fieldError(`q${qi}_text`)}</p>
                 )}
               </div>
 
               <button
                 onClick={() => deleteQuestion(qi)}
-                className="text-red-600 hover:text-red-700 text-sm"
+                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm"
                 type="button"
                 disabled={form.questions.length === 1}
               >
@@ -552,7 +554,7 @@ export default function QuizForm({
 
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
                 <select
                   value={q.type}
                   onChange={(e) => {
@@ -566,7 +568,7 @@ export default function QuizForm({
                               : defaultMcqAnswers(),
                     });
                   }}
-                  className="w-full border rounded-lg p-3"
+                  className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="MCQ">QCM (multi)</option>
                   <option value="TRUE_FALSE">Vrai / Faux</option>
@@ -576,20 +578,20 @@ export default function QuizForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Points</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Points</label>
                 <input
                   type="number"
                   value={q.points}
                   onChange={(e) => updateQuestion(qi, { points: Number(e.target.value) })}
-                  className={`w-full border rounded-lg p-3 ${fieldError(`q${qi}_points`) ? 'border-red-400' : ''}`}
+                  className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${fieldError(`q${qi}_points`) ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
                   min={0}
                 />
                 {fieldError(`q${qi}_points`) && (
-                  <p className="text-red-500 text-xs mt-1">{fieldError(`q${qi}_points`)}</p>
+                  <p className="text-red-500 dark:text-red-400 text-xs mt-1">{fieldError(`q${qi}_points`)}</p>
                 )}
               </div>
 
-              <div className="text-sm text-gray-500 flex items-end">
+              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-end">
                 {q.type === 'MULTI_TEXT' ? 'Points par bonne réponse' : ''}
               </div>
             </div>
@@ -598,26 +600,27 @@ export default function QuizForm({
             <div className="mt-6">
               {q.type === 'TEXT' ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Réponse attendue</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Réponse attendue</label>
                   <input
                     value={q.answers?.[0]?.text ?? ''}
                     onChange={(e) => setTextExpected(qi, e.target.value)}
-                    className={`w-full border rounded-lg p-3 focus:outline-none focus:border-blue-600 ${fieldError(`q${qi}_answers`) ? 'border-red-400' : ''}`}
+                    className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 ${fieldError(`q${qi}_answers`) ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
                     placeholder="Ex: Paris"
                   />
                   {fieldError(`q${qi}_answers`) && (
-                    <p className="text-red-500 text-xs mt-1">{fieldError(`q${qi}_answers`)}</p>
+                    <p className="text-red-500 dark:text-red-400 text-xs mt-1">{fieldError(`q${qi}_answers`)}</p>
                   )}
                 </div>
               ) : q.type === 'MULTI_TEXT' ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Réponses attendues</p>
-                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                    <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={q.strictOrder ?? false}
                         onChange={(e) => updateQuestion(qi, { strictOrder: e.target.checked })}
+                        className="accent-blue-600"
                       />
                       Ordre obligatoire
                     </label>
@@ -625,7 +628,7 @@ export default function QuizForm({
                   {q.answers.map((a, ai) => (
                     <div key={a.id || a.tempId} className="flex items-center gap-3">
                       {q.strictOrder && (
-                        <span className="text-xs font-bold text-gray-400 w-5 text-center shrink-0">{ai + 1}.</span>
+                        <span className="text-xs font-bold text-gray-400 dark:text-gray-500 w-5 text-center shrink-0">{ai + 1}.</span>
                       )}
                       <input
                         value={a.text}
@@ -633,13 +636,13 @@ export default function QuizForm({
                           const answers = q.answers.map((x, i) => i === ai ? { ...x, text: e.target.value } : x);
                           updateQuestion(qi, { answers });
                         }}
-                        className={`flex-1 border rounded-lg p-3 focus:outline-none focus:border-blue-600 ${!a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300' : ''}`}
+                        className={`flex-1 border rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 ${!a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-700'}`}
                         placeholder={`Réponse attendue ${ai + 1}`}
                       />
                       <button
                         type="button"
                         onClick={() => deleteAnswer(qi, ai)}
-                        className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-200"
+                        className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         disabled={q.answers.length <= 1}
                       >
                         Suppr.
@@ -647,9 +650,9 @@ export default function QuizForm({
                     </div>
                   ))}
                   {fieldError(`q${qi}_answers`) && (
-                    <p className="text-red-500 text-xs">{fieldError(`q${qi}_answers`)}</p>
+                    <p className="text-red-500 dark:text-red-400 text-xs">{fieldError(`q${qi}_answers`)}</p>
                   )}
-                  <button type="button" onClick={() => addAnswer(qi)} className="text-sm text-blue-600 hover:text-blue-700">
+                  <button type="button" onClick={() => addAnswer(qi)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                     + Ajouter une réponse
                   </button>
                 </div>
@@ -662,7 +665,7 @@ export default function QuizForm({
                         name={q.type === 'TRUE_FALSE' ? `tf_${q.id || q.tempId}` : undefined}
                         checked={a.isCorrect}
                         onChange={() => toggleCorrect(qi, ai)}
-                        className="h-5 w-5"
+                        className="h-5 w-5 accent-blue-600"
                       />
                       <input
                         value={a.text}
@@ -670,7 +673,7 @@ export default function QuizForm({
                           const answers = q.answers.map((x, i) => (i === ai ? { ...x, text: e.target.value } : x));
                           updateQuestion(qi, { answers });
                         }}
-                        className={`flex-1 border rounded-lg p-3 ${q.type === 'MCQ' && !a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300' : ''}`}
+                        className={`flex-1 border rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 ${q.type === 'MCQ' && !a.text.trim() && fieldError(`q${qi}_answers`) ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-700'}`}
                         placeholder={`Réponse ${ai + 1}`}
                         disabled={q.type === 'TRUE_FALSE'}
                       />
@@ -678,7 +681,7 @@ export default function QuizForm({
                         <button
                           type="button"
                           onClick={() => deleteAnswer(qi, ai)}
-                          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-200"
+                          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                           disabled={q.answers.length <= 2}
                         >
                           Suppr.
@@ -687,10 +690,10 @@ export default function QuizForm({
                     </div>
                   ))}
                   {fieldError(`q${qi}_answers`) && (
-                    <p className="text-red-500 text-xs mt-1">{fieldError(`q${qi}_answers`)}</p>
+                    <p className="text-red-500 dark:text-red-400 text-xs mt-1">{fieldError(`q${qi}_answers`)}</p>
                   )}
                   {q.type === 'MCQ' && (
-                    <button type="button" onClick={() => addAnswer(qi)} className="text-sm text-blue-600 hover:text-blue-700">
+                    <button type="button" onClick={() => addAnswer(qi)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                       + Ajouter une réponse
                     </button>
                   )}
@@ -707,7 +710,7 @@ export default function QuizForm({
           type="button"
           onClick={addQuestion}
           disabled={form.questions.length >= 15}
-          className={`px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 ${form.questions.length >= 15 ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${form.questions.length >= 15 ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           + Ajouter une question {form.questions.length >= 15 && '(max 15)'}
         </button>
@@ -716,7 +719,7 @@ export default function QuizForm({
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-6 py-3 rounded-lg font-medium border border-gray-300 bg-white hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             Annuler
           </button>
@@ -724,7 +727,7 @@ export default function QuizForm({
             type="button"
             onClick={onSubmit}
             disabled={saving}
-            className={`px-6 py-3 rounded-lg font-medium ${saving ? 'bg-gray-300 text-gray-600' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+            className={`px-6 py-3 rounded-lg font-medium ${saving ? 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400' : 'bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500'}`}
           >
             {saving ? 'Enregistrement...' : mode === 'create' ? 'Créer le quiz' : 'Enregistrer'}
           </button>

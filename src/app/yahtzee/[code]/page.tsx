@@ -196,7 +196,7 @@ export default function YahtzeePage() {
           <h1 className="text-3xl font-black text-white mb-2">Partie terminée !</h1>
           <p className="text-slate-400 mb-6">Classement final</p>
           <div className="space-y-3">
-            {results.map((p, i) => (
+            {[...results].sort((a, b) => b.total - a.total).map((p, i) => (
               <div key={p.userId} className={`flex items-center justify-between px-4 py-3 rounded-xl ${i === 0 ? 'bg-amber-400/20 border border-amber-400/50' : 'bg-slate-700/50'}`}>
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
@@ -206,6 +206,9 @@ export default function YahtzeePage() {
               </div>
             ))}
           </div>
+          <button onClick={() => router.push(`/lobby/${lobbyId}`)} className="mt-3 w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors">
+            🔄 Rejouer
+          </button>
           <button onClick={() => router.push('/dashboard')} className="mt-6 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors">
             Retour au menu
           </button>

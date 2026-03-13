@@ -72,6 +72,16 @@ async function main() {
     update: {},
     create: { email: 'user3@quiz.app', username: 'User3', role: 'USER', passwordHash: defaultPasswordHash },
   });
+  const anonUser4 = await prisma.user.upsert({
+    where: { email: 'user4@quiz.app' },
+    update: {},
+    create: { email: 'user4@quiz.app', username: 'User4', role: 'USER', passwordHash: defaultPasswordHash },
+  });
+  const anonUser5 = await prisma.user.upsert({
+    where: { email: 'user5@quiz.app' },
+    update: {},
+    create: { email: 'user5@quiz.app', username: 'User5', role: 'USER', passwordHash: defaultPasswordHash },
+  });
   const farosUser = await prisma.user.upsert({
     where: { email: 'faros@quiz.app' },
     update: {},
@@ -433,7 +443,9 @@ async function main() {
 
   const shuffle = (arr: typeof allQuizzes) => arr.sort(() => Math.random() - 0.5);
   const farosQuizzes = shuffle([...allQuizzes]).slice(0, 20);
-  const userQuizzes = shuffle([...allQuizzes]).slice(0, 20);
+  const anonUser1Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+  const anonUser2Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+  const anonUser3Quizzes = shuffle([...allQuizzes]).slice(0, 20);
 
   for (let i = 0; i < farosQuizzes.length; i++) {
     const quiz = farosQuizzes[i];
@@ -441,18 +453,32 @@ async function main() {
       data: { userId: farosUser.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
     });
   }
-  for (let i = 0; i < userQuizzes.length; i++) {
-    const quiz = userQuizzes[i];
+  for (let i = 0; i < anonUser1Quizzes.length; i++) {
+    const quiz = anonUser1Quizzes[i];
     await prisma.attempt.create({
-      data: { userId: anonUser.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
+      data: { userId: anonUser1.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
     });
   }
-  console.log('✅ 20 attempts Quiz créés pour Faros et User');
+
+  for (let i = 0; i < anonUser2Quizzes.length; i++) {
+    const quiz = anonUser2Quizzes[i];
+    await prisma.attempt.create({
+      data: { userId: anonUser2.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
+    });
+  }
+  for (let i = 0; i < anonUser3Quizzes.length; i++) {
+    const quiz = anonUser3Quizzes[i];
+    await prisma.attempt.create({
+      data: { userId: anonUser3.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
+    });
+  }
+
+  console.log('✅ 20 attempts Quiz créés pour Faros, User1, User2 et User3');
 
   // ─── 6. Parties UNO ───────────────────────────────────────────────────────
   console.log('\n🎴 Création des parties UNO...');
 
-  const unoPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3];
+  const unoPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
   const totalUnoGames = 80;
   const unoGameDates: Date[] = [];
 
@@ -491,7 +517,7 @@ async function main() {
   // ─── 7. Parties SKYJOW ────────────────────────────────────────────────────
   console.log('\n🂠 Création des parties Skyjow...');
 
-  const skyjowPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3];
+  const skyjowPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
   const totalSkyjowGames = 60;
   const skyjowGameDates: Date[] = [];
 
@@ -539,7 +565,7 @@ async function main() {
   // ─── 8. Parties TABOO ────────────────────────────────────────────────────
   console.log('\n🚫 Création des parties Taboo...');
 
-  const tabooPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3];
+  const tabooPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
   const totalTabooGames = 40;
   const tabooGameDates: Date[] = [];
 
@@ -554,19 +580,20 @@ async function main() {
     const gameId = crypto.randomUUID();
     const gameDate = tabooGameDates[g];
 
-    const shuffled = shufflePlayers(tabooPlayers);
-    const teamA = shuffled.slice(0, Math.ceil(shuffled.length / 2));
-    const teamB = shuffled.slice(Math.ceil(shuffled.length / 2));
+    const playerCount = Math.floor(Math.random() * (tabooPlayers.length - 3)) + 4; // 4 à 7 joueurs
+    const participants = shufflePlayers(tabooPlayers).slice(0, Math.min(playerCount, tabooPlayers.length));
+    const teamA = participants.slice(0, Math.ceil(participants.length / 2));
+    const teamB = participants.slice(Math.ceil(participants.length / 2));
 
     // 1 attempt par manche par joueur (comme le vrai serveur qui appelle /api/attempts à chaque endTurn)
-    const totalRounds = 3;
+    const totalRounds = Math.floor(Math.random() * 5) + 2;
     let scoreA = 0, scoreB = 0, trapA = 0, trapB = 0;
     let turnIndex = 0;
 
     for (let r = 0; r < totalRounds; r++) {
       // ── Manche équipe A ──
       const outcomeA = Math.random();
-      if (outcomeA < 0.45)      { scoreA += 10; }
+      if (outcomeA < 0.45) { scoreA += 10; }
       else if (outcomeA < 0.75) { scoreB += 10; trapB += 10; }
 
       const turnTimeA = new Date(gameDate.getTime() + turnIndex * 5000);
@@ -589,7 +616,7 @@ async function main() {
 
       // ── Manche équipe B ──
       const outcomeB = Math.random();
-      if (outcomeB < 0.45)      { scoreB += 10; }
+      if (outcomeB < 0.45) { scoreB += 10; }
       else if (outcomeB < 0.75) { scoreA += 10; trapA += 10; }
 
       const turnTimeB = new Date(gameDate.getTime() + turnIndex * 5000);
@@ -611,9 +638,55 @@ async function main() {
       turnIndex++;
     }
 
-    console.log(`  ✅ Partie Taboo ${g + 1}/${totalTabooGames} — A: ${scoreA}pts (${trapA}p) · B: ${scoreB}pts (${trapB}p) — ${totalRounds * 2} manches`);
+    console.log(`  ✅ Partie Taboo ${g + 1}/${totalTabooGames} — A: ${scoreA}pts (${trapA}p) · B: ${scoreB}pts (${trapB}p) — ${totalRounds} manches`);
   }
   console.log(`✅ ${totalTabooGames} parties Taboo créées`);
+
+  // ─── 9. Parties YAHTZEE ───────────────────────────────────────────────────
+  console.log('\n🎲 Création des parties Yahtzee...');
+
+  const yahtzeePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+  const totalYahtzeeGames = 50;
+  const yahtzeeGameDates: Date[] = [];
+
+  for (let g = 0; g < totalYahtzeeGames; g++) {
+    const baseDaysAgo = Math.floor((g / totalYahtzeeGames) * 100);
+    const jitterHours = Math.floor(Math.random() * 36);
+    yahtzeeGameDates.push(new Date(Date.now() - baseDaysAgo * 24 * 60 * 60 * 1000 - jitterHours * 60 * 60 * 1000));
+  }
+  yahtzeeGameDates.sort((a, b) => a.getTime() - b.getTime());
+
+  for (let g = 0; g < totalYahtzeeGames; g++) {
+    const gameId = crypto.randomUUID();
+    const playerCount = Math.floor(Math.random() * (yahtzeePlayers.length - 1)) + 2;
+    const participants = shufflePlayers(yahtzeePlayers).slice(0, playerCount);
+    const gameDate = yahtzeeGameDates[g];
+
+    // Score Yahtzee réaliste : entre 100 et 375 pts
+    const scores = participants.map(() => Math.floor(Math.random() * 275) + 100);
+
+    // Classement basé sur le score (plus haut = meilleur)
+    const ranked = [...participants]
+      .map((player, i) => ({ player, score: scores[i] }))
+      .sort((a, b) => b.score - a.score);
+
+    for (let p = 0; p < ranked.length; p++) {
+      await prisma.attempt.create({
+        data: {
+          userId: ranked[p].player.id,
+          score: ranked[p].score,
+          gameType: 'YAHTZEE',
+          placement: p + 1,
+          gameId,
+          quizId: null,
+          trapScore: 0,
+          createdAt: new Date(gameDate.getTime() + p * 1000),
+        },
+      });
+    }
+    console.log(`  ✅ Partie Yahtzee ${g + 1}/${totalYahtzeeGames} — ${playerCount} joueurs — scores: ${ranked.map(r => r.score).join(', ')}`);
+  }
+  console.log(`✅ ${totalYahtzeeGames} parties Yahtzee créées`);
 
   console.log(`\n✨ Seed terminé ! ${createdCount} quiz créés avec succès.`);
 }

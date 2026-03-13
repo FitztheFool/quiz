@@ -1,25 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { randomLobbyId } from '@/lib/utils';
-import CreateLobbyButton from '@/components/CreateLobbyButton';
 import type { TabType } from '@/types/dashboard';
 
 const QUIZ_NAV_ITEMS: { tab?: TabType; label: string; icon: string; href?: string }[] = [
     { tab: 'available', label: 'Quiz disponibles', icon: '🎯' },
     { tab: 'my-quizzes', label: 'Mes quiz', icon: '📝' },
     { label: '', icon: '', href: '' },
-    { label: 'Générer un quiz', icon: '✨', href: '/quiz/generate' },
+    { label: 'Générer un quiz (IA)', icon: '✨', href: '/quiz/generate' },
     { label: 'Créer un quiz', icon: '➕', href: '/quiz/create' },
 ];
 
 const LEADERBOARD_ITEMS: { label: string; icon: string; href: string }[] = [
     { label: 'UNO', icon: '🃏', href: '/leaderboard/uno' },
     { label: 'Skyjow', icon: '🂠', href: '/leaderboard/skyjow' },
-    { label: 'Taboo', icon: '🚫', href: '/leaderboard/taboo' },
+    { label: 'Taboo', icon: '🗣️', href: '/leaderboard/taboo' },
     { label: 'Quiz', icon: '🎯', href: '/leaderboard/quiz' },
+    { label: 'Yahtzee', icon: '🎲', href: '/leaderboard/yahtzee' },
 ];
 
 interface SidebarProps {
@@ -37,17 +37,21 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, isAut
     const pathname = usePathname();
     const router = useRouter();
     const [collapsed, setCollapsed] = useState(true);
-    const [quizMenuOpen, setQuizMenuOpen] = useState(true);
-    const [unoMenuOpen, setUnoMenuOpen] = useState(true);
-    const [leaderboardMenuOpen, setLeaderboardMenuOpen] = useState(true);
+    const [quizMenuOpen, setQuizMenuOpen] = useState(false);
+    const [lobbyMenuOpen, setLobbyMenuOpen] = useState(false);
 
     const isQuizTab = QUIZ_NAV_ITEMS.some(n => n.tab === activeTab);
     const isQuizHref = QUIZ_NAV_ITEMS.some(n => n.href && pathname === n.href);
     const quizSectionActive = isQuizTab || isQuizHref;
-    const unoSectionActive = activeTab === 'uno-score';
-    const leaderboardSectionActive = LEADERBOARD_ITEMS.some(n => pathname === n.href);
+    const lobbySectionActive = activeTab === 'lobbies' || pathname.startsWith('/lobby/');
+    const isCreatingLobby = pathname.startsWith('/lobby/');
 
     const handleTab = (tab: TabType) => { onTabChange(tab); onClose(); };
+
+    useEffect(() => {
+        if (quizSectionActive) setQuizMenuOpen(true);
+        if (lobbySectionActive) setLobbyMenuOpen(true);
+    }, [quizSectionActive, lobbySectionActive]);
 
     return (
         <aside className={`
@@ -79,6 +83,46 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, isAut
 
             {/* Navigation */}
             <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+
+                {/* ── Lobby ── */}
+                {isAuthenticated && (
+                    <div>
+                        <button
+                            onClick={() => { if (collapsed) setCollapsed(false); else setLobbyMenuOpen(prev => !prev); }}
+                            title="Lobby"
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left
+                ${lobbySectionActive ? 'bg-green-50 text-green-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}>
+                            <span className="text-base flex-shrink-0">🎮</span>
+                            {!collapsed && (
+                                <>
+                                    <span>Lobby</span>
+                                    <span className={`ml-auto text-xs transition-transform duration-200 ${lobbyMenuOpen ? 'rotate-180' : ''}`}>▾</span>
+                                </>
+                            )}
+                        </button>
+
+                        {!collapsed && lobbyMenuOpen && (
+                            <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-gray-100 dark:border-gray-700 pl-3">
+                                <button
+                                    onClick={() => router.push(`/lobby/${randomLobbyId()}`)}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left
+                        ${isCreatingLobby ? 'bg-green-50 text-green-700' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}>
+                                    <span className="text-sm">➕</span>
+                                    Créer un lobby
+                                    {isCreatingLobby && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500" />}
+                                </button>
+                                <button
+                                    onClick={() => handleTab('lobbies')}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left
+                        ${activeTab === 'lobbies' ? 'bg-green-50 text-green-700' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}>
+                                    <span className="text-sm">🔍</span>
+                                    Voir les lobbies
+                                    {activeTab === 'lobbies' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500" />}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* ── Quiz ── */}
                 <div>
@@ -137,38 +181,19 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, isAut
                 </div>
 
                 {/* ── Leaderboard ── */}
-                <div>
-                    <button
-                        onClick={() => { if (collapsed) setCollapsed(false); else setLeaderboardMenuOpen(prev => !prev); }}
-                        title="Leaderboard"
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left
-                            ${leaderboardSectionActive ? 'bg-yellow-50 text-yellow-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white dark:text-white'}`}>
-                        <span className="text-base flex-shrink-0">🏆</span>
-                        {!collapsed && (
-                            <>
-                                <span>Leaderboard</span>
-                                <span className={`ml-auto text-xs transition-transform duration-200 ${leaderboardMenuOpen ? 'rotate-180' : ''}`}>▾</span>
-                            </>
-                        )}
-                    </button>
-
-                    {!collapsed && leaderboardMenuOpen && (
-                        <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-gray-100 dark:border-gray-700 pl-3">
-                            {LEADERBOARD_ITEMS.map(item => {
-                                const isActive = pathname === item.href;
-                                return (
-                                    <Link key={item.href} href={item.href}
-                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left
-                                            ${isActive ? 'bg-yellow-50 text-yellow-700' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white dark:text-white'}`}>
-                                        <span className="text-sm">{item.icon}</span>
-                                        {item.label}
-                                        {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-yellow-500" />}
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                <button
+                    onClick={() => router.push('/leaderboard/uno')}
+                    title="Leaderboard"
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left
+        ${pathname.startsWith('/leaderboard/') ? 'bg-yellow-50 text-yellow-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}>
+                    <span className="text-base flex-shrink-0">🏆</span>
+                    {!collapsed && (
+                        <>
+                            <span>Leaderboard</span>
+                            {pathname.startsWith('/leaderboard/') && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-yellow-500" />}
+                        </>
                     )}
-                </div>
+                </button>
 
                 {/* ── Paramètres ── */}
                 <button onClick={() => router.push('/settings')} title="Paramètres"
@@ -199,16 +224,6 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, isAut
                     </Link>
                 )}
             </nav>
-
-            {/* CTA Lobby (connectés seulement) */}
-            {isAuthenticated && (
-                <div className="px-3 py-4 border-t border-gray-100 dark:border-gray-700">
-                    {collapsed
-                        ? <button title="Créer un lobby" onClick={() => router.push(`/lobby/${randomLobbyId()}`)} className="w-full flex justify-center text-xl">🎮</button>
-                        : <CreateLobbyButton />
-                    }
-                </div>
-            )}
         </aside>
     );
 }

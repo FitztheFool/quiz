@@ -8,8 +8,8 @@ export async function POST(req: NextRequest) {
         const { userId, gameType, gameId, score, placement, quizId } = body;
 
         if (!userId || !gameType || !gameId || score === undefined) {
-            console.warn('[POST /api/attempts] Paramètres manquants', body);
-            return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
+            console.warn('[POST /api/attempt] Paramètres manquants', body);
+            return NextResponse.json({ error: 'Paramètres manquant' }, { status: 400 });
         }
 
         const attempt = await prisma.attempt.create({
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(attempt);
     } catch (error) {
-        console.error('[POST /api/attempts]', error);
+        console.error('[POST /api/attempt]', error);
         return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
 }

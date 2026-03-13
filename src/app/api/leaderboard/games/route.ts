@@ -1,37 +1,9 @@
 // app/api/leaderboard/games/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { GameType } from '@prisma/client';
+import { GAME_CONFIG } from '@/lib/gameConfig';
 
-const GAME_CONFIG = {
-    uno: {
-        gameType: 'UNO' as const,
-        label: 'UNO',
-        higherIsBetter: true,
-        scoreLabel: 'Points',
-        description: 'Les points sont calculés selon le placement final : 🥇 1ère place = 20 pts · 🥈 2ème = 13 pts · 🥉 3ème = 6 pts · Autres = 2 pts. Le classement est basé sur le total de points cumulés.',
-    },
-    skyjow: {
-        gameType: 'SKYJOW' as const,
-        label: 'Skyjow',
-        higherIsBetter: false,
-        scoreLabel: 'Score moyen',
-        description: 'À Skyjow, moins de points c\'est mieux ! Le classement est basé sur le score moyen par partie (somme des cartes restantes). Les colonnes de 3 cartes identiques sont éliminées. Le déclencheur du dernier tour voit son score doublé s\'il n\'est pas le meilleur.',
-    },
-    taboo: {
-        gameType: 'TABOO' as const,
-        label: 'Taboo',
-        higherIsBetter: true,
-        scoreLabel: 'Mots devinés',
-        description: 'Le score représente le nombre de mots devinés par ton équipe sur l\'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 1 point à l\'équipe.',
-    },
-    quiz: {
-        gameType: 'QUIZ' as const,
-        label: 'Quiz',
-        higherIsBetter: true,
-        scoreLabel: 'Score total',
-        description: 'Classement basé sur le meilleur score cumulé par quiz. Pour chaque quiz, seul ton meilleur score est comptabilisé. Le score total est la somme de tes meilleurs scores sur tous les quiz complétés.',
-    },
-};
 
 export async function GET(req: NextRequest) {
     try {
@@ -95,7 +67,7 @@ export async function GET(req: NextRequest) {
 
         // UNO, SKYJOW, TABOO
         const attempts = await prisma.attempt.findMany({
-            where: { userId: { in: eligibleUserIds }, gameType: config.gameType },
+            where: { userId: { in: eligibleUserIds }, gameType: config.gameType as GameType },
             select: { userId: true, score: true, trapScore: true, placement: true, gameId: true, createdAt: true },
             orderBy: { createdAt: 'asc' },
         });
@@ -140,11 +112,20 @@ export async function GET(req: NextRequest) {
                 const wins = data.placements.filter(p => p === 1).length;
                 const score = game === 'skyjow' ? avgScore : totalScore;
 
-                const detail = game === 'skyjow'
-                    ? `Moy. ${avgScore} pts · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`
-                    : game === 'taboo'
-                        ? `${totalScore} devinés · ${totalTrapScore} piégés · ${turnsPlayed} manche${turnsPlayed > 1 ? 's' : ''}`
-                        : `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
+                let detail: string;
+                switch (game) {
+                    case 'skyjow':
+                        detail = `Moy. ${avgScore} pts · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
+                        break;
+                    case 'taboo':
+                        detail = `${totalScore} devinés · ${totalTrapScore} piégés · ${turnsPlayed} manche${turnsPlayed > 1 ? 's' : ''}`;
+                        break;
+                    case 'yahtzee':
+                        detail = `Moy. ${avgScore} pts · ${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
+                        break;
+                    default:
+                        detail = `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
+                }
 
                 return {
                     userId,

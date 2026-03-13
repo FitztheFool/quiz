@@ -37,6 +37,7 @@ interface UserScore {
     completedAt: string;
     maxScore: number;
     attempts: number;
+    type: string;
 }
 
 interface UnoStats {
@@ -384,8 +385,8 @@ export default function DashboardPage() {
                             {[
                                 { label: '1ère place', emoji: '🥇', pts: 20, color: 'amber' },
                                 { label: '2ème place', emoji: '🥈', pts: 13, color: 'indigo' },
-                                { label: '3ème place', emoji: '🥉', pts: 6,  color: 'rose' },
-                                { label: 'Autres',     emoji: '🎴', pts: 2,  color: 'slate' },
+                                { label: '3ème place', emoji: '🥉', pts: 6, color: 'rose' },
+                                { label: 'Autres', emoji: '🎴', pts: 2, color: 'slate' },
                             ].map(({ label, emoji, pts, color }) => (
                                 <div key={label} className={`rounded-2xl border border-${color}-200 bg-${color}-50 px-4 py-3`}>
                                     <div className={`flex items-center gap-2 text-sm font-semibold text-${color}-700`}>
@@ -409,9 +410,9 @@ export default function DashboardPage() {
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5 mb-8">
                                 {[
                                     { label: 'Points totaux', value: unoStats.totalScore ?? 0, emoji: '🔥', color: 'orange' },
-                                    { label: '1ère place',    value: unoStats.top1 ?? unoStats.wins, emoji: '🥇', color: 'amber' },
-                                    { label: '2ème place',    value: unoStats.top2 ?? 0, emoji: '🥈', color: 'indigo' },
-                                    { label: '3ème place',    value: unoStats.top3 ?? 0, emoji: '🥉', color: 'rose' },
+                                    { label: '1ère place', value: unoStats.top1 ?? unoStats.wins, emoji: '🥇', color: 'amber' },
+                                    { label: '2ème place', value: unoStats.top2 ?? 0, emoji: '🥈', color: 'indigo' },
+                                    { label: '3ème place', value: unoStats.top3 ?? 0, emoji: '🥉', color: 'rose' },
                                     { label: 'Participations', value: unoStats.gamesPlayed, emoji: '🎮', color: 'sky' },
                                 ].map(({ label, value, emoji, color }) => (
                                     <div key={label} className={`rounded-3xl border border-${color}-200 bg-gradient-to-br from-${color}-50 to-white p-5 shadow-sm`}>
@@ -441,8 +442,8 @@ export default function DashboardPage() {
                                     const cardClass = isTop1
                                         ? 'border-amber-200 bg-gradient-to-r from-amber-50 to-white'
                                         : isTop2 ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-white'
-                                        : isTop3 ? 'border-rose-200 bg-gradient-to-r from-rose-50 to-white'
-                                        : 'border-slate-200 bg-white';
+                                            : isTop3 ? 'border-rose-200 bg-gradient-to-r from-rose-50 to-white'
+                                                : 'border-slate-200 bg-white';
                                     return (
                                         <div key={`${game.createdAt}-${i}`}
                                             className={`group flex items-center justify-between rounded-2xl border px-4 py-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${cardClass}`}>

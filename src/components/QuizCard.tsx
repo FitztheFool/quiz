@@ -32,7 +32,7 @@ export default function QuizCard({
   onEdit,
   onDelete,
 }: QuizCardProps) {
-  const isMyQuiz = quiz.creator?.id === currentUserId;
+  const isMyQuiz = currentUserId !== undefined && quiz.creator?.id === currentUserId;
   const isLocked = !quiz.isPublic && !isMyQuiz;
 
   const isPerfect =
@@ -84,7 +84,7 @@ export default function QuizCard({
 
       {/* Contenu — flex-1 pousse le bouton en bas */}
       <div className="flex-1">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white dark:text-white line-clamp-2 min-h-[3.5rem]">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[3.5rem]">
           {quiz.title}
         </h3>
 
@@ -119,7 +119,7 @@ export default function QuizCard({
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           👤 Créé par{' '}
           <Link
-            href={currentUserId === quiz.creator.id ? '/dashboard' : `/profile/${quiz.creator.username}`}
+            href={currentUserId === quiz.creator.id ? '/dashboard' : `/profil/${quiz.creator.username}`}
             className="font-semibold text-blue-600 hover:underline transition-colors"
           >
             {quiz.creator.username}

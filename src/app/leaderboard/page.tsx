@@ -139,7 +139,7 @@ export default function LeaderboardPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Link
-                          href={session?.user?.username === entry.username ? '/dashboard' : `/profile/${entry.username}`}
+                          href={session?.user?.username === entry.username ? '/dashboard' : `/profil/${entry.username}`}
                           className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                         >
                           {entry.username}

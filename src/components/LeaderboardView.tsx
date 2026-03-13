@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { GAME_CONFIG } from '@/lib/gameConfig';
+import Pagination from '@/components/Pagination';
 
-type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz';
+type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz' | 'yahtzee';
 
 interface LeaderboardEntry {
     rank: number;
@@ -28,25 +31,6 @@ interface Pagination {
     total: number;
     totalPages: number;
 }
-
-const DESCRIPTIONS: Record<Game, string> = {
-    uno:    'Les points sont calculés selon le placement final : 🥇 1ère place = 20 pts · 🥈 2ème = 13 pts · 🥉 3ème = 6 pts · Autres = 2 pts. Le classement est basé sur le total de points cumulés.',
-    skyjow: "À Skyjow, moins de points c'est mieux ! Le classement est basé sur le score moyen par partie (somme des cartes restantes). Les colonnes de 3 cartes identiques sont éliminées. Le déclencheur du dernier tour voit son score doublé s'il n'est pas le meilleur.",
-    taboo:  "Le score représente le nombre de mots devinés par ton équipe sur l'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 10 points à l'équipe en fin de manche.",
-    quiz:   'Pour chaque quiz, seul ton meilleur score est comptabilisé. Le score total est la somme de tes meilleurs scores sur tous les quiz complétés.',
-};
-
-const SCORE_LABELS: Record<Game, string> = {
-    uno: 'Points', skyjow: 'Score moyen', taboo: 'Mots devinés', quiz: 'Score total',
-};
-
-const GAME_ICONS: Record<Game, string> = {
-    uno: '🃏', skyjow: '🂠', taboo: '🚫', quiz: '🎯',
-};
-
-const GAME_LABELS: Record<Game, string> = {
-    uno: 'UNO', skyjow: 'Skyjow', taboo: 'Taboo', quiz: 'Quiz',
-};
 
 const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const LIMIT = 20;
@@ -87,143 +71,148 @@ export default function LeaderboardView({ game }: Props) {
     }, [game, page]);
 
     const myEntry = leaderboard.find(e => e.userId === session?.user?.id);
-    const scoreLabel = config?.scoreLabel ?? SCORE_LABELS[game];
-    const label = config?.label ?? GAME_LABELS[game];
+    const scoreLabel = config?.scoreLabel ?? GAME_CONFIG[game].scoreLabel;
+    const label = config?.label ?? GAME_CONFIG[game].label;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
-                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 md:p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 md:p-8">
 
-                    {/* Header */}
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-3xl flex-shrink-0">
-                            {GAME_ICONS[game]}
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6 flex-wrap">
+                    {Object.entries(GAME_CONFIG).map(([key, config]) => (
+                        <Link key={key} href={`/leaderboard/${key}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2
+            ${game === key
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                                    : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'}`}>
+                            <span>{config.icon ?? '🎮'}</span>
+                            {config.label}
+                        </Link>
+                    ))}
+                </div>
+
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-3xl flex-shrink-0">
+                        {GAME_CONFIG[game].icon}
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Leaderboard {label}</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            {pagination
+                                ? `${pagination.total} joueur${pagination.total > 1 ? 's' : ''} classé${pagination.total > 1 ? 's' : ''}`
+                                : 'Chargement…'
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                {/* Description — toujours visible */}
+                <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                        📊 Calcul des points
+                    </p>
+                    <p className="text-sm text-gray-700 dark:text-gray-200">
+                        {config?.description ?? GAME_CONFIG[game].description}
+                    </p>
+                </div>
+
+                {/* Ma position */}
+                {myEntry && (
+                    <div className="mb-6 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-5 py-4 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">{MEDAL[myEntry.rank] ?? `#${myEntry.rank}`}</span>
+                            <div>
+                                <p className="font-bold text-gray-900 dark:text-white">
+                                    {myEntry.username} <span className="text-xs text-gray-400 font-normal">(moi)</span>
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{myEntry.detail}</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Leaderboard {label}</h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                                {pagination
-                                    ? `${pagination.total} joueur${pagination.total > 1 ? 's' : ''} classé${pagination.total > 1 ? 's' : ''}`
-                                    : 'Chargement…'
-                                }
-                            </p>
+                        <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-700">{myEntry.score}</p>
+                            <p className="text-xs text-gray-400">{scoreLabel}</p>
                         </div>
                     </div>
+                )}
 
-                    {/* Description — toujours visible */}
-                    <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-5 py-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
-                            📊 Calcul des points
-                        </p>
-                        <p className="text-sm text-gray-700 dark:text-gray-200">
-                            {config?.description ?? DESCRIPTIONS[game]}
-                        </p>
+                {/* Tableau */}
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-400 mb-3" />
+                        <p className="text-sm">Chargement du classement…</p>
                     </div>
-
-                    {/* Ma position */}
-                    {myEntry && (
-                        <div className="mb-6 rounded-xl border-2 border-blue-200 bg-blue-50 px-5 py-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl">{MEDAL[myEntry.rank] ?? `#${myEntry.rank}`}</span>
-                                <div>
-                                    <p className="font-bold text-gray-900 dark:text-white">
-                                        {myEntry.username} <span className="text-xs text-gray-400 font-normal">(moi)</span>
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{myEntry.detail}</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-blue-700">{myEntry.score}</p>
-                                <p className="text-xs text-gray-400">{scoreLabel}</p>
-                            </div>
+                ) : leaderboard.length === 0 ? (
+                    <div className="text-center py-12">
+                        <p className="text-4xl mb-3">🏜️</p>
+                        <p className="text-gray-600 font-semibold">Aucune partie enregistrée</p>
+                        <p className="text-gray-400 text-sm mt-1">Soyez le premier à jouer !</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
+                            <table className="min-w-full divide-y divide-gray-100">
+                                <thead className="bg-gray-50 dark:bg-gray-800">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Rang</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Joueur</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{scoreLabel}</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Détail</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                                    {leaderboard.map(entry => {
+                                        const isMe = entry.userId === session?.user?.id;
+                                        const isPodium = entry.rank <= 3;
+                                        return (
+                                            <tr key={entry.userId}
+                                                className={`transition-colors ${isMe ? 'bg-blue-50 dark:bg-blue-900/20 font-semibold' : isPodium ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    {MEDAL[entry.rank]
+                                                        ? <span className="text-xl">{MEDAL[entry.rank]}</span>
+                                                        : <span className="text-sm text-gray-500 dark:text-gray-400 font-semibold">#{entry.rank}</span>
+                                                    }
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <Link href={isMe ? '/dashboard' : `/profil/${entry.username}`}
+                                                        className={`text-sm font-medium hover:underline text-blue-600 dark:text-blue-400`}>
+                                                        {entry.username}
+                                                    </Link>
+                                                    {isMe && <span className="ml-1 text-xs opacity-60">(moi)</span>}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                                        {entry.score}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
+                                                    <span className="text-xs text-gray-700 dark:text-gray-300">{entry.detail}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
 
-                    {/* Tableau */}
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-400 mb-3" />
-                            <p className="text-sm">Chargement du classement…</p>
-                        </div>
-                    ) : leaderboard.length === 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-4xl mb-3">🏜️</p>
-                            <p className="text-gray-600 font-semibold">Aucune partie enregistrée</p>
-                            <p className="text-gray-400 text-sm mt-1">Soyez le premier à jouer !</p>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
-                                <table className="min-w-full divide-y divide-gray-100">
-                                    <thead className="bg-gray-50 dark:bg-gray-800">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Rang</th>
-                                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Joueur</th>
-                                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{scoreLabel}</th>
-                                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Détail</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                                        {leaderboard.map(entry => {
-                                            const isMe = entry.userId === session?.user?.id;
-                                            const isPodium = entry.rank <= 3;
-                                            return (
-                                                <tr key={entry.userId}
-                                                    className={`transition-colors ${isMe ? 'bg-blue-50 dark:bg-blue-900/20 font-semibold' : isPodium ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        {MEDAL[entry.rank]
-                                                            ? <span className="text-xl">{MEDAL[entry.rank]}</span>
-                                                            : <span className="text-sm text-gray-500 dark:text-gray-400 font-semibold">#{entry.rank}</span>
-                                                        }
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className={`text-sm ${isMe ? 'text-blue-700 dark:text-blue-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                                                            {entry.username}
-                                                            {isMe && <span className="ml-1 text-xs opacity-60">(moi)</span>}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className={`text-sm font-bold ${isPodium || isMe ? 'text-blue-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                                                            {entry.score}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
-                                                        <span className="text-xs text-gray-400 dark:text-gray-500">{entry.detail}</span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Pagination */}
-                            {pagination && pagination.totalPages > 1 && (
-                                <div className="flex items-center justify-between mt-4 px-1">
-                                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                                        Page {pagination.page}/{pagination.totalPages} · {pagination.total} joueur{pagination.total > 1 ? 's' : ''}
-                                    </p>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => setPage(p => p - 1)}
-                                            disabled={page === 1}
-                                            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                                        >
-                                            ← Précédent
-                                        </button>
-                                        <button
-                                            onClick={() => setPage(p => p + 1)}
-                                            disabled={page === pagination.totalPages}
-                                            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                                        >
-                                            Suivant →
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-        </div>
+                        {/* Pagination */}
+                        {pagination && (
+                            <>
+                                <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-4">
+                                    Page {pagination.page}/{pagination.totalPages} · {pagination.total} joueur{pagination.total > 1 ? 's' : ''}
+                                </p>
+                                <Pagination
+                                    currentPage={page}
+                                    totalPages={pagination.totalPages}
+                                    onPageChange={setPage}
+                                />
+                            </>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }

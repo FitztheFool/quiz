@@ -5,4 +5,5 @@ export type TabType =
     | 'uno-score'
     | 'settings'
     | 'leaderboard'
-    | 'admin';
+    | 'admin'
+    | 'lobbies'
