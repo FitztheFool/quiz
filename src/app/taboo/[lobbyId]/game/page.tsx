@@ -349,7 +349,6 @@ export default function TabooGamePage() {
                         </div>
                     )}
 
-
                     <button onClick={() => socketRef.current?.emit('taboo:nextTurn', { lobbyId })}
                         className="mt-2 w-full px-8 py-4 rounded-2xl bg-green-500 hover:bg-green-400 font-bold text-lg transition-all shadow-lg shadow-green-500/20">
                         ➡ Tour suivant

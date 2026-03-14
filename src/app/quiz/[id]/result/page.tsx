@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { useQuizResult, LeaderboardEntry } from '@/hooks/useQuizResult';
 import { getQuizSocket } from '@/lib/socket';
 
-// ✅ #9 — Exported type decoupled from hook internals
 export type PlayerProgress = {
     userId: string;
     username: string;
@@ -19,58 +18,42 @@ export type PlayerProgress = {
 
 const PODIUM_EMOJIS = ['🥇', '🥈', '🥉'];
 
-// ✅ #3 — Centralised podium rank styles
 const rankStyle = (i: number) => ({
-    border: i === 0 ? 'border-yellow-400' : i === 1 ? 'border-gray-300' : 'border-amber-500/40',
-    bg: i === 0 ? 'bg-yellow-50' : i === 1 ? 'bg-gray-50' : 'bg-amber-50/50',
-    text: i === 0 ? 'text-yellow-800' : i === 1 ? 'text-gray-700' : 'text-amber-800',
-    score: i === 0 ? 'text-yellow-700' : i === 1 ? 'text-gray-600' : 'text-amber-700',
+    border: i === 0 ? 'border-yellow-400 dark:border-yellow-600' : i === 1 ? 'border-gray-300 dark:border-gray-600' : 'border-amber-500/40 dark:border-amber-700/40',
+    bg: i === 0 ? 'bg-yellow-50 dark:bg-yellow-900/20' : i === 1 ? 'bg-gray-50 dark:bg-gray-800' : 'bg-amber-50/50 dark:bg-amber-900/10',
+    text: i === 0 ? 'text-yellow-800 dark:text-yellow-300' : i === 1 ? 'text-gray-700 dark:text-gray-200' : 'text-amber-800 dark:text-amber-300',
+    score: i === 0 ? 'text-yellow-700 dark:text-yellow-400' : i === 1 ? 'text-gray-600 dark:text-gray-300' : 'text-amber-700 dark:text-amber-400',
 });
 
-// ✅ #6 — Shared "(moi)" tag component
 function MeTag() {
-    return <span className="text-sm font-normal text-gray-400 ml-2">(moi)</span>;
+    return <span className="text-sm font-normal text-gray-400 dark:text-gray-500 ml-2">(moi)</span>;
 }
 
 export default function QuizResultPage() {
     const router = useRouter();
     const {
-        quizId,
-        lobbyCode,
-        session,
-        authStatus,
-        payload,
-        notFound,
-        leaderboard,
-        playerProgress,
-        totalPlayers,
-        allFinished,
-        timeLeft,
-        handleRestart,
+        quizId, lobbyCode, session, authStatus, payload,
+        notFound, leaderboard, playerProgress, totalPlayers,
+        allFinished, timeLeft, handleRestart,
     } = useQuizResult();
 
     const socket = useMemo(() => getQuizSocket(), []);
-
-    // ✅ #2 — Single mode variable instead of three chained conditional returns
     const mode = !lobbyCode ? 'solo' : !allFinished ? 'waiting' : 'podium';
 
-    // Reset lobby quiz selection then navigate back — clears the checkbox for everyone
     const handleRejouer = () => {
         if (lobbyCode) socket?.emit('lobby:restart');
         router.push(`/lobby/${lobbyCode}`);
     };
 
-    if (authStatus === 'loading') {
-        return <LoadingSpinner message="Chargement des résultats..." />;
-    }
+    if (authStatus === 'loading') return <LoadingSpinner message="Chargement des résultats..." />;
 
     if (notFound || !payload) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 text-center max-w-md mx-4">
                     <div className="text-6xl mb-4">🔍</div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Résultats introuvables</h2>
-                    <p className="text-gray-600 mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Résultats introuvables</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
                         Les résultats ont expiré ou n&apos;existent pas. Faites le quiz pour voir vos résultats.
                     </p>
                     <Link href={`/quiz/${quizId}`} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block">
@@ -81,7 +64,6 @@ export default function QuizResultPage() {
         );
     }
 
-    // ─── Mode LOBBY : salle d'attente ─────────────────────────────────────────
     if (mode === 'waiting') {
         return (
             <LobbyWaitingRoom
@@ -96,25 +78,21 @@ export default function QuizResultPage() {
         );
     }
 
-    // ─── Mode LOBBY : podium final ────────────────────────────────────────────
     if (mode === 'podium') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900">
                 <div className="max-w-3xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
                     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 mb-8">
 
-                        {/* Header */}
                         <div className="text-center mb-6">
                             <div className="text-6xl mb-3">🏆</div>
-                            <h1 className="text-3xl font-bold text-gray-800 mb-1">Classement final</h1>
-                            <p className="text-gray-500 mb-4">{payload.quizTitle}</p>
-
-                            {/* Score perso */}
-                            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3">
-                                <span className="text-gray-600 font-medium">Ton score</span>
-                                <span className="text-xl font-bold text-blue-600">
+                            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-1">Classement final</h1>
+                            <p className="text-gray-500 dark:text-gray-400 mb-4">{payload.quizTitle}</p>
+                            <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl px-5 py-3">
+                                <span className="text-gray-600 dark:text-gray-300 font-medium">Ton score</span>
+                                <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                                     {payload.score}
-                                    <span className="text-sm text-gray-400 font-normal"> / {payload.totalPoints} pts</span>
+                                    <span className="text-sm text-gray-400 dark:text-gray-500 font-normal"> / {payload.totalPoints} pts</span>
                                 </span>
                             </div>
                         </div>
@@ -122,7 +100,6 @@ export default function QuizResultPage() {
                         {/* Top 3 */}
                         <div className="space-y-3 mb-4">
                             {leaderboard.slice(0, 3).map((entry, i) => {
-                                // ✅ #3 — Use centralised rank styles
                                 const s = rankStyle(i);
                                 return (
                                     <div key={entry.userId} className={`flex items-center gap-4 p-4 rounded-xl border-2 ${s.border} ${s.bg}`}>
@@ -141,13 +118,13 @@ export default function QuizResultPage() {
                         {leaderboard.length > 3 && (
                             <div className="space-y-2">
                                 {leaderboard.slice(3).map((entry, i) => (
-                                    <div key={entry.userId} className="flex items-center gap-4 px-4 py-3 rounded-xl border border-gray-100 bg-gray-50">
-                                        <span className="text-gray-500 font-bold w-10 text-center">{i + 4}</span>
-                                        <span className="flex-1 text-gray-700 font-medium">
+                                    <div key={entry.userId} className="flex items-center gap-4 px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                                        <span className="text-gray-500 dark:text-gray-400 font-bold w-10 text-center">{i + 4}</span>
+                                        <span className="flex-1 text-gray-700 dark:text-gray-200 font-medium">
                                             {entry.username}
                                             {entry.userId === session?.user?.id && <MeTag />}
                                         </span>
-                                        <span className="text-gray-600 font-bold">{entry.totalScore} pts</span>
+                                        <span className="text-gray-600 dark:text-gray-300 font-bold">{entry.totalScore} pts</span>
                                     </div>
                                 ))}
                             </div>
@@ -160,7 +137,7 @@ export default function QuizResultPage() {
                             <Link href="/dashboard" className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium">
                                 Dashboard
                             </Link>
-                            <Link href="/" className="bg-white text-gray-700 px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors font-medium">
+                            <Link href="/" className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
                                 Accueil
                             </Link>
                         </div>
@@ -182,7 +159,6 @@ export default function QuizResultPage() {
         );
     }
 
-    // ─── Mode solo ────────────────────────────────────────────────────────────
     return (
         <QuizResults
             quizTitle={payload.quizTitle}
@@ -197,22 +173,17 @@ export default function QuizResultPage() {
     );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function LobbyWaitingRoom({ score, totalPoints, leaderboard, playerProgress, totalPlayers, currentUserId, timeLeft }: {
     score: number;
     totalPoints: number;
     leaderboard: LeaderboardEntry[];
-    // ✅ #9 — Use exported type instead of ReturnType<typeof useQuizResult>[...]
     playerProgress: PlayerProgress[];
     totalPlayers: number;
     currentUserId?: string;
     timeLeft: number | null;
 }) {
-    // ✅ #7 — Clearer name: finishedPlayersCount
     const finishedPlayersCount = leaderboard.length;
 
-    // ✅ #1 — Moved ref mutation into useEffect, never during render
     const maxTimeLeftRef = useRef<number>(timeLeft ?? 0);
     useEffect(() => {
         if (timeLeft !== null && timeLeft > maxTimeLeftRef.current) {
@@ -220,36 +191,33 @@ function LobbyWaitingRoom({ score, totalPoints, leaderboard, playerProgress, tot
         }
     }, [timeLeft]);
 
-    // ✅ #4 — Initialise ref to first non-null timeLeft to avoid initial 0 flash
     const timerPct = maxTimeLeftRef.current > 0 && timeLeft !== null
         ? (timeLeft / maxTimeLeftRef.current) * 100
         : 0;
 
-    // ✅ #5 — Memoize filtered in-progress players
     const inProgressPlayers = useMemo(
         () => playerProgress.filter(p => !leaderboard.find(l => l.userId === p.userId)),
         [playerProgress, leaderboard]
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center p-4">
             <div className="max-w-lg w-full">
 
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 mb-4 flex items-center justify-between">
                     <div>
-                        <p className="font-bold text-gray-800">Quiz terminé ! 🎉</p>
-                        <p className="text-sm text-gray-400">En attente des autres joueurs…</p>
+                        <p className="font-bold text-gray-800 dark:text-gray-100">Quiz terminé ! 🎉</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500">En attente des autres joueurs…</p>
                     </div>
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                         {score}
-                        <span className="text-base text-gray-400 font-normal"> / {totalPoints} pts</span>
+                        <span className="text-base text-gray-400 dark:text-gray-500 font-normal"> / {totalPoints} pts</span>
                     </span>
                 </div>
 
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
                     <div className="flex justify-between items-center mb-3">
-                        <h2 className="font-bold text-gray-800">Joueurs</h2>
-                        {/* ✅ #8 — Use ?? instead of || to correctly handle totalPlayers === 0 */}
+                        <h2 className="font-bold text-gray-800 dark:text-gray-100">Joueurs</h2>
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             {finishedPlayersCount} / {totalPlayers ?? '?'} terminé{finishedPlayersCount > 1 ? 's' : ''}
                         </span>
@@ -258,7 +226,7 @@ function LobbyWaitingRoom({ score, totalPoints, leaderboard, playerProgress, tot
                     {timeLeft !== null && timeLeft > 0 && (
                         <div className="flex justify-between items-center mb-4 text-sm">
                             <span className="text-gray-500 dark:text-gray-400">⏱ Temps max restant</span>
-                            <span className={`font-bold tabular-nums ${timeLeft <= 10 ? 'text-red-500' : 'text-blue-600'}`}>
+                            <span className={`font-bold tabular-nums ${timeLeft <= 10 ? 'text-red-500 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
                                 {timeLeft >= 60
                                     ? `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`
                                     : `${timeLeft}s`}
@@ -266,49 +234,32 @@ function LobbyWaitingRoom({ score, totalPoints, leaderboard, playerProgress, tot
                         </div>
                     )}
 
-                    {/* ✅ #10 — Accessible progress bar */}
-                    <div
-                        className="w-full bg-gray-100 rounded-full h-2 mb-5"
-                        role="progressbar"
-                        aria-valuenow={Math.round(timerPct)}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-label="Temps restant"
-                    >
-                        <div
-                            className={`h-2 rounded-full transition-all duration-500 ${timerPct > 60 ? 'bg-green-500' : timerPct > 30 ? 'bg-orange-400' : 'bg-red-500'}`}
-                            style={{ width: `${timerPct}%` }}
-                        />
+                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-5"
+                        role="progressbar" aria-valuenow={Math.round(timerPct)} aria-valuemin={0} aria-valuemax={100} aria-label="Temps restant">
+                        <div className={`h-2 rounded-full transition-all duration-500 ${timerPct > 60 ? 'bg-green-500' : timerPct > 30 ? 'bg-orange-400' : 'bg-red-500'}`}
+                            style={{ width: `${timerPct}%` }} />
                     </div>
 
                     <div className="space-y-4">
                         {leaderboard.map((entry) => (
                             <div key={entry.userId} className="flex items-center gap-3">
-                                <span className="text-green-500 text-lg w-6 text-center">✓</span>
+                                <span className="text-green-500 dark:text-green-400 text-lg w-6 text-center">✓</span>
                                 <div className="flex-1">
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                                             {entry.username}
                                             {entry.userId === currentUserId && <MeTag />}
                                         </span>
-                                        <span className="text-sm font-bold text-green-600">{entry.totalScore}/{totalPoints} pts</span>
+                                        <span className="text-sm font-bold text-green-600 dark:text-green-400">{entry.totalScore}/{totalPoints} pts</span>
                                     </div>
-                                    {/* ✅ #10 — Accessible progress bar */}
-                                    <div
-                                        className="w-full bg-gray-100 rounded-full h-1.5"
-                                        role="progressbar"
-                                        aria-valuenow={100}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                        aria-label={`Progression de ${entry.username}`}
-                                    >
-                                        <div className="bg-green-400 h-1.5 rounded-full w-full" />
+                                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5"
+                                        role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100} aria-label={`Progression de ${entry.username}`}>
+                                        <div className="bg-green-400 dark:bg-green-500 h-1.5 rounded-full w-full" />
                                     </div>
                                 </div>
                             </div>
                         ))}
 
-                        {/* ✅ #5 — Use memoized inProgressPlayers */}
                         {inProgressPlayers.map((player) => {
                             const pct = player.totalQuestions > 0
                                 ? (player.currentQuestion / player.totalQuestions) * 100
@@ -319,21 +270,12 @@ function LobbyWaitingRoom({ score, totalPoints, leaderboard, playerProgress, tot
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center mb-1">
                                             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{player.username}</span>
-                                            <span className="text-xs text-gray-400">{player.currentQuestion}/{player.totalQuestions}</span>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500">{player.currentQuestion}/{player.totalQuestions}</span>
                                         </div>
-                                        {/* ✅ #10 — Accessible progress bar */}
-                                        <div
-                                            className="w-full bg-gray-100 rounded-full h-1.5"
-                                            role="progressbar"
-                                            aria-valuenow={Math.round(pct)}
-                                            aria-valuemin={0}
-                                            aria-valuemax={100}
-                                            aria-label={`Progression de ${player.username}`}
-                                        >
-                                            <div
-                                                className="bg-blue-400 h-1.5 rounded-full transition-all duration-500"
-                                                style={{ width: `${pct}%` }}
-                                            />
+                                        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5"
+                                            role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={`Progression de ${player.username}`}>
+                                            <div className="bg-blue-400 dark:bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                                style={{ width: `${pct}%` }} />
                                         </div>
                                     </div>
                                 </div>

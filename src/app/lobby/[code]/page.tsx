@@ -334,7 +334,7 @@ export default function LobbyPage() {
 
                         {/* Choix du jeu */}
                         <div>
-                            <h2 className="font-bold text-sm text-gray-500 uppercase mb-2">Jeu</h2>
+                            <h2 className="font-bold text-sm text-gray-500 dark:text-white uppercase mb-2">Jeu</h2>
                             <div className="grid grid-cols-2 gap-2">
                                 {(['quiz', 'uno', 'taboo', 'skyjow', 'yahtzee'] as GameType[]).map((g) => (
                                     <button key={g} onClick={() => isHost && setGameType(g)} disabled={!isHost}
@@ -354,7 +354,7 @@ export default function LobbyPage() {
                         {/* Options Skyjow */}
                         {lobby.gameType === 'skyjow' && (
                             <div>
-                                <h2 className="font-bold text-sm text-gray-500 uppercase mb-2">Options Skyjow</h2>
+                                <h2 className="font-bold text-sm text-gray-500 dark:text-white uppercase mb-2">Options Skyjow</h2>
                                 <label className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${isHost ? 'cursor-pointer hover:border-blue-300' : 'cursor-default opacity-70'} ${lobby.skyjowOptions?.eliminateRows ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}>
                                     <input
                                         type="checkbox"
@@ -375,7 +375,7 @@ export default function LobbyPage() {
                         {lobby.gameType === 'quiz' && (
                             <>
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2">Mode de temps</label>
+                                    <label className="block text-sm font-semibold mb-2 dark:text-white">Mode de temps</label>
                                     <select value={lobby.timeMode} onChange={(e) => { const m = e.target.value; socket?.emit('lobby:setTimeMode', { timeMode: m }); if (m !== 'none') socket?.emit('lobby:setTimePerQuestion', { timePerQuestion: DEFAULT_TIME[m] ?? 15 }); }} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                         <option value="total">Questionnaire</option>
                                         <option value="per_question">Temps par question</option>
@@ -384,7 +384,7 @@ export default function LobbyPage() {
                                 </div>
                                 {lobby.timeMode !== 'none' && (
                                     <div>
-                                        <label className="block text-sm font-semibold mb-2">{lobby.timeMode === 'total' ? 'Temps total' : 'Temps par question'}</label>
+                                        <label className="block text-sm font-semibold mb-2 dark:text-white">{lobby.timeMode === 'total' ? 'Temps total' : 'Temps par question'}</label>
                                         <select value={Number(lobby.timePerQuestion)} onChange={(e) => setTime(Number(e.target.value))} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                             {(lobby.timeMode === 'total' ? TIME_OPTIONS_TOTAL : TIME_OPTIONS_PER_QUESTION).map(t => <option key={t} value={t}>{lobby.timeMode === 'total' ? formatTotalTime(t) : `${t}s`}</option>)}
                                         </select>
@@ -396,7 +396,7 @@ export default function LobbyPage() {
                         {/* Options UNO */}
                         {lobby.gameType === 'uno' && (
                             <div className="space-y-2">
-                                <h2 className="text-sm font-semibold text-gray-500 uppercase">Options UNO</h2>
+                                <h2 className="text-sm font-semibold text-gray-500 dark:text-white uppercase">Options UNO</h2>
                                 <div className="grid grid-cols-2 gap-2">
                                     {[{ value: 'none', label: '👤 Solo', desc: '2–8' }, { value: '2v2', label: '👥 2v2', desc: '4 joueurs' }].map(opt => (
                                         <button key={opt.value} onClick={() => isHost && setUnoOption('teamMode', opt.value)} disabled={!isHost}
@@ -405,7 +405,7 @@ export default function LobbyPage() {
                                         </button>
                                     ))}
                                 </div>
-                                {is2v2 && <select value={lobby.unoOptions.teamWinMode} onChange={e => isHost && setUnoOption('teamWinMode', e.target.value)} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white text-sm disabled:opacity-60"><option value="one">Un joueur vide sa main</option><option value="both">Les 2 vident leur main</option></select>}
+                                {is2v2 && <select value={lobby.unoOptions.teamWinMode} onChange={e => isHost && setUnoOption('teamWinMode', e.target.value)} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60"><option value="one">Un joueur vide sa main</option><option value="both">Les 2 vident leur main</option></select>}
                                 <label className={`flex items-center justify-between border rounded-lg px-3 py-2 ${isHost ? 'cursor-pointer' : 'opacity-60'}`}>
                                     <span className="text-sm">Cartes empilables (+2/+4)</span>
                                     <input type="checkbox" checked={lobby.unoOptions.stackable} onChange={e => isHost && setUnoOption('stackable', e.target.checked)} disabled={!isHost} className="w-4 h-4" />
@@ -420,33 +420,33 @@ export default function LobbyPage() {
                         {/* Options Taboo */}
                         {lobby.gameType === 'taboo' && (
                             <div className="space-y-3">
-                                <h2 className="text-sm font-semibold text-gray-500 uppercase">Options Taboo</h2>
+                                <h2 className="text-sm font-semibold text-gray-500  dark:text-white uppercase">Options Taboo</h2>
                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Durée d'un tour</label>
+                                    <label className="block text-xs text-gray-500 dark:text-white mb-1">Durée d'un tour</label>
                                     <select value={lobby.tabooOptions.turnDuration} onChange={e => isHost && setTabooOption({ turnDuration: Number(e.target.value) })} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                         {[15, 30, 45, 60, 90, 120, 180, 240, 300].map(t => <option key={t} value={t}>{t}s</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Nombre de rounds</label>
+                                    <label className="block text-xs text-gray-500 dark:text-white mb-1">Nombre de rounds</label>
                                     <select value={lobby.tabooOptions.totalRounds} onChange={e => isHost && setTabooOption({ totalRounds: Number(e.target.value) })} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                         {[1, 2, 3, 4, 5, 7, 10].map(r => <option key={r} value={r}>{r} round{r > 1 ? 's' : ''}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Mots piégés max</label>
+                                    <label className="block text-xs text-gray-500 dark:text-white mb-1">Mots piégés max</label>
                                     <select value={lobby.tabooOptions.trapWordCount} onChange={e => isHost && setTabooOption({ trapWordCount: Number(e.target.value) })} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                         {[2, 3, 4, 5, 6, 7, 8, 10].map(n => <option key={n} value={n}>{n} mots</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Temps chercher mots piégés</label>
+                                    <label className="block text-xs text-gray-500 dark:text-white mb-1">Temps chercher mots piégés</label>
                                     <select value={lobby.tabooOptions.trapDuration} onChange={e => isHost && setTabooOption({ trapDuration: Number(e.target.value) })} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                         {[15, 30, 45, 60, 90, 120, 180].map(t => <option key={t} value={t}>{t}s</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-gray-500 mb-1">Tentatives max par tour</label>
+                                    <label className="block text-xs text-gray-500 dark:text-white mb-1">Tentatives max par tour</label>
                                     <select value={lobby.tabooOptions.maxAttempts} onChange={e => isHost && setTabooOption({ maxAttempts: Number(e.target.value) })} disabled={!isHost} className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-60">
                                         {[3, 5, 7, 10, 15, 20, 30].map(n => <option key={n} value={n}>{n} tentatives</option>)}
                                     </select>
@@ -456,7 +456,7 @@ export default function LobbyPage() {
 
                         {/* Statut */}
                         <div>
-                            <label className="block text-sm font-semibold mb-2">Statut</label>
+                            <label className="block text-sm font-semibold mb-2 dark:text-white">Statut</label>
                             <span className="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border bg-yellow-50 text-yellow-700 border-yellow-200">⏳ En attente</span>
                         </div>
 

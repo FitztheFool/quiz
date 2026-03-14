@@ -21,7 +21,7 @@ export const GAME_CONFIG = {
         icon: '🗣️',
         higherIsBetter: true,
         scoreLabel: 'Mots devinés',
-        description: "Le score représente le nombre de mots devinés par ton équipe sur l'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 1 point à l'équipe.",
+        description: "Le score représente le nombre de mots devinés par ton équipe sur l'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 10 point à l'équipe.",
     },
     quiz: {
         gameType: 'QUIZ' as const,
