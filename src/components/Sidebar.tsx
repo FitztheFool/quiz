@@ -31,8 +31,8 @@ export default function Sidebar({ isOpen, onClose, isAuthenticated, userRole, us
     const [lobbyMenuOpen, setLobbyMenuOpen] = useState(false);
 
     const quizSectionActive = QUIZ_NAV_ITEMS.some(n => n.href && pathname.startsWith(n.href));
-    const isCreatingLobby = pathname.startsWith('/lobby/');
-    const lobbySectionActive = pathname.startsWith('/lobby/') || pathname.startsWith('/lobbies');
+    const isCreatingLobby = pathname.startsWith('/lobby/create/');
+    const lobbySectionActive = pathname.startsWith('/lobby/');
 
     useEffect(() => {
         if (quizSectionActive) setQuizMenuOpen(true);
@@ -106,16 +106,16 @@ export default function Sidebar({ isOpen, onClose, isAuthenticated, userRole, us
                                     Créer un lobby
                                     {isCreatingLobby && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500" />}
                                 </Link>
-                                <Link href="/lobbies"
+                                <Link href="/lobby/all"
                                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left
-                ${pathname.startsWith('/lobbies')
+                ${pathname === '/lobby/all'
                                             ? 'bg-green-50 text-green-700'
                                             : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                                         }`}
                                 >
                                     <span className="text-sm">🔍</span>
                                     Voir les lobbies
-                                    {pathname.startsWith('/lobbies') && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500" />}
+                                    {pathname === '/lobby/all' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500" />}
                                 </Link>
                             </div>
                         )}

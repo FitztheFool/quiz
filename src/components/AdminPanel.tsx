@@ -12,9 +12,8 @@ interface AdminUser {
     email: string;
     role: string;
     createdAt: string;
-    _count: { createdQuizzes: number };
-    quizAttempts: number;
-    unoAttempts: number;
+    deactivatedAt: string | null;
+    image: string | null;
 }
 
 interface AdminQuiz {
@@ -443,14 +442,45 @@ export default function AdminPanel() {
                                 {/* Totaux globaux */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {[
-                                        { label: 'Utilisateurs', value: stats.totals.users, color: 'blue' },
-                                        { label: 'Quiz', value: stats.totals.quizzes, color: 'green' },
-                                        { label: 'Parties jouées', value: Object.values(stats.totals.gameStats).reduce((a, b) => a + b.count, 0), color: 'orange' },
-                                        { label: 'Points marqués', value: stats.totals.pointsScored, color: 'purple' },
+                                        {
+                                            label: "Utilisateurs",
+                                            value: stats.totals.users,
+                                            classes:
+                                                "bg-blue-50/70 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:shadow-blue-500/20",
+                                        },
+                                        {
+                                            label: "Quiz",
+                                            value: stats.totals.quizzes,
+                                            classes:
+                                                "bg-emerald-50/70 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:shadow-emerald-500/20",
+                                        },
+                                        {
+                                            label: "Parties jouées",
+                                            value: Object.values(stats.totals.gameStats).reduce(
+                                                (a, b) => a + b.count,
+                                                0
+                                            ),
+                                            classes:
+                                                "bg-amber-50/70 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:shadow-amber-500/20",
+                                        },
+                                        {
+                                            label: "Points marqués",
+                                            value: stats.totals.pointsScored,
+                                            classes:
+                                                "bg-violet-50/70 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:shadow-violet-500/20",
+                                        },
                                     ].map((stat) => (
-                                        <div key={stat.label} className={`bg-${stat.color}-50 dark:bg-${stat.color}-900/20 border border-${stat.color}-200 dark:border-${stat.color}-800 rounded-xl p-4 text-center`}>
-                                            <div className={`text-3xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>{stat.value.toLocaleString()}</div>
-                                            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{stat.label}</div>
+                                        <div
+                                            key={stat.label}
+                                            className={`border rounded-2xl p-5 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${stat.classes}`}
+                                        >
+                                            <div className="text-4xl font-extrabold tracking-tight tabular-nums">
+                                                {stat.value.toLocaleString()}
+                                            </div>
+
+                                            <div className="text-xs uppercase tracking-widest opacity-70 mt-2 font-semibold">
+                                                {stat.label}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -734,11 +764,11 @@ export default function AdminPanel() {
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-left">
-                                            <th className="px-4 py-3 rounded-l-lg">Utilisateur</th>
+                                            <th className="px-4 py-3 rounded-l-lg">Image</th>
+                                            <th className="px-4 py-3">Utilisateur</th>
                                             <th className="px-4 py-3">Email</th>
-                                            <th className="px-4 py-3 text-center">Quiz créés</th>
-                                            <th className="px-4 py-3 text-center">🎯 Quiz</th>
-                                            <th className="px-4 py-3 text-center">🎴 UNO</th>
+                                            <th className="px-4 py-3 text-center">Inscrit le</th>
+                                            <th className="px-4 py-3 text-center">Désactivé</th>
                                             <th className="px-4 py-3 text-center">Rôle</th>
                                             <th className="px-4 py-3 text-center rounded-r-lg">Actions</th>
                                         </tr>
@@ -750,19 +780,57 @@ export default function AdminPanel() {
                                             </tr>
                                         ) : (
                                             users.map((user) => (
+
                                                 <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+
+                                                    {/* IMAGE */}
+                                                    <td className="px-4 py-3">
+                                                        {user.image ? (
+                                                            <img
+                                                                src={user.image}
+                                                                className="w-9 h-9 rounded-full object-cover border"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">
+                                                                {user.username[0]?.toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                    </td>
+
+                                                    {/* USERNAME */}
                                                     <td className="px-4 py-3 font-semibold">
                                                         <Link
                                                             href={session?.user?.username === user.username ? '/dashboard' : `/profil/${user.username}`}
-                                                            className="text-blue-600 dark:text-blue-400 hover:underline transition-colors"
+                                                            className="text-blue-600 dark:text-blue-400 hover:underline"
                                                         >
                                                             {user.username}
                                                         </Link>
                                                     </td>
-                                                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{user.email}</td>
-                                                    <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{user._count.createdQuizzes}</td>
-                                                    <td className="px-4 py-3 text-center text-blue-600 dark:text-blue-400 font-medium">{user.quizAttempts}</td>
-                                                    <td className="px-4 py-3 text-center text-orange-600 dark:text-orange-400 font-medium">{user.unoAttempts}</td>
+
+                                                    {/* EMAIL */}
+                                                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                                                        {user.email}
+                                                    </td>
+
+                                                    {/* CREATED */}
+                                                    <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 text-sm">
+                                                        {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                                                    </td>
+
+                                                    {/* DEACTIVATED */}
+                                                    <td className="px-4 py-3 text-center">
+                                                        {user.deactivatedAt ? (
+                                                            <span className="text-red-600 dark:text-red-400 font-semibold text-xs">
+                                                                {new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-green-600 dark:text-green-400 text-xs font-semibold">
+                                                                Actif
+                                                            </span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* ROLE */}
                                                     <td className="px-4 py-3 text-center">
                                                         {user.role === 'ADMIN' || user.role === 'ANONYMOUS' ? (
                                                             <span className={`text-xs font-bold px-3 py-1 rounded-full border inline-flex items-center gap-2 ${user.role === 'ADMIN' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-gray-300 text-gray-800 border-gray-400'}`} title="Rôle verrouillé">
@@ -781,6 +849,8 @@ export default function AdminPanel() {
                                                             </select>
                                                         )}
                                                     </td>
+
+                                                    {/* ACTIONS */}
                                                     <td className="px-4 py-3 text-center">
                                                         {user.role !== 'ADMIN' && (
                                                             <button
@@ -791,7 +861,9 @@ export default function AdminPanel() {
                                                             </button>
                                                         )}
                                                     </td>
+
                                                 </tr>
+
                                             ))
                                         )}
                                     </tbody>

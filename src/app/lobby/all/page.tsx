@@ -23,94 +23,12 @@ const gameTypeEmojis: Record<string, string> = {
 };
 const gameTypes = Object.keys(gameTypeEmojis);
 
-// Mock data for demonstration
-const mockLobbies: Lobby[] = [
-    {
-        id: '1',
-        title: 'Partie Uno Rapide',
-        description: 'Venez jouer à l\'Uno avec nous ! Une partie fun et rapide pour tout le monde.',
-        gameType: 'uno',
-        maxPlayers: 4,
-        currentPlayers: 2,
-        status: 'waiting',
-        host: 'Alice'
-    },
-    {
-        id: '2',
-        title: 'Taboo Challenge',
-        description: 'Défi de mots interdits - Testez votre créativité et votre rapidité !',
-        gameType: 'taboo',
-        maxPlayers: 6,
-        currentPlayers: 4,
-        status: 'waiting',
-        host: 'Bob'
-    },
-    {
-        id: '3',
-        title: 'Quiz Culture Générale',
-        description: 'Testez vos connaissances sur l\'histoire, la géographie et la science.',
-        gameType: 'quiz',
-        maxPlayers: 8,
-        currentPlayers: 8,
-        status: 'in-progress',
-        host: 'Charlie'
-    },
-    {
-        id: '4',
-        title: 'Yahtzee Night',
-        description: 'Soirée Yahtzee - Qui sera le maître des dés ce soir ?',
-        gameType: 'yahtzee',
-        maxPlayers: 4,
-        currentPlayers: 1,
-        status: 'waiting',
-        host: 'Diana'
-    },
-    {
-        id: '5',
-        title: 'Skyjow Intense',
-        description: 'Défi Skyjow intense - Préparez-vous à une bataille épique !',
-        gameType: 'skyjow',
-        maxPlayers: 2,
-        currentPlayers: 2,
-        status: 'in-progress',
-        host: 'Eve'
-    },
-    {
-        id: '6',
-        title: 'Uno Tournament',
-        description: 'Tournoi Uno - Seulement pour les meilleurs joueurs !',
-        gameType: 'uno',
-        maxPlayers: 8,
-        currentPlayers: 6,
-        status: 'waiting',
-        host: 'Frank'
-    },
-    {
-        id: '7',
-        title: 'Taboo Family',
-        description: 'Taboo en famille - Amusez-vous avec vos proches !',
-        gameType: 'taboo',
-        maxPlayers: 10,
-        currentPlayers: 3,
-        status: 'waiting',
-        host: 'Grace'
-    },
-    {
-        id: '8',
-        title: 'Quiz Science',
-        description: 'Quiz spécialisé en sciences - Pour les passionnés !',
-        gameType: 'quiz',
-        maxPlayers: 6,
-        currentPlayers: 5,
-        status: 'waiting',
-        host: 'Henry'
-    }
-];
 
 export default function LobbiesPage() {
     const router = useRouter();
     const { socket, connected } = useLobbySocket();
-    const [lobbies, setLobbies] = useState<Lobby[]>(mockLobbies); // Start with mock data
+    const [lobbies, setLobbies] = useState<Lobby[]>([]);
+
     const [loading, setLoading] = useState(false); // No loading since we have mock data
     const [selectedGameType, setSelectedGameType] = useState('all');
     const [showFull, setShowFull] = useState(false);

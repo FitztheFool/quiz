@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
                 username: true,
                 email: true,
                 role: true,
+                image: true,
                 createdAt: true,
                 _count: { select: { createdQuizzes: true } },
                 attempts: { select: { gameType: true } },

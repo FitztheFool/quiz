@@ -255,7 +255,7 @@ export default function LobbyCodePage() {
         };
 
         socket.on('lobby:state', onState);
-        socket.on('lobby:kicked', () => { alert('Vous avez été expulsé.'); router.push('/lobbies'); });
+        socket.on('lobby:kicked', () => { alert('Vous avez été expulsé.'); router.push('/lobby/all'); });
         socket.on('game:start', (payload: { gameType: GameType; quizId?: string; timeMode?: string; timePerQuestion?: number }) => {
             if (payload.gameType === 'uno') router.push(`/uno/${lobbyId}`);
             else if (payload.gameType === 'taboo') router.push(`/taboo/${lobbyId}/game`);
