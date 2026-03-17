@@ -20,7 +20,6 @@ export default function PersistentChat({ lobbyId }: { lobbyId: string }) {
     const [teamMessages, setTeamMessages] = useState<ChatMessage[]>([]);
     const [myTeam, setMyTeam] = useState<0 | 1 | undefined>(undefined);
     const [hasTeamChat, setHasTeamChat] = useState(false);
-    const joinedRef = useRef(false);
 
     // Écoute les updates d'équipe depuis le lobby state
     useEffect(() => {
