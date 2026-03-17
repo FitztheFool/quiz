@@ -68,20 +68,34 @@ export async function GET(req: NextRequest) {
         // UNO, SKYJOW, TABOO, PUISSANCE4, ...
         const attempts = await prisma.attempt.findMany({
             where: { userId: { in: eligibleUserIds }, gameType: config.gameType as GameType },
-            select: { userId: true, score: true, trapScore: true, placement: true, gameId: true, createdAt: true },
-            orderBy: { createdAt: 'asc' },
+            select: { userId: true, score: true, trapScore: true, placement: true, gameId: true },
         });
 
-        const byUser = new Map<string, { scores: number[]; trapScores: number[]; placements: number[]; turnsPlayed: number; draws: number }>();
+        // Pour Taboo : rounds dédupliqués par (userId, gameId) via raw SQL
+        // → 1 valeur de rounds par partie par joueur, pas de multiplication
+        const tabooRoundsByUser = game === 'taboo'
+            ? await prisma.$queryRaw<{ userId: string; total_rounds: number }[]>`
+                SELECT "userId", SUM(rounds)::int as total_rounds
+                FROM (
+                    SELECT DISTINCT "userId", "gameId", rounds
+                    FROM attempts
+                    WHERE "gameType" = 'TABOO'
+                      AND "userId" = ANY(${eligibleUserIds})
+                ) sub
+                GROUP BY "userId"
+            `
+            : [];
+
+        const roundsByUser = new Map<string, number>(
+            tabooRoundsByUser.map(r => [r.userId, r.total_rounds])
+        );
+
+        const byUser = new Map<string, { scores: number[]; trapScores: number[]; placements: number[]; draws: number }>();
         for (const a of attempts) {
-            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], trapScores: [], placements: [], turnsPlayed: 0, draws: 0 });
+            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], trapScores: [], placements: [], draws: 0 });
             const u = byUser.get(a.userId)!;
-            if (game === 'taboo') {
-                u.turnsPlayed += 1;
-            } else {
-                u.scores.push(a.score);
-                u.trapScores.push(a.trapScore ?? 0);
-            }
+            u.scores.push(a.score);
+            u.trapScores.push(a.trapScore ?? 0);
             if (a.placement === null) {
                 u.draws += 1;
             } else {
@@ -89,33 +103,16 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Taboo : prendre uniquement le dernier attempt par (userId, gameId) = score final de la partie
-        if (game === 'taboo') {
-            const lastByUserGame = new Map<string, typeof attempts[0]>();
-            for (const a of attempts) {
-                const key = `${a.userId}__${a.gameId}`;
-                const existing = lastByUserGame.get(key);
-                if (!existing || a.createdAt > existing.createdAt) {
-                    lastByUserGame.set(key, a);
-                }
-            }
-            for (const a of lastByUserGame.values()) {
-                const u = byUser.get(a.userId)!;
-                u.scores.push(a.score);
-                u.trapScores.push(a.trapScore ?? 0);
-            }
-        }
-
         const sorted = Array.from(byUser.entries())
             .map(([userId, data]) => {
                 const gamesPlayed = data.scores.length;
-                const turnsPlayed = game === 'taboo' ? data.turnsPlayed : gamesPlayed;
                 const totalScore = data.scores.reduce((s, v) => s + v, 0);
                 const totalTrapScore = data.trapScores.reduce((s, v) => s + v, 0);
                 const avgScore = gamesPlayed > 0 ? Math.round(totalScore / gamesPlayed) : 0;
                 const wins = data.placements.filter(p => p === 1).length;
                 const draws = data.draws;
                 const score = game === 'skyjow' ? avgScore : totalScore;
+                const totalRounds = roundsByUser.get(userId) ?? 0;
 
                 let detail: string;
                 switch (game) {
@@ -123,7 +120,7 @@ export async function GET(req: NextRequest) {
                         detail = `Moy. ${avgScore} pts · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
                     case 'taboo':
-                        detail = `${totalScore} devinés · ${totalTrapScore} piégés · ${turnsPlayed} manche${turnsPlayed > 1 ? 's' : ''}`;
+                        detail = `${totalScore} devinés · ${totalTrapScore} piégés · ${totalRounds} manche${totalRounds > 1 ? 's' : ''}`;
                         break;
                     case 'yahtzee':
                         detail = `Moy. ${avgScore} pts · ${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;

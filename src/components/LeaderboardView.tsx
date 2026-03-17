@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -37,6 +37,15 @@ interface PaginationData {
 const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const LIMIT = 20;
 
+const GAME_BADGE_ACTIVE: Record<string, string> = {
+    QUIZ: 'bg-blue-600   text-white border-blue-600',
+    UNO: 'bg-orange-500 text-white border-orange-500',
+    TABOO: 'bg-red-600    text-white border-red-600',
+    SKYJOW: 'bg-sky-500    text-white border-sky-500',
+    YAHTZEE: 'bg-purple-600 text-white border-purple-600',
+    PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
+};
+
 interface Props {
     game: Game;
 }
@@ -52,14 +61,25 @@ export default function LeaderboardView({ game }: Props) {
     const [initialLoading, setInitialLoading] = useState(true);
     const [refetching, setRefetching] = useState(false);
 
-    useEffect(() => { setPage(1); }, [game]);
+    // On stocke le dernier (game, page) fetché pour éviter tout double appel
+    const lastFetch = useRef<{ game: Game; page: number } | null>(null);
 
     useEffect(() => {
+        // Si game a changé, on veut fetcher page 1 — on corrige page si nécessaire
+        const targetPage = lastFetch.current?.game !== game ? 1 : page;
+
+        // Déduplique : si on a déjà fetché exactement ce (game, page), on skip
+        if (lastFetch.current?.game === game && lastFetch.current?.page === targetPage) return;
+        lastFetch.current = { game, page: targetPage };
+
+        // Si page state est désynchronisé (ex: changement de jeu), on le corrige sans re-trigger
+        if (page !== targetPage) setPage(targetPage);
+
         const isFirst = leaderboard.length === 0 && !pagination;
         if (isFirst) setInitialLoading(true);
         else setRefetching(true);
 
-        fetch(`/api/leaderboard/games?game=${game}&page=${page}&limit=${LIMIT}`)
+        fetch(`/api/leaderboard/games?game=${game}&page=${targetPage}&limit=${LIMIT}`)
             .then(r => r.ok ? r.json() : null)
             .then(data => {
                 if (data) {
@@ -80,20 +100,24 @@ export default function LeaderboardView({ game }: Props) {
         router.push(`/leaderboard/${f.toLowerCase()}`);
     };
 
+    const gameType = GAME_CONFIG[game].gameType;
+    const activeClassName = GAME_BADGE_ACTIVE[gameType] ?? 'bg-gray-800 text-white border-gray-800';
     const myEntry = leaderboard.find(e => e.userId === session?.user?.id);
     const scoreLabel = config?.scoreLabel ?? GAME_CONFIG[game].scoreLabel;
     const label = config?.label ?? GAME_CONFIG[game].label;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
+        <div className="mx-auto max-w-7xl min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 md:p-8">
 
-                {/* Tabs → GameFilterPills (sans ALL) */}
+
+                {/* Tabs → GameFilterPills */}
                 <div className="mb-6">
                     <GameFilterPills
-                        value={game.toUpperCase() as GameFilter}
+                        value={gameType}
                         onChange={handleGameChange}
                         showAll={false}
+                        activeClassName={activeClassName}
                     />
                 </div>
 
@@ -210,7 +234,7 @@ export default function LeaderboardView({ game }: Props) {
                         {pagination && pagination.totalPages > 1 && (
                             <>
                                 <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-4">
-                                    Page {pagination.page}/{pagination.totalPages} · {pagination.total} joueur{pagination.total > 1 ? 's' : ''}
+                                    Page {page}/{pagination.totalPages} · {pagination.total} joueur{pagination.total > 1 ? 's' : ''}
                                 </p>
                                 <Pagination
                                     currentPage={page}

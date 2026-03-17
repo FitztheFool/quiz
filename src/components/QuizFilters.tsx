@@ -37,7 +37,8 @@ export default function QuizFilters({
         const res = await fetch(`/api/quiz?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
-          onQuizzesChange(data);
+          const list = Array.isArray(data) ? data : data.quizzes ?? [];
+          onQuizzesChange(list);
         }
       } catch (err) {
         console.error('Erreur recherche:', err);
@@ -54,7 +55,8 @@ export default function QuizFilters({
       const res = await fetch('/api/quiz');
       if (res.ok) {
         const data = await res.json();
-        onQuizzesChange(data);
+        const list = Array.isArray(data) ? data : data.quizzes ?? [];
+        onQuizzesChange(list);
       }
     } catch (err) {
       console.error('Erreur reset:', err);

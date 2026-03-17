@@ -1,6 +1,7 @@
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import QuizCard from '@/components/QuizCard';
@@ -16,6 +17,7 @@ interface Quiz {
     isPublic: boolean;
     createdAt?: string;
     creatorId?: string;
+    creator?: { id: string; username: string } | null;
     _count: { questions: number };
     category?: { name: string } | null;
     questions?: { points: number }[];
@@ -40,6 +42,7 @@ interface Props {
 
 export default function UserProfilePage({ username, isOwnProfile = false }: Props) {
     const router = useRouter();
+    const { data: session } = useSession();
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
@@ -84,17 +87,25 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
         </div>
     );
 
+    const currentUserId = session?.user?.id;
     const displayName = profile.name || username;
     const quizzes = profile.quizzes ?? [];
     const quizTotalPages = Math.ceil(quizzes.length / PAGE_SIZE);
     const paginatedQuizzes = quizzes.slice((quizPage - 1) * PAGE_SIZE, quizPage * PAGE_SIZE);
 
+    const handleEdit = (quizId: string) => router.push(`/quiz/${quizId}/edit`);
+    const handleDelete = async (quizId: string) => {
+        if (!confirm('Supprimer ce quiz ?')) return;
+        const res = await fetch(`/api/quiz/${quizId}`, { method: 'DELETE' });
+        if (res.ok) setProfile(prev => prev ? { ...prev, quizzes: prev.quizzes.filter(q => q.id !== quizId) } : prev);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
-            <div className="max-w-5xl mx-auto space-y-6">
+            <div className="max-w-5xl mx-auto">
+                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 md:p-8">
 
-                {/* Header */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
+                    {/* Header */}
                     {!isOwnProfile && (
                         <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-flex items-center gap-1">
                             ← Retour
@@ -124,57 +135,64 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
                     </div>
 
                     {/* Tabs */}
-                    <div className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <div className="border-b-2 border-gray-200 dark:border-gray-700 mb-6">
                         <div className="flex gap-6">
                             {(['stats', 'quizzes'] as TabType[]).map((tab) => (
                                 <button key={tab} onClick={() => setActiveTab(tab)}
-                                    className={`pb-3 px-2 font-semibold text-sm transition-colors border-b-4 ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                                    className={`pb-3 px-2 font-semibold text-sm transition-colors border-b-4 -mb-0.5 ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                                     {tab === 'stats' ? '📊 Statistiques' : '📝 Quiz créés'}
                                 </button>
                             ))}
                         </div>
                     </div>
-                </div>
 
-                {/* Tab Stats */}
-                {activeTab === 'stats' && (
-                    <UserStats username={username} />
-                )}
+                    {/* Tab Stats */}
+                    {activeTab === 'stats' && (
+                        <UserStats username={username} />
+                    )}
 
-                {/* Tab Quiz */}
-                {activeTab === 'quizzes' && (
-                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                            Quiz créés {isOwnProfile ? 'par vous' : `par ${displayName}`}
-                        </h2>
-                        {quizzes.length === 0 ? (
-                            <div className="text-center py-8 space-y-4">
-                                <p className="text-gray-500 text-sm">Aucun quiz public créé.</p>
-                                {isOwnProfile && (
-                                    <div className="flex gap-3 justify-center">
-                                        <Link href="/quiz/create" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                                            ✏️ Créer un quiz
-                                        </Link>
-                                        <Link href="/quiz/generate" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                                            🤖 Générer un quiz
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {paginatedQuizzes.map((quiz) => (
-                                        <QuizCard key={quiz.id} quiz={quiz} currentUserId={undefined} totalPoints={quizPoints[quiz.id] || 0} />
-                                    ))}
+                    {/* Tab Quiz */}
+                    {activeTab === 'quizzes' && (
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                                Quiz créés {isOwnProfile ? 'par vous' : `par ${displayName}`}
+                            </h2>
+                            {isOwnProfile && (
+                                <div className="flex gap-3 mb-6">
+                                    <Link href="/quiz/create" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                                        ✏️ Créer un quiz
+                                    </Link>
+                                    <Link href="/quiz/generate" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                                        🤖 Générer un quiz
+                                    </Link>
                                 </div>
-                                {quizTotalPages > 1 && (
-                                    <Pagination currentPage={quizPage} totalPages={quizTotalPages} onPageChange={setQuizPage} />
-                                )}
-                            </>
-                        )}
-                    </div>
-                )}
+                            )}
+                            {quizzes.length === 0 ? (
+                                <p className="text-gray-500 text-sm text-center py-8">Aucun quiz créé pour l'instant.</p>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {paginatedQuizzes.map((quiz) => (
+                                            <QuizCard
+                                                key={quiz.id}
+                                                quiz={{ ...quiz, creator: quiz.creator ?? { id: profile.id, username } }}
+                                                currentUserId={currentUserId}
+                                                totalPoints={quizPoints[quiz.id] || 0}
+                                                showActions={isOwnProfile}
+                                                onEdit={() => handleEdit(quiz.id)}
+                                                onDelete={() => handleDelete(quiz.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                    {quizTotalPages > 1 && (
+                                        <Pagination currentPage={quizPage} totalPages={quizTotalPages} onPageChange={setQuizPage} />
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                </div>
             </div>
         </div>
     );

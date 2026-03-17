@@ -1,10 +1,8 @@
 'use client';
 
-import { GAME_EMOJI_MAP } from '@/lib/gameConfig';
+import { GAME_CONFIG } from '@/lib/gameConfig';
 
-type GameType = 'QUIZ' | 'UNO' | 'TABOO' | 'SKYJOW' | 'YAHTZEE' | 'PUISSANCE4';
-
-export type GameFilter = GameType | 'ALL';
+export type GameFilter = typeof GAME_CONFIG[keyof typeof GAME_CONFIG]['gameType'] | 'ALL';
 
 interface Props {
     value: GameFilter;
@@ -14,7 +12,11 @@ interface Props {
     showAll?: boolean;
 }
 
-const GAMES: GameFilter[] = ['ALL', 'QUIZ', 'UNO', 'TABOO', 'SKYJOW', 'YAHTZEE', 'PUISSANCE4'];
+const GAMES = Object.values(GAME_CONFIG).map(g => ({
+    gameType: g.gameType as GameFilter,
+    label: g.label,
+    icon: g.icon,
+}));
 
 export default function GameFilterPills({
     value,
@@ -23,16 +25,24 @@ export default function GameFilterPills({
     inactiveClassName = 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
     showAll = true,
 }: Props) {
-    const games = showAll ? GAMES : GAMES.filter(g => g !== 'ALL');
+    const games = showAll ? GAMES : GAMES;
     return (
         <div className="flex flex-wrap gap-2">
-            {games.map((g) => (
+            {showAll && (
                 <button
-                    key={g}
-                    onClick={() => onChange(g)}
-                    className={`text-xs font-bold px-3 py-1 rounded-full border transition-colors ${value === g ? activeClassName : inactiveClassName}`}
+                    onClick={() => onChange('ALL')}
+                    className={`text-xs font-bold px-3 py-1 rounded-full border transition-colors ${value === 'ALL' ? activeClassName : inactiveClassName}`}
                 >
-                    {g === 'ALL' ? '🎮 Tous' : `${GAME_EMOJI_MAP[g]} ${g}`}
+                    🎮 Tous
+                </button>
+            )}
+            {games.map(g => (
+                <button
+                    key={g.gameType}
+                    onClick={() => onChange(g.gameType)}
+                    className={`text-xs font-bold px-3 py-1 rounded-full border transition-colors ${value === g.gameType ? activeClassName : inactiveClassName}`}
+                >
+                    {g.icon} {g.label}
                 </button>
             ))}
         </div>

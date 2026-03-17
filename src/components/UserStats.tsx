@@ -5,6 +5,7 @@ import Pagination from '@/components/Pagination';
 import { GAME_EMOJI_MAP } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal';
 import GameFilterPills, { GameFilter } from '@/components/GameFilterPills';
+import GameStatCards from '@/components/GameStatCards';
 
 interface Player {
     username: string;
@@ -49,6 +50,24 @@ const GAME_BADGE_ACTIVE: Record<string, string> = {
     YAHTZEE: 'bg-purple-600 text-white border-purple-600',
     PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
 };
+
+function CollapseSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+    const [open, setOpen] = useState(defaultOpen);
+    return (
+        <div>
+            <button
+                onClick={() => setOpen(o => !o)}
+                className="flex items-center gap-2 w-full text-left mb-3 group"
+            >
+                <span className="text-lg font-bold text-gray-800 dark:text-white">{title}</span>
+                <span className={`ml-1 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>
+                    ▾
+                </span>
+            </button>
+            {open && children}
+        </div>
+    );
+}
 
 interface Props {
     username: string;
@@ -104,46 +123,14 @@ export default function UserStats({ username, currentUsername }: Props) {
 
     return (
         <div className="space-y-8">
-            {/* Stats */}
-            <div>
-                <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-3">🎮 Statistiques</h2>
-                {Object.keys(stats.gameStats).length === 0 ? (
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune statistique pour ce jeu.</p>
-                ) : (
-                    <div className="flex flex-wrap gap-3">
-                        {Object.entries(stats.gameStats)
-                            .sort((a, b) => b[1].count - a[1].count)
-                            .map(([type, { count, points, wins }]) => (
-                                <div key={type} className={`${GAME_BADGE[type] ?? 'bg-gray-100 text-gray-600'} border rounded-xl p-3.5 flex items-center gap-3.5`} style={{ minWidth: 180 }}>
-                                    <div className="text-2xl">{GAME_EMOJI_MAP[type] ?? '🎮'}</div>
-                                    <div>
-                                        <div className="text-[11px] font-bold uppercase tracking-widest opacity-70 mb-1">{type}</div>
-                                        <div className="flex items-center gap-3">
-                                            <div>
-                                                <div className="text-lg font-bold tabular-nums leading-none">{count}</div>
-                                                <div className="text-[11px] opacity-60">parties</div>
-                                            </div>
-                                            <div className="w-px self-stretch opacity-20 bg-current" />
-                                            <div>
-                                                <div className="text-lg font-bold tabular-nums leading-none">{points}</div>
-                                                <div className="text-[11px] opacity-60">points</div>
-                                                {count > 0 && (
-                                                    <div className={`text-xs font-bold mt-1 ${wins / count >= 0.6 ? 'text-green-400' : wins / count >= 0.4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                        {Math.round((wins / count) * 100)}% victoires
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-                )}
-            </div>
 
-            {/* Recent activity */}
-            <div>
-                <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-3">🕐 Activité récente</h2>
+            {/* Statistiques — repliable */}
+            <CollapseSection title="🎮 Statistiques">
+                <GameStatCards gameStats={stats.gameStats} />
+            </CollapseSection>
+
+            {/* Activité récente — repliable */}
+            <CollapseSection title="🕐 Activité récente">
                 <div className="mt-3 mb-4">
                     <GameFilterPills
                         value={gameFilter}
@@ -219,13 +206,13 @@ export default function UserStats({ username, currentUsername }: Props) {
                                     </tbody>
                                 </table>
                             </div>
-                            {stats.pagination.totalPages > 1 && (
+                            {(stats.pagination?.totalPages ?? 0) > 1 && (
                                 <Pagination currentPage={page} totalPages={stats.pagination.totalPages} onPageChange={handlePageChange} />
                             )}
                         </>
                     )}
                 </div>
-            </div>
+            </CollapseSection>
 
             {modalGame && (
                 <PlayerModal

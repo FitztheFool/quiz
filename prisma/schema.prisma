@@ -162,6 +162,7 @@ model Attempt {
   id         String   @id @default(cuid())
   score      Int
   trapScore  Int      @default(0)   // mots piégés (taboo:fail) — 0 pour les autres jeux
+  rounds     Int      @default(0)   // nombre de manches jouées (Taboo), 0 pour les autres jeux
   gameType   GameType @default(QUIZ)
   gameId     String
   placement  Int?

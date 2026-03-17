@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
+import { GAME_CONFIG } from '@/lib/gameConfig';
 import prisma from '@/lib/prisma';
 
 function getSinceForRecentActivity(period: number) {
@@ -21,39 +22,27 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
 
-    // Period filter
     const periodRaw = Number.parseInt(searchParams.get('period') || '30', 10);
     const period = Number.isFinite(periodRaw) ? (periodRaw < -1 ? 30 : periodRaw) : 30;
 
-    // Activity pagination
     const activityPage = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10));
     const activityPageSize = Math.min(
         100,
         Math.max(1, Number.parseInt(searchParams.get('pageSize') || String(ACTIVITY_PAGE_SIZE), 10))
     );
 
-    // User search filter (searches across attempt → user.username)
     const userQuery = searchParams.get('q')?.trim() ?? '';
 
-    // Game type filter
-    const VALID_GAME_TYPES = ['QUIZ', 'UNO', 'TABOO', 'SKYJOW', 'YAHTZEE'] as const;
-    type GameType = typeof VALID_GAME_TYPES[number];
+    const VALID_GAME_TYPES = Object.values(GAME_CONFIG).map(g => g.gameType);
     const gameTypeParam = searchParams.get('gameType')?.toUpperCase() ?? '';
-    const gameTypeFilter: GameType | null = (VALID_GAME_TYPES as readonly string[]).includes(gameTypeParam)
-        ? (gameTypeParam as GameType)
-        : null;
+    const gameTypeFilter = VALID_GAME_TYPES.includes(gameTypeParam as any) ? gameTypeParam : null;
 
     const sinceFilter = getSinceForRecentActivity(period);
 
-    // Build the `where` clause for attempts
     const attemptWhere: Record<string, unknown> = {};
     if (sinceFilter) attemptWhere.createdAt = sinceFilter;
-    if (userQuery) {
-        attemptWhere.user = { username: { contains: userQuery, mode: 'insensitive' } };
-    }
-    if (gameTypeFilter) {
-        attemptWhere.gameType = gameTypeFilter;
-    }
+    if (userQuery) attemptWhere.user = { username: { contains: userQuery, mode: 'insensitive' } };
+    if (gameTypeFilter) attemptWhere.gameType = gameTypeFilter;
 
     const selectAttemptFields = {
         createdAt: true,
@@ -65,23 +54,51 @@ export async function GET(req: NextRequest) {
         user: { select: { username: true } },
     } as const;
 
+    const distinctGameIds = await prisma.attempt.findMany({
+        where: attemptWhere,
+        select: { gameId: true, createdAt: true },
+        distinct: ['gameId'],
+        orderBy: { createdAt: 'desc' },
+    });
+
+    const totalFilteredGames = distinctGameIds.length;
+    const totalPages = Math.max(1, Math.ceil(totalFilteredGames / activityPageSize));
+
+    const pageGameIds = distinctGameIds
+        .slice((activityPage - 1) * activityPageSize, activityPage * activityPageSize)
+        .map(g => g.gameId);
+
     const [
         totalUsers,
         totalQuizzes,
-        gameCountsAllTime,
+        gameStatsByType,
+        distinctGamesByType,
+        // rounds Taboo : 1 attempt par partie (dédupliqué par gameId) pour ne pas multiplier par le nb de joueurs
+        tabooRoundsPerGame,
         topQuizzesAllTime,
         totalPointsAllTime,
-        totalActivityAttempts,
-        // Step 1 — fetch only attempts matching the filters to discover gameIds
-        filteredAttempts,
+        allPlayersForPage,
+        filteredAttemptsForPage,
     ] = await Promise.all([
         prisma.user.count(),
         prisma.quiz.count(),
         prisma.attempt.groupBy({
             by: ['gameType'],
-            _count: { id: true },
             _sum: { score: true },
         }),
+        prisma.attempt.findMany({
+            select: { gameType: true, gameId: true },
+            distinct: ['gameId', 'gameType'],
+        }),
+        // 1 ligne par partie Taboo — raw SQL pour garantir la déduplication
+        prisma.$queryRaw<{ total_rounds: number }[]>`
+            SELECT SUM(rounds)::int as total_rounds
+            FROM (
+                SELECT DISTINCT "gameId", rounds
+                FROM attempts
+                WHERE "gameType" = 'TABOO'
+            ) sub
+        `,
         prisma.quiz.findMany({
             select: {
                 id: true,
@@ -93,22 +110,29 @@ export async function GET(req: NextRequest) {
             orderBy: { attempts: { _count: 'desc' } },
             take: 10,
         }),
-        prisma.attempt.aggregate({
-            _sum: { score: true },
-        }),
-        prisma.attempt.count({ where: attemptWhere }),
+        prisma.attempt.aggregate({ _sum: { score: true } }),
         prisma.attempt.findMany({
-            where: attemptWhere,
+            where: { gameId: { in: pageGameIds } },
             select: selectAttemptFields,
             orderBy: { createdAt: 'desc' },
-            take: activityPage * activityPageSize * 8,
+        }),
+        prisma.attempt.findMany({
+            where: { ...attemptWhere, gameId: { in: pageGameIds } },
+            select: selectAttemptFields,
+            orderBy: { createdAt: 'desc' },
         }),
     ]);
 
-    // ── Step 2: paginate filtered games ──────────────────────────────────────
-    // Build a lightweight game index from the filtered attempts (one entry per gameId)
-    const filteredGameIndex = new Map<string, { createdAt: Date; gameType: string; gameId: string; quiz: { id: string; title: string } | null }>();
-    for (const a of filteredAttempts) {
+    // Somme des rounds Taboo dédupliqués par partie
+    const totalTabooRounds = tabooRoundsPerGame[0]?.total_rounds ?? 0;
+
+    const filteredGameIndex = new Map<string, {
+        createdAt: Date;
+        gameType: string;
+        gameId: string;
+        quiz: { id: string; title: string } | null;
+    }>();
+    for (const a of filteredAttemptsForPage) {
         const key = a.gameId ?? `solo-${a.user.username}-${a.createdAt.getTime()}`;
         if (!filteredGameIndex.has(key)) {
             filteredGameIndex.set(key, {
@@ -120,28 +144,6 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    const sortedGameIds = [...filteredGameIndex.values()]
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    const totalGames = sortedGameIds.length;
-    const avgPlayersPerGame = totalGames > 0 ? filteredAttempts.length / totalGames : 1;
-    const estimatedTotalGames = Math.ceil(totalActivityAttempts / Math.max(1, avgPlayersPerGame));
-
-    // Paginate the game list
-    const pageGameIds = sortedGameIds
-        .slice((activityPage - 1) * activityPageSize, activityPage * activityPageSize)
-        .map(g => g.gameId);
-
-    // ── Step 3: fetch ALL players for the paginated games ────────────────────
-    // This second query ignores the user/gameType filters so every participant
-    // of a matched game is returned, not just the ones matching the search.
-    const allPlayersForPage = await prisma.attempt.findMany({
-        where: { gameId: { in: pageGameIds } },
-        select: selectAttemptFields,
-        orderBy: { createdAt: 'desc' },
-    });
-
-    // ── Build per-game groups with full player lists ──────────────────────────
     const gameMap = new Map<string, {
         createdAt: Date;
         gameType: string;
@@ -150,19 +152,22 @@ export async function GET(req: NextRequest) {
         players: { username: string; score: number; placement: number | null }[];
     }>();
 
-    // Seed the map with the paginated game metadata (preserves order)
     for (const gameId of pageGameIds) {
-        const meta = filteredGameIndex.get(gameId)!;
+        const meta = filteredGameIndex.get(gameId);
+        if (!meta) continue;
         gameMap.set(gameId, { ...meta, players: [] });
     }
 
-    // Fill in all players (from the unfiltered second query)
     for (const a of allPlayersForPage) {
         const key = a.gameId ?? `solo-${a.user.username}-${a.createdAt.getTime()}`;
-        if (!gameMap.has(key)) continue; // belongs to a game not on this page
+        if (!gameMap.has(key)) continue;
         const game = gameMap.get(key)!;
         if (!game.players.some(p => p.username === a.user.username)) {
-            game.players.push({ username: a.user.username ?? 'Anonyme', score: a.score, placement: a.placement });
+            game.players.push({
+                username: a.user.username ?? 'Anonyme',
+                score: a.score,
+                placement: a.placement,
+            });
         }
     }
 
@@ -175,13 +180,19 @@ export async function GET(req: NextRequest) {
         players: g.players.sort((a, b) => (a.placement ?? 99) - (b.placement ?? 99)),
     }));
 
-    // ── Top quizzes stats ────────────────────────────────────────────────────
-    const gameStats: Record<string, { count: number; points: number }> = {};
-    for (const row of gameCountsAllTime) {
+    const gameStats: Record<string, { count: number; points: number; rounds: number }> = {};
+
+    for (const row of gameStatsByType) {
         gameStats[row.gameType] = {
-            count: row._count.id,
+            count: 0,
             points: row._sum.score ?? 0,
+            rounds: row.gameType === 'TABOO' ? totalTabooRounds : 0,
         };
+    }
+
+    for (const g of distinctGamesByType) {
+        if (!gameStats[g.gameType]) gameStats[g.gameType] = { count: 0, points: 0, rounds: 0 };
+        gameStats[g.gameType].count++;
     }
 
     const quizzesWithStats = topQuizzesAllTime.map((quiz) => {
@@ -214,12 +225,8 @@ export async function GET(req: NextRequest) {
         activityMeta: {
             page: activityPage,
             pageSize: activityPageSize,
-            // Estimated total — exact count would need a raw GROUP BY gameId query
-            totalGames: Math.max(totalGames, estimatedTotalGames),
-            totalPages: Math.max(
-                1,
-                Math.ceil(Math.max(totalGames, estimatedTotalGames) / activityPageSize)
-            ),
+            totalGames: totalFilteredGames,
+            totalPages,
         },
     });
 }

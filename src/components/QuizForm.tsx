@@ -340,6 +340,7 @@ export default function QuizForm({
 
   function validate(): string | null {
     if (!form.title.trim()) return 'Titre requis.';
+    if (!form.categoryId) return 'Catégorie requise.';
     if (form.questions.length === 0) return 'Ajoute au moins une question.';
     for (const [qi, q] of form.questions.entries()) {
       if (!q.text.trim()) return `Question ${qi + 1}: texte requis.`;
@@ -367,6 +368,15 @@ export default function QuizForm({
 
     if (!form.title.trim()) {
       setFieldError('title', 'Titre requis');
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        titleRef.current?.focus();
+      }, 50);
+      return;
+    }
+
+    if (!form.categoryId) {
+      setFieldError('categoryId', 'Catégorie requise');
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         titleRef.current?.focus();
@@ -480,16 +490,20 @@ export default function QuizForm({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
             <select
               value={form.categoryId ?? ''}
-              onChange={(e) => setQuizField('categoryId', e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500"
+              onChange={(e) => {
+                setQuizField('categoryId', e.target.value);
+                if (submitted) setFieldError('categoryId', e.target.value ? '' : 'Catégorie requise');
+              }}
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 ${fieldError('categoryId') ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
             >
-              <option value="">Aucune catégorie</option>
+              <option value="">Sélectionner une catégorie</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {fieldError('categoryId') && (
+              <p className="text-red-500 dark:text-red-400 text-xs mt-1">{fieldError('categoryId')}</p>
+            )}
           </div>
 
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

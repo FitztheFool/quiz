@@ -173,7 +173,7 @@ export default function LobbyCodePage() {
 
     const [gameType, setGameTypeState] = useState<GameType>('quiz');
     const [maxPlayers, setMaxPlayersState] = useState(8);
-    const [isPublic, setIsPublicState] = useState(true);
+    const [isPublic, setIsPublicState] = useState(false);
     const [selectedQuizId, setSelectedQuizId] = useState<string | undefined>();
     const [selectedQuizTitle, setSelectedQuizTitle] = useState('');
     const [unoTeamMode, setUnoTeamMode] = useState<'none' | '2v2'>('none');
@@ -224,7 +224,7 @@ export default function LobbyCodePage() {
             setGameTypeState(state.gameType ?? 'quiz');
             setMaxPlayersState(state.maxPlayers ?? 8);
             setTeams(state.teams ?? null);
-            setIsPublicState(state.isPublic ?? true);
+            setIsPublicState(state.isPublic ?? false);
             if (state.quizId) {
                 setSelectedQuizId(state.quizId);
             }
@@ -278,7 +278,7 @@ export default function LobbyCodePage() {
                 setMeta(m);
                 setGameTypeState(m.gameType ?? 'quiz');
                 setMaxPlayersState(m.maxPlayers ?? 8);
-                setIsPublicState(m.isPublic ?? true);
+                setIsPublicState(m.isPublic ?? false);
                 if (m.unoOptions) { setUnoTeamMode(m.unoOptions.teamMode as 'none' | '2v2'); setUnoTeamWinMode(m.unoOptions.teamWinMode as 'one' | 'both'); setUnoStackable(m.unoOptions.stackable); setUnoJumpIn(m.unoOptions.jumpIn); }
                 if (m.tabooOptions) { setTabooTurnDuration(m.tabooOptions.turnDuration); setTabooTotalRounds(m.tabooOptions.totalRounds); setTabooTrapWordCount(m.tabooOptions.trapWordCount); setTabooMaxAttempts(m.tabooOptions.maxAttempts); setTabooTrapDuration(m.tabooOptions.trapDuration); }
                 if (m.quizOptions) { setQuizTimeMode(m.quizOptions.timeMode as 'per_question' | 'total' | 'none'); setQuizTimePerQuestion(m.quizOptions.timePerQuestion); }

@@ -23,31 +23,56 @@ export async function GET(
         return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
 
-    // gameStats : toujours toutes les parties, sans filtre
-    const allAttempts = await prisma.attempt.findMany({
-        where: { userId: user.id },
-        select: { gameType: true, score: true, placement: true },
-    });
-
-    const gameStats: Record<string, { count: number; points: number; wins: number }> = {};
+    const gameStats: Record<string, { count: number; points: number; wins: number; rounds: number }> = {};
     for (const key of Object.keys(GAME_CONFIG)) {
         const type = GAME_CONFIG[key as keyof typeof GAME_CONFIG].gameType;
-        gameStats[type] = { count: 0, points: 0, wins: 0 };
-    }
-    for (const a of allAttempts) {
-        if (!gameStats[a.gameType]) gameStats[a.gameType] = { count: 0, points: 0, wins: 0 };
-        gameStats[a.gameType].count++;
-        gameStats[a.gameType].points += a.score;
-        if (a.placement === 1) gameStats[a.gameType].wins++;
+        gameStats[type] = { count: 0, points: 0, wins: 0, rounds: 0 };
     }
 
-    // Activité récente : filtre gameType appliqué directement en DB
+    // Points + rounds par gameType
+    // rounds dédupliqués par (userId, gameId) via raw SQL pour éviter la multiplication par nb joueurs
+    const [attemptSumsByType, tabooRoundsResult, distinctGamesByType] = await Promise.all([
+        prisma.attempt.groupBy({
+            by: ['gameType'],
+            where: { userId: user.id },
+            _sum: { score: true },
+        }),
+        prisma.$queryRaw<{ total_rounds: number }[]>`
+            SELECT SUM(rounds)::int as total_rounds
+            FROM (
+                SELECT DISTINCT "gameId", rounds
+                FROM attempts
+                WHERE "gameType" = 'TABOO'
+                  AND "userId" = ${user.id}
+            ) sub
+        `,
+        prisma.attempt.findMany({
+            where: { userId: user.id },
+            select: { gameType: true, gameId: true, placement: true },
+            distinct: ['gameId', 'gameType'],
+        }),
+    ]);
+
+    const tabooRounds = tabooRoundsResult[0]?.total_rounds ?? 0;
+
+    for (const row of attemptSumsByType) {
+        if (!gameStats[row.gameType]) gameStats[row.gameType] = { count: 0, points: 0, wins: 0, rounds: 0 };
+        gameStats[row.gameType].points = row._sum.score ?? 0;
+        gameStats[row.gameType].rounds = row.gameType === 'TABOO' ? tabooRounds : 0;
+    }
+
+    for (const g of distinctGamesByType) {
+        if (!gameStats[g.gameType]) gameStats[g.gameType] = { count: 0, points: 0, wins: 0, rounds: 0 };
+        gameStats[g.gameType].count++;
+        if (g.placement === 1) gameStats[g.gameType].wins++;
+    }
+
+    // Activité récente
     const where = {
         userId: user.id,
         ...(gameTypeFilter ? { gameType: gameTypeFilter } : {}),
     };
 
-    // On récupère les gameIds distincts pour la pagination
     const distinctGames = await prisma.attempt.findMany({
         where,
         distinct: ['gameId'],
@@ -59,28 +84,30 @@ export async function GET(
     const totalPages = Math.ceil(totalGames / pageSize);
     const paginatedGameIds = distinctGames.slice(skip, skip + pageSize).map(g => g.gameId);
 
-    // Attempts de l'utilisateur sur les parties paginées
     const recentAttempts = await prisma.attempt.findMany({
         where: { userId: user.id, gameId: { in: paginatedGameIds } },
         include: { quiz: { select: { id: true, title: true } } },
         orderBy: { createdAt: 'desc' },
     });
 
-    // Tous les joueurs des parties paginées
     const allPlayersInGames = await prisma.attempt.findMany({
         where: { gameId: { in: paginatedGameIds } },
         include: { user: { select: { username: true } } },
-        orderBy: { placement: 'asc' },
+        orderBy: { createdAt: 'desc' },
     });
 
     const playersByGame = new Map<string, { username: string; score: number; placement: number | null }[]>();
     for (const a of allPlayersInGames) {
         if (!playersByGame.has(a.gameId)) playersByGame.set(a.gameId, []);
-        playersByGame.get(a.gameId)!.push({
-            username: a.user.username ?? 'Inconnu',
-            score: a.score,
-            placement: a.placement,
-        });
+        const existing = playersByGame.get(a.gameId)!;
+        const idx = existing.findIndex(p => p.username === a.user.username);
+        if (idx === -1) {
+            existing.push({
+                username: a.user.username ?? 'Inconnu',
+                score: a.score,
+                placement: a.placement,
+            });
+        }
     }
 
     const byGame = new Map<string, typeof recentAttempts>();
@@ -92,13 +119,14 @@ export async function GET(
     const recentActivity = paginatedGameIds.map(gameId => {
         const attempts = byGame.get(gameId) ?? [];
         const first = attempts[0];
+        const myEntry = playersByGame.get(gameId)?.find(p => p.username === user.username);
         return {
             gameId,
             gameType: first.gameType,
             createdAt: first.createdAt,
             quiz: first.quiz ? { id: first.quiz.id, title: first.quiz.title } : null,
-            score: first.score,
-            placement: first.placement,
+            score: myEntry?.score ?? first.score,
+            placement: myEntry?.placement ?? first.placement,
             players: playersByGame.get(gameId) ?? [],
         };
     });

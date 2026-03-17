@@ -1,11 +1,10 @@
-// app/api/attempts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { userId, gameType, gameId, score, placement, quizId } = body;
+        const { userId, gameType, gameId, score, placement, quizId, trapScore, rounds } = body;
 
         if (!userId || !gameType || !gameId || score === undefined) {
             console.warn('[POST /api/attempt] Paramètres manquants', body);
@@ -20,6 +19,8 @@ export async function POST(req: NextRequest) {
                 score,
                 placement: placement ?? null,
                 quizId: quizId ?? null,
+                trapScore: trapScore ?? 0,
+                rounds: rounds ?? 0,
             },
         });
 

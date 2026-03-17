@@ -20,7 +20,7 @@ export const GAME_CONFIG = {
         label: 'Taboo',
         icon: '🗣️',
         higherIsBetter: true,
-        scoreLabel: 'Mots devinés',
+        scoreLabel: 'Victoires',
         description: "Le score représente le nombre de mots devinés par ton équipe sur l'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 10 point à l'équipe.",
     },
     quiz: {

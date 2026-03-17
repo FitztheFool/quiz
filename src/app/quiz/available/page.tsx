@@ -56,7 +56,7 @@ const isTab = (v: string): v is TabType => VALID_TABS.includes(v as TabType);
 export default function DashboardPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    usePathname();
+    const pathname = usePathname();
 
     const getTabFromHash = (): TabType => {
         if (typeof window === 'undefined') return 'available';
@@ -143,14 +143,14 @@ export default function DashboardPage() {
     }, [fetchQuizzes, fetchMyQuizzes]);
 
     useEffect(() => {
-        if (status === 'unauthenticated') {
+        /*if (status === 'unauthenticated') {
             router.push('/login?callbackUrl=' + encodeURIComponent('/dashboard'));
             return;
-        }
-        if (status === 'authenticated') {
-            fetchData();
-            setActiveTab(getTabFromHash());
-        }
+        }*/
+        //if (status === 'authenticated') {
+        fetchData();
+        setActiveTab(getTabFromHash());
+        //}
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status]);
 
@@ -185,8 +185,6 @@ export default function DashboardPage() {
             </div>
         );
     }
-
-    if (!session) return null;
 
     const scoreTotalPages = Math.ceil(myScores.length / PAGE_SIZE);
     const paginatedScores = myScores.slice((scorePage - 1) * PAGE_SIZE, scorePage * PAGE_SIZE);
@@ -237,7 +235,7 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {activeTab === 'admin' && session.user?.role === 'ADMIN'}
+            {activeTab === 'admin' && session?.user?.role === 'ADMIN'}
 
             {activeTab === 'my-quizzes' && (
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 md:p-8">
