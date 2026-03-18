@@ -8,7 +8,7 @@ import { GAME_CONFIG } from '@/lib/gameConfig';
 import Pagination from '@/components/Pagination';
 import GameFilterPills, { GameFilter } from '@/components/GameFilterPills';
 
-type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz' | 'yahtzee' | 'puissance4';
+type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz' | 'yahtzee' | 'puissance4' | 'just-one' | 'battleship';
 
 interface LeaderboardEntry {
     rank: number;
@@ -44,6 +44,8 @@ const GAME_BADGE_ACTIVE: Record<string, string> = {
     SKYJOW: 'bg-sky-500    text-white border-sky-500',
     YAHTZEE: 'bg-purple-600 text-white border-purple-600',
     PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
+    JUST_ONE: 'bg-teal-600   text-white border-teal-600',
+    BATTLESHIP: 'bg-cyan-600   text-white border-cyan-600',
 };
 
 interface Props {
@@ -97,7 +99,8 @@ export default function LeaderboardView({ game }: Props) {
 
     const handleGameChange = (f: GameFilter) => {
         if (f === 'ALL') return;
-        router.push(`/leaderboard/${f.toLowerCase()}`);
+        const key = Object.keys(GAME_CONFIG).find(k => GAME_CONFIG[k as keyof typeof GAME_CONFIG].gameType === f);
+        if (key) router.push(`/leaderboard/${key}`);
     };
 
     const gameType = GAME_CONFIG[game].gameType;

@@ -215,10 +215,10 @@ export default function YahtzeePage() {
             ))}
           </div>
           <button onClick={() => router.push(`/lobby/create/${lobbyId}`)} className="mt-3 w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors">
-            🔄 Rejouer
+            Retour au lobby
           </button>
-          <button onClick={() => router.push('/dashboard')} className="mt-6 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors">
-            Retour au menu
+          <button onClick={() => router.push('/')} className="mt-3 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors">
+            Quitter
           </button>
         </div>
       </div>

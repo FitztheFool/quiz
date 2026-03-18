@@ -414,9 +414,13 @@ export default function skyjowGamePage() {
                             </div>
                         ))}
                     </div>
-                    <button onClick={() => router.push('/dashboard')}
+                    <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
                         className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors">
-                        Retour au tableau de bord
+                        Retour au lobby
+                    </button>
+                    <button onClick={() => router.push('/')}
+                        className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition-colors">
+                        Quitter
                     </button>
                 </div>
             </div>

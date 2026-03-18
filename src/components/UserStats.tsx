@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
-import { GAME_EMOJI_MAP } from '@/lib/gameConfig';
+import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal';
 import GameFilterPills, { GameFilter } from '@/components/GameFilterPills';
 import GameStatCards from '@/components/GameStatCards';
@@ -40,6 +40,8 @@ const GAME_BADGE: Record<string, string> = {
     SKYJOW: 'bg-sky-100    dark:bg-sky-900/40    text-sky-700    dark:text-sky-400',
     YAHTZEE: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
     PUISSANCE4: 'bg-rose-100   dark:bg-rose-900/40   text-rose-700   dark:text-rose-400',
+    JUST_ONE: 'bg-teal-100   dark:bg-teal-900/40   text-teal-700   dark:text-teal-400',
+    BATTLESHIP: 'bg-cyan-100   dark:bg-cyan-900/40   text-cyan-700   dark:text-cyan-400',
 };
 
 const GAME_BADGE_ACTIVE: Record<string, string> = {
@@ -49,6 +51,8 @@ const GAME_BADGE_ACTIVE: Record<string, string> = {
     SKYJOW: 'bg-sky-500    text-white border-sky-500',
     YAHTZEE: 'bg-purple-600 text-white border-purple-600',
     PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
+    JUST_ONE: 'bg-teal-600   text-white border-teal-600',
+    BATTLESHIP: 'bg-cyan-600   text-white border-cyan-600',
 };
 
 function CollapseSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
@@ -164,7 +168,7 @@ export default function UserStats({ username, currentUsername }: Props) {
                                             <tr key={a.gameId} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                                 <td className="px-3 py-2 whitespace-nowrap">
                                                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${GAME_BADGE[a.gameType] ?? 'bg-gray-100 text-gray-600'}`}>
-                                                        {GAME_EMOJI_MAP[a.gameType] ?? '🎮'} {a.gameType}
+                                                        {GAME_EMOJI_MAP[a.gameType] ?? '🎮'} {GAME_LABEL_MAP[a.gameType] ?? a.gameType}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 py-2 whitespace-nowrap">

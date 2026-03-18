@@ -20,7 +20,7 @@ export const GAME_CONFIG = {
         label: 'Taboo',
         icon: '🗣️',
         higherIsBetter: true,
-        scoreLabel: 'Victoires',
+        scoreLabel: 'Points',
         description: "Le score représente le nombre de mots devinés par ton équipe sur l'ensemble des parties. Un mot deviné ou qui se fait buzzer comme piégé rapporte 10 point à l'équipe.",
     },
     quiz: {
@@ -44,21 +44,33 @@ export const GAME_CONFIG = {
         label: 'Puissance 4',
         icon: '🔴',
         higherIsBetter: true,
-        scoreLabel: 'Points',
-        description: 'Classement basé sur le nombre de victoires cumulées. Chaque victoire rapporte 10 points. En cas de match nul, aucun point n\'est attribué.',
+        scoreLabel: 'Victoires',
+        description: 'Classement basé sur le nombre de victoires cumulées. Chaque victoire rapporte 1 point, et le total de points détermine le classement général.',
     },
     'just-one': {
         gameType: 'JUST_ONE' as const,
         label: 'Just One',
         icon: '🔤',
         higherIsBetter: true,
-        scoreLabel: 'Score',
+        scoreLabel: 'Score moyen',
         description: 'Jeu coopératif : les joueurs écrivent chacun un indice pour faire deviner un mot mystère. Les indices identiques sont annulés. Le score final (sur 13) reflète la performance collective de l\'équipe.',
+    },
+    'battleship': {
+        gameType: 'BATTLESHIP' as const,
+        label: 'Bataille Navale',
+        icon: '🚢',
+        higherIsBetter: true,
+        scoreLabel: 'Victoires',
+        description: '',
     },
 } as const;
 
 export const GAME_EMOJI_MAP = Object.fromEntries(
     Object.values(GAME_CONFIG).map(g => [g.gameType, g.icon])
+) as Record<string, string>;
+
+export const GAME_LABEL_MAP = Object.fromEntries(
+    Object.values(GAME_CONFIG).map(g => [g.gameType, g.label])
 ) as Record<string, string>;
 
 export type GameType = keyof typeof GAME_CONFIG;
@@ -77,16 +89,19 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     yahtzee: [2, 3, 4, 5, 6, 7, 8],
     puissance4: [2],
     'just-one': [3, 4, 5, 6, 7],
+    battleship: [2],
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
     puissance4: 2,
+    battleship: 2,
     taboo: 4,
     'just-one': 3,
 };
 
 export const EXACT_PLAYERS: Partial<Record<GameType, number>> = {
     puissance4: 2,
+    battleship: 2,
 };
 
 export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
@@ -102,4 +117,5 @@ export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string) => string>>
     yahtzee: (id) => `/yahtzee/${id}`,
     puissance4: (id) => `/puissance4/${id}`,
     'just-one': (id) => `/just-one/${id}`,
+    'battleship': (id) => `/battleship/${id}`,
 };

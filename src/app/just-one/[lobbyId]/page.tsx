@@ -219,9 +219,13 @@ export default function JustOnePage() {
                         </p>
                         <p className="text-lg text-gray-500 dark:text-slate-400 mt-1">{finalScore.level}</p>
                     </div>
-                    <button onClick={() => router.push('/')}
+                    <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
                         className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all">
-                        Retour à l'accueil
+                        Retour au lobby
+                    </button>
+                    <button onClick={() => router.push('/')}
+                        className="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold text-sm transition-all">
+                        Quitter
                     </button>
                 </div>
             );

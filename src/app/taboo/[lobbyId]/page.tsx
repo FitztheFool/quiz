@@ -265,11 +265,11 @@ export default function TabooGamePage() {
                 <div className="flex flex-col gap-3 w-full max-w-xs">
                     <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
                         className="w-full px-8 py-3 rounded-xl bg-green-500 hover:bg-green-400 font-bold text-lg transition-colors shadow-lg shadow-green-500/20">
-                        🔄 Rejouer
+                        Retour au lobby
                     </button>
-                    <button onClick={() => router.push('/dashboard')}
+                    <button onClick={() => router.push('/')}
                         className="w-full px-8 py-3 rounded-xl bg-white/10 hover:bg-white/20 font-semibold transition-colors">
-                        🏠 Retour au dashboard
+                        Quitter
                     </button>
                 </div>
             </div>

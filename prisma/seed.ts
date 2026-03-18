@@ -724,6 +724,79 @@ async function main() {
     }
     console.log(`✅ ${totalP4Games} parties Puissance 4 créées`);
 
+    // ─── 11. Parties JUST ONE ─────────────────────────────────────────────────
+    console.log('\n🔤 Création des parties Just One...');
+
+    const justOnePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const totalJustOneGames = 35;
+
+    for (let g = 0; g < totalJustOneGames; g++) {
+        const gameId = crypto.randomUUID();
+        const baseDaysAgo = Math.floor((g / totalJustOneGames) * 60);
+        const jitterHours = Math.floor(Math.random() * 24);
+        const gameDate = new Date(Date.now() - baseDaysAgo * 24 * 60 * 60 * 1000 - jitterHours * 60 * 60 * 1000);
+
+        const playerCount = Math.floor(Math.random() * 5) + 3; // 3 à 7 joueurs
+        const participants = shufflePlayers(justOnePlayers).slice(0, Math.min(playerCount, justOnePlayers.length));
+
+        // Score coopératif : mots devinés sur 13
+        const score = Math.floor(Math.random() * 10) + 3; // 3 à 12
+
+        for (let p = 0; p < participants.length; p++) {
+            await prisma.attempt.create({
+                data: {
+                    userId: participants[p].id,
+                    score,
+                    gameType: 'JUST_ONE',
+                    placement: null,
+                    gameId,
+                    quizId: null,
+                    trapScore: 0,
+                    createdAt: new Date(gameDate.getTime() + p * 1000),
+                },
+            });
+        }
+        console.log(`  ✅ Partie Just One ${g + 1}/${totalJustOneGames} — ${participants.length} joueurs — score: ${score}/13`);
+    }
+    console.log(`✅ ${totalJustOneGames} parties Just One créées`);
+
+    // ─── 12. Parties BATTLESHIP ───────────────────────────────────────────────
+    console.log('\n🚢 Création des parties Bataille Navale...');
+
+    const battleshipPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const totalBattleshipGames = 30;
+
+    for (let g = 0; g < totalBattleshipGames; g++) {
+        const gameId = crypto.randomUUID();
+        const baseDaysAgo = Math.floor((g / totalBattleshipGames) * 60);
+        const jitterHours = Math.floor(Math.random() * 24);
+        const gameDate = new Date(Date.now() - baseDaysAgo * 24 * 60 * 60 * 1000 - jitterHours * 60 * 60 * 1000);
+
+        const shuffled = shufflePlayers(battleshipPlayers);
+        const player1 = shuffled[0];
+        const player2 = shuffled[1];
+        const winnerIndex = Math.random() < 0.5 ? 0 : 1;
+        const players = [player1, player2];
+
+        for (let p = 0; p < 2; p++) {
+            const isWinner = p === winnerIndex;
+            await prisma.attempt.create({
+                data: {
+                    userId: players[p].id,
+                    score: isWinner ? 10 : 0,
+                    gameType: 'BATTLESHIP',
+                    placement: isWinner ? 1 : 2,
+                    gameId,
+                    quizId: null,
+                    trapScore: 0,
+                    createdAt: new Date(gameDate.getTime() + p * 1000),
+                },
+            });
+        }
+        console.log(`  ✅ Partie Battleship ${g + 1}/${totalBattleshipGames} — ${player1.username} vs ${player2.username} — gagnant: ${players[winnerIndex].username}`);
+    }
+    console.log(`✅ ${totalBattleshipGames} parties Bataille Navale créées`);
+
     console.log(`\n✨ Seed terminé ! ${createdCount} quiz créés avec succès.`);
 }
 

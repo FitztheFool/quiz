@@ -29,6 +29,7 @@ enum GameType {
   YAHTZEE
   PUISSANCE4
   JUST_ONE
+  BATTLESHIP
 }
 
 model Account {

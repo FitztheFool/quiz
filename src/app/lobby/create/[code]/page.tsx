@@ -182,6 +182,9 @@ export default function LobbyCodePage() {
     const [quizTimePerQuestion, setQuizTimePerQuestion] = useState(15);
     const [skyjowEliminateRows, setSkyjowEliminateRows] = useState(false);
     const [teams, setTeams] = useState<Record<string, 0 | 1> | null>(null);
+    const [gridSize, setGridSize] = useState(10);
+    const [turnTime, setTurnTime] = useState(30);
+    const [autoPlace, setAutoPlace] = useState(true);
     const { setLobbyId } = useChat();
 
     useEffect(() => {
@@ -441,6 +444,28 @@ export default function LobbyCodePage() {
                             )}
                             <Toggle checked={unoStackable} onChange={v => { setUnoStackable(v); socket?.emit('lobby:setUnoOptions', { stackable: v }); }} label="Cartes empilables (+2/+4)" disabled={!isHost} />
                             {unoTeamMode !== '2v2' && <Toggle checked={unoJumpIn} onChange={v => { setUnoJumpIn(v); socket?.emit('lobby:setUnoOptions', { jumpIn: v }); }} label="Jump-in" disabled={!isHost} />}
+                        </div>
+                    )}
+
+                    {/* Options Bataille Navale */}
+                    {gameType === 'battleship' && (
+                        <div className="bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30">
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Bataille Navale</p>
+                            <OptionRow label="Taille de la grille">
+                                <OptionSelect
+                                    value={gridSize}
+                                    onChange={v => { setGridSize(Number(v)); socket?.emit('lobby:setBattleshipOptions', { gridSize: Number(v) }); }}
+                                    options={[8, 10, 12].map(n => ({ v: n, label: `${n}×${n}` }))}
+                                />
+                            </OptionRow>
+                            <OptionRow label="Temps par tour">
+                                <OptionSelect
+                                    value={turnTime}
+                                    onChange={v => { setTurnTime(Number(v)); socket?.emit('lobby:setBattleshipOptions', { turnTime: Number(v) }); }}
+                                    options={[10, 20, 30, 60, 90, 120].map(t => ({ v: t, label: `${t}s` }))}
+                                />
+                            </OptionRow>
+                            <Toggle checked={autoPlace} onChange={v => { setAutoPlace(v); socket?.emit('lobby:setBattleshipOptions', { autoPlace: v }); }} label="Placement automatique" />
                         </div>
                     )}
 

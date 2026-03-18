@@ -373,11 +373,11 @@ export default function UnoPage() {
 
                     <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
                         className="mt-5 w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
-                        🔄 Retour au lobby
+                        Retour au lobby
                     </button>
-                    <button onClick={() => router.push('/dashboard')}
+                    <button onClick={() => router.push('/')}
                         className="mt-3 w-full py-3 rounded-xl bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition">
-                        🏠 Retour au dashboard
+                        Quitter
                     </button>
                 </div>
             </div>
@@ -411,11 +411,11 @@ export default function UnoPage() {
                     </div>
                     <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
                         className="w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
-                        🔄 Retour au lobby
+                        Retour au lobby
                     </button>
-                    <button onClick={() => router.push('/dashboard')}
+                    <button onClick={() => router.push('/')}
                         className="mt-3 w-full py-3 rounded-xl bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition">
-                        🏠 Retour au dashboard
+                        Quitter
                     </button>
                 </div>
             </div>

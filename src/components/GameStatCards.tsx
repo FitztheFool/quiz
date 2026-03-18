@@ -1,5 +1,5 @@
 'use client';
-import { GAME_EMOJI_MAP } from '@/lib/gameConfig';
+import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
 
 interface GameStat {
     count: number;
@@ -20,6 +20,8 @@ const GAME_BADGE: Record<string, string> = {
     SKYJOW: 'bg-sky-100    dark:bg-sky-900/40    text-sky-700    dark:text-sky-400',
     YAHTZEE: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
     PUISSANCE4: 'bg-rose-100   dark:bg-rose-900/40   text-rose-700   dark:text-rose-400',
+    JUST_ONE: 'bg-teal-100   dark:bg-teal-900/40   text-teal-700   dark:text-teal-400',
+    BATTLESHIP: 'bg-cyan-100   dark:bg-cyan-900/40   text-cyan-700   dark:text-cyan-400',
 };
 
 export default function GameStatCards({ gameStats, columns = 4 }: Props) {
@@ -41,7 +43,7 @@ export default function GameStatCards({ gameStats, columns = 4 }: Props) {
                     >
                         <div className="text-2xl flex-shrink-0">{GAME_EMOJI_MAP[type] ?? '🎮'}</div>
                         <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-bold uppercase tracking-widest opacity-70 mb-1.5">{type}</div>
+                            <div className="text-[11px] font-bold uppercase tracking-widest opacity-70 mb-1.5">{GAME_LABEL_MAP[type] ?? type}</div>
                             <div className="flex items-center gap-3">
 
                                 {/* Colonne gauche : parties + manches pour Taboo */}
@@ -62,7 +64,7 @@ export default function GameStatCards({ gameStats, columns = 4 }: Props) {
                                 <div>
                                     <div className="text-lg font-bold tabular-nums leading-none">{points.toLocaleString()}</div>
                                     <div className="text-[11px] opacity-60 mt-0.5">points</div>
-                                    {wins !== undefined && count > 0 && (
+                                    {wins !== undefined && count > 0 && type !== 'JUST_ONE' && (
                                         <div className={`text-xs font-bold mt-1 ${wins / count >= 0.6
                                             ? 'text-green-400'
                                             : wins / count >= 0.4
