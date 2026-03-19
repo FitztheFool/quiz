@@ -1,3 +1,4 @@
+// src/app/api/quiz/[id]/route.ts
 // app/api/quiz/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';

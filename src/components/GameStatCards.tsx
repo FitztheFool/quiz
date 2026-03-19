@@ -1,3 +1,4 @@
+// src/components/GameStatCards.tsx
 'use client';
 import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
 

@@ -1,3 +1,4 @@
+// src/lib/prompt.ts
 const POINTS_BY_DIFFICULTY: Record<string, { mcq: number; true_false: number; text: number }> = {
     facile: { mcq: 1, true_false: 1, text: 2 },
     normal: { mcq: 2, true_false: 1, text: 3 },

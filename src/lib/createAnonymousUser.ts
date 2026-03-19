@@ -1,3 +1,4 @@
+// src/lib/createAnonymousUser.ts
 import prisma from '@/lib/prisma';
 import { randomInt } from 'crypto';
 

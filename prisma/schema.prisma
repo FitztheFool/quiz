@@ -176,6 +176,7 @@ model Attempt {
   quizId String?
   quiz   Quiz?   @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, gameId])
   @@index([userId, quizId])
   @@index([userId, gameType])
   @@map("attempts")

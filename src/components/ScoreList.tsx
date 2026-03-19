@@ -1,3 +1,4 @@
+// src/components/ScoreList.tsx
 import Link from 'next/link';
 import { GAME_CONFIG } from '@/lib/gameConfig';
 

@@ -1,11 +1,12 @@
+// src/app/skyjow/[lobbyId]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { getLobbySocket } from '@/lib/socket';
-import { io as socketIO, Socket } from 'socket.io-client';
+import { getSkyjowSocket } from '@/lib/socket';
+import type { Socket } from 'socket.io-client';
 import { useChat } from '@/context/ChatContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -54,18 +55,6 @@ function cardLabel(value: number | null, revealed: boolean, removed: boolean): s
     return String(value);
 }
 
-// ── Connexion au skyjow server ─────────────────────────────────────────────────
-
-let skyjowSocket: Socket | null = null;
-function getskyjowSocket(): Socket {
-    if (!skyjowSocket) {
-        skyjowSocket = socketIO(process.env.NEXT_PUBLIC_SKYJOW_SERVER_URL ?? 'http://localhost:10004', {
-            transports: ['websocket'],
-            autoConnect: true,
-        });
-    }
-    return skyjowSocket;
-}
 
 // ── Composant carte ───────────────────────────────────────────────────────────
 
@@ -190,7 +179,8 @@ export default function skyjowGamePage() {
 
     useEffect(() => {
         if (!lobbyId || status !== 'authenticated' || !userId) return;
-        const sock = getskyjowSocket();
+        const sock = getSkyjowSocket();
+        if (!sock) return;
         skyjowRef.current = sock;
 
         if (!joinedRef.current) {

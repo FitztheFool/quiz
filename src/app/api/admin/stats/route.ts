@@ -1,3 +1,4 @@
+// src/app/api/admin/stats/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
 import { GAME_CONFIG } from '@/lib/gameConfig';

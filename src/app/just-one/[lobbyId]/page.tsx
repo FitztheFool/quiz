@@ -1,3 +1,4 @@
+// src/app/just-one/[lobbyId]/page.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -5,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getJustOneSocket } from '@/lib/socket';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useChat } from '@/context/ChatContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -104,6 +106,13 @@ export default function JustOnePage() {
     const [showHistory, setShowHistory] = useState(false);
 
     const [currentWordIndex, setCurrentWordIndex] = useState<number | null>(null);
+
+    const { setLobbyId } = useChat();
+
+    useEffect(() => {
+        setLobbyId(lobbyId);
+        return () => setLobbyId(null);
+    }, [lobbyId]);
 
     const me = session?.user?.id ?? '';
     const myName = session?.user?.username ?? session?.user?.email ?? 'Moi';
@@ -265,7 +274,7 @@ export default function JustOnePage() {
                         <div className="flex justify-center gap-3 flex-wrap">
                             {[1, 2, 3, 4, 5].map(i => (
                                 <button key={i}
-                                    onClick={() => socket.emit('game:pickWord', { roomId: lobbyId, wordIndex: i - 1 })}
+                                    onClick={() => socket?.emit('game:pickWord', { roomId: lobbyId, wordIndex: i - 1 })}
                                     className="w-14 h-14 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold transition-all shadow-lg shadow-blue-500/20 hover:scale-105">
                                     {i}
                                 </button>
@@ -339,7 +348,7 @@ export default function JustOnePage() {
                                 onChange={e => setMyClue(e.target.value.toUpperCase())}
                                 onKeyDown={e => {
                                     if (e.key === 'Enter' && myClue.trim()) {
-                                        socket.emit('game:submitClue', { roomId: lobbyId, clue: myClue.trim() });
+                                        socket?.emit('game:submitClue', { roomId: lobbyId, clue: myClue.trim() });
                                         setClueSubmitted(true);
                                     }
                                 }}
@@ -351,7 +360,7 @@ export default function JustOnePage() {
                             <button
                                 onClick={() => {
                                     if (!myClue.trim()) return;
-                                    socket.emit('game:submitClue', { roomId: lobbyId, clue: myClue.trim() });
+                                    socket?.emit('game:submitClue', { roomId: lobbyId, clue: myClue.trim() });
                                     setClueSubmitted(true);
                                 }}
                                 disabled={!myClue.trim()}
@@ -420,7 +429,7 @@ export default function JustOnePage() {
                             onChange={e => setMyGuess(e.target.value.toUpperCase())}
                             onKeyDown={e => {
                                 if (e.key === 'Enter' && myGuess.trim()) {
-                                    socket.emit('game:submitGuess', { roomId: lobbyId, guess: myGuess.trim() });
+                                    socket?.emit('game:submitGuess', { roomId: lobbyId, guess: myGuess.trim() });
                                 }
                             }}
                             placeholder="Ta réponse…"
@@ -430,14 +439,14 @@ export default function JustOnePage() {
                         />
                         <div className="flex gap-3">
                             <button
-                                onClick={() => socket.emit('game:submitGuess', { roomId: lobbyId, guess: null })}
+                                onClick={() => socket?.emit('game:submitGuess', { roomId: lobbyId, guess: null })}
                                 className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-slate-600/50 text-gray-500 dark:text-slate-400 text-sm font-semibold hover:border-gray-400 transition-all">
                                 ⏭️ Passer
                             </button>
                             <button
                                 onClick={() => {
                                     if (!myGuess.trim()) return;
-                                    socket.emit('game:submitGuess', { roomId: lobbyId, guess: myGuess.trim() });
+                                    socket?.emit('game:submitGuess', { roomId: lobbyId, guess: myGuess.trim() });
                                 }}
                                 disabled={!myGuess.trim()}
                                 className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition-all">

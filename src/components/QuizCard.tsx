@@ -1,3 +1,4 @@
+// src/components/QuizCard.tsx
 import Link from 'next/link';
 
 interface QuizCardProps {

@@ -1,3 +1,4 @@
+// src/app/api/quiz/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { groqClient, GROQ_MODEL } from '@/lib/openai';
 import { buildPrompt } from '@/lib/prompt';

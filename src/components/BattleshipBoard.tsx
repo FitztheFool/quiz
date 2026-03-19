@@ -1,3 +1,4 @@
+// src/components/BattleshipBoard.tsx
 'use client';
 
 import React, { useCallback, useMemo } from 'react';

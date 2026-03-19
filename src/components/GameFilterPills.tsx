@@ -1,3 +1,4 @@
+// src/components/GameFilterPills.tsx
 'use client';
 
 import { GAME_CONFIG } from '@/lib/gameConfig';

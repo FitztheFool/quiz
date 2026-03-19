@@ -1,3 +1,4 @@
+// src/app/quiz/[id]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 

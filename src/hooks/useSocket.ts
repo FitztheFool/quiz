@@ -1,3 +1,4 @@
+// src/hooks/useSocket.ts
 // hooks/useSocket.ts
 import { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";

@@ -1,3 +1,4 @@
+// src/types/dashboard.ts
 export type TabType =
     | 'available'
     | 'my-quizzes'

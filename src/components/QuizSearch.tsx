@@ -1,3 +1,4 @@
+// src/components/QuizSearch.tsx
 import { useRef, useState } from "react";
 
 function QuizSearch({ isHost, onSelect, selectedId }: { isHost: boolean; onSelect: (id: string, title: string) => void; selectedId?: string }) {

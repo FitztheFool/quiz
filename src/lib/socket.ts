@@ -1,3 +1,4 @@
+// src/lib/socket.ts
 import { io, Socket } from "socket.io-client";
 
 let lobbySocket: Socket | null = null;
@@ -70,11 +71,9 @@ export function getPuissance4Socket(): Socket | null {
     return puissance4Socket;
 }
 
-export function getJustOneSocket(): Socket {
-    if (!justOneSocket) {
-        justOneSocket = io(process.env.NEXT_PUBLIC_JUSTONE_SERVER_URL ?? 'http://localhost:10007', {
-            transports: ['websocket'],
-        });
-    }
+export function getJustOneSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!justOneSocket) justOneSocket = createSocket(process.env.NEXT_PUBLIC_JUSTONE_SERVER_URL ?? "http://localhost:10007", "Just One Socket");
+    if (!justOneSocket.connected) justOneSocket.connect();
     return justOneSocket;
 }

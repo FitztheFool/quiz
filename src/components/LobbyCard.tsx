@@ -1,3 +1,4 @@
+// src/components/LobbyCard.tsx
 import { GAME_CONFIG } from '@/lib/gameConfig';
 
 const gameTypeEmojis: Record<string, string> = {

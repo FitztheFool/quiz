@@ -1,3 +1,4 @@
+// src/components/UserProfilePage.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useEffect, useState } from 'react';

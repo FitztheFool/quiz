@@ -1,3 +1,4 @@
+// src/app/puissance4/[lobbyId]/page.tsx
 'use client';
 
 /**

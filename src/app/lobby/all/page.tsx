@@ -1,3 +1,4 @@
+// src/app/lobby/all/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useState, useEffect } from 'react';

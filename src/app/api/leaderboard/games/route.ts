@@ -1,3 +1,4 @@
+// src/app/api/leaderboard/games/route.ts
 // app/api/leaderboard/games/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';

@@ -1,3 +1,4 @@
+// src/app/api/taboo/[word]/route.ts
 // src/app/api/taboo/word/route.ts
 
 import { NextResponse } from 'next/server';

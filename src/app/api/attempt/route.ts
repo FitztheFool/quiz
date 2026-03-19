@@ -1,3 +1,4 @@
+// src/app/api/attempt/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
@@ -11,8 +12,17 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Paramètres manquant' }, { status: 400 });
         }
 
-        const attempt = await prisma.attempt.create({
-            data: {
+        const attempt = await prisma.attempt.upsert({
+            where: {
+                userId_gameId: { userId, gameId }  // contrainte unique dans le schema
+            },
+            update: {
+                score,
+                placement: placement ?? null,
+                trapScore: trapScore ?? 0,
+                rounds: rounds ?? 0,
+            },
+            create: {
                 userId,
                 gameType,
                 gameId,

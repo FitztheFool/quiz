@@ -1,3 +1,4 @@
+// src/app/yahtzee/[code]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 

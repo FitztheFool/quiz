@@ -1,3 +1,4 @@
+// src/app/taboo/[lobbyId]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 

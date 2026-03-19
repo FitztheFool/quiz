@@ -1,3 +1,4 @@
+// src/app/profil/[username]/page.tsx
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';

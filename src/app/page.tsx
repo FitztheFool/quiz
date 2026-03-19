@@ -1,3 +1,4 @@
+// src/app/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -54,7 +55,7 @@ export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [categoryId, setCategoryId] = useState('');
     const [page, setPage] = useState(1);
-    const [code, setCode] = useState<string | null>(null)
+    const [code] = useState(() => generateCode(8))
 
     const fetchQuizzes = useCallback(async (p = 1, s = '', cat = '') => {
         const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
@@ -70,10 +71,6 @@ export default function HomePage() {
             setQuizPoints(prev => ({ ...prev, ...computePoints(list) }));
         }
     }, []);
-
-    useEffect(() => {
-        setCode(generateCode(8))
-    }, [])
 
     useEffect(() => {
         let cancelled = false;

@@ -1,3 +1,4 @@
+// src/components/FloatingChat.tsx
 // components/FloatingChat.tsx
 'use client';
 

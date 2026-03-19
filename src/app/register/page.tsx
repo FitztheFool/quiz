@@ -1,3 +1,4 @@
+// src/app/register/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 

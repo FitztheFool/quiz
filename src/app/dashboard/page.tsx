@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 'use client';
 import { useSession } from 'next-auth/react';
 import LoadingSpinner from '@/components/LoadingSpinner';

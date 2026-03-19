@@ -1,3 +1,4 @@
+// src/app/api/user/[username]/stats/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { GAME_CONFIG } from '@/lib/gameConfig';

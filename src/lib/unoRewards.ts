@@ -1,3 +1,4 @@
+// src/lib/unoRewards.ts
 export const UNO_REWARDS: Record<number, number> = {
     1: 8,
     2: 5,

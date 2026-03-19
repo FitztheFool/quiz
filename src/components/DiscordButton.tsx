@@ -1,3 +1,4 @@
+// src/components/DiscordButton.tsx
 import { signIn } from 'next-auth/react';
 
 interface DiscordButtonProps {

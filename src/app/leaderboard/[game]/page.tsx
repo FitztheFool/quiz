@@ -1,3 +1,4 @@
+// src/app/leaderboard/[game]/page.tsx
 import { redirect } from 'next/navigation';
 import LeaderboardView from '@/components/LeaderboardView';
 
