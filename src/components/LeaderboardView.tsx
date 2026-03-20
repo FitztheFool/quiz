@@ -5,11 +5,11 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { GAME_CONFIG } from '@/lib/gameConfig';
+import { GAME_CONFIG, GameType as Game } from '@/lib/gameConfig';
 import Pagination from '@/components/Pagination';
 import GameFilterPills, { GameFilter } from '@/components/GameFilterPills';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
-type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz' | 'yahtzee' | 'puissance4' | 'just-one' | 'battleship';
 
 interface LeaderboardEntry {
     rank: number;
@@ -47,6 +47,7 @@ const GAME_BADGE_ACTIVE: Record<string, string> = {
     PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
     JUST_ONE: 'bg-teal-600   text-white border-teal-600',
     BATTLESHIP: 'bg-cyan-600   text-white border-cyan-600',
+    DIAMANT:    'bg-amber-500  text-white border-amber-500',
 };
 
 interface Props {
@@ -172,9 +173,9 @@ export default function LeaderboardView({ game }: Props) {
 
                 {/* Tableau */}
                 {initialLoading ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-400 mb-3" />
-                        <p className="text-sm">Chargement du classement…</p>
+                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <LoadingSpinner fullScreen={false} />
+                        <p className="text-sm text-gray-400">Chargement du classement…</p>
                     </div>
                 ) : leaderboard.length === 0 ? (
                     <div className="text-center py-12">
@@ -186,7 +187,7 @@ export default function LeaderboardView({ game }: Props) {
                     <div className={`relative transition-opacity duration-150 ${refetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                         {refetching && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center">
-                                <div className="w-6 h-6 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+                                <LoadingSpinner fullScreen={false} />
                             </div>
                         )}
 

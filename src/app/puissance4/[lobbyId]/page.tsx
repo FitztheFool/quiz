@@ -14,6 +14,7 @@ import { useSession } from 'next-auth/react';
 import { getPuissance4Socket } from '@/lib/socket';
 import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -169,13 +170,7 @@ export default function Puissance4Page() {
 
     const handleRematch = () => socket?.emit('p4:rematch', { lobbyId });
 
-    if (status === 'loading') {
-        return (
-            <div className="min-h-screen bg-[#0f0c29] flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full border-4 border-white/20 border-t-white animate-spin" />
-            </div>
-        );
-    }
+    if (status === 'loading') return <LoadingSpinner />;
 
     const winnerPlayer = gameState?.winner !== null && gameState?.winner !== 'draw'
         ? players.find(p => p.colorIndex === gameState?.winner)
@@ -330,9 +325,8 @@ export default function Puissance4Page() {
 
                 {/* ── En attente d'un joueur ── */}
                 {gameState?.status === 'waiting' && !playerLeft && (
-                    <div className="flex flex-col items-center gap-3 text-white/60">
-                        <div className="w-8 h-8 rounded-full border-4 border-white/20 border-t-white/60 animate-spin" />
-                        <p className="text-sm">En attente d'un adversaire…</p>
+                    <div className="flex flex-col items-center gap-2">
+                        <LoadingSpinner fullScreen={false} message="En attente d'un adversaire…" />
                         <p className="text-xs text-white/30 font-mono">{lobbyId}</p>
                     </div>
                 )}

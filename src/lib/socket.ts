@@ -9,6 +9,7 @@ let skyjowSocket: Socket | null = null;
 let yahtzeeSocket: Socket | null = null;
 let puissance4Socket: Socket | null = null;
 let justOneSocket: Socket | null = null;
+let impostorSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -76,4 +77,11 @@ export function getJustOneSocket(): Socket | null {
     if (!justOneSocket) justOneSocket = createSocket(process.env.NEXT_PUBLIC_JUSTONE_SERVER_URL ?? "http://localhost:10007", "Just One Socket");
     if (!justOneSocket.connected) justOneSocket.connect();
     return justOneSocket;
+}
+
+export function getImpostorSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!impostorSocket) impostorSocket = createSocket(process.env.NEXT_PUBLIC_IMPOSTOR_SERVER_URL ?? "http://localhost:10010", "Impostor Socket");
+    if (!impostorSocket.connected) impostorSocket.connect();
+    return impostorSocket;
 }

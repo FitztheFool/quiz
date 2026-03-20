@@ -4,9 +4,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useDiamant, Card, PlayerInfo, FinalScore } from '@/hooks/useDiamant';
+import { useDiamant, Card, PlayerInfo } from '@/hooks/useDiamant';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useChat } from '@/context/ChatContext';
+import GameOverModal from '@/components/GameOverModal';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -47,13 +48,13 @@ function TimerBar({ endsAt, duration }: { endsAt: number; duration: number }) {
 
     return (
         <div className="w-full space-y-1">
-            <div className="flex justify-between text-xs text-stone-400">
+            <div className="flex justify-between text-xs text-stone-500 dark:text-stone-400">
                 <span>Temps pour décider</span>
-                <span className={`font-mono font-bold ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : ''}`}>
+                <span className={`font-mono font-bold ${timeLeft <= 5 ? 'text-red-500 dark:text-red-400 animate-pulse' : ''}`}>
                     {timeLeft}s
                 </span>
             </div>
-            <div className="w-full h-2 bg-stone-800 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all duration-200 ${color}`}
                     style={{ width: `${pct}%` }}
@@ -86,9 +87,9 @@ function ExpeditionCard({
         <div
             className={`relative flex-shrink-0 w-20 rounded-xl border-2 transition-all duration-300
                 ${isLast ? 'scale-110 shadow-2xl z-10' : 'opacity-80'}
-                ${isTreasure ? 'border-amber-600 bg-amber-950/60' : ''}
-                ${isDanger ? 'border-red-700 bg-red-950/60' : ''}
-                ${isRelicCard ? 'border-emerald-600 bg-emerald-950/60' : ''}
+                ${isTreasure ? 'border-amber-600 bg-amber-50/80 dark:bg-amber-950/60' : ''}
+                ${isDanger ? 'border-red-600 bg-red-50/80 dark:bg-red-950/60' : ''}
+                ${isRelicCard ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/60' : ''}
             `}
             style={{ minHeight: '96px' }}
         >
@@ -96,7 +97,7 @@ function ExpeditionCard({
                 {isTreasure && (
                     <>
                         <span className="text-2xl">💎</span>
-                        <span className="text-amber-300 font-black text-lg leading-none">{card.value}</span>
+                        <span className="text-amber-700 dark:text-amber-300 font-black text-lg leading-none">{card.value}</span>
                         <span className="text-amber-600 text-[10px]">rubis</span>
                         {rubisOnCard > 0 && (
                             <div className="absolute -top-2 -right-2 bg-amber-500 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
@@ -108,7 +109,7 @@ function ExpeditionCard({
                 {isDanger && (
                     <>
                         <span className="text-2xl">{DANGER_EMOJI[card.danger!] ?? '⚠️'}</span>
-                        <span className="text-red-300 text-[10px] text-center leading-tight font-semibold">
+                        <span className="text-red-700 dark:text-red-300 text-[10px] text-center leading-tight font-semibold">
                             {DANGER_LABELS[card.danger!] ?? card.danger}
                         </span>
                     </>
@@ -116,7 +117,7 @@ function ExpeditionCard({
                 {isRelicCard && (
                     <>
                         <span className="text-2xl">🏺</span>
-                        <span className="text-emerald-300 text-[10px] text-center leading-tight font-semibold">
+                        <span className="text-emerald-700 dark:text-emerald-300 text-[10px] text-center leading-tight font-semibold">
                             Relique
                         </span>
                         {isRelic && (
@@ -128,7 +129,7 @@ function ExpeditionCard({
                 )}
             </div>
             {/* Index */}
-            <div className="absolute bottom-1 left-0 right-0 text-center text-[9px] text-stone-600 font-mono">
+            <div className="absolute bottom-1 left-0 right-0 text-center text-[9px] text-stone-400 dark:text-stone-600 font-mono">
                 #{index + 1}
             </div>
         </div>
@@ -140,31 +141,31 @@ function ExpeditionCard({
 function PlayerRow({ player, isMe }: { player: PlayerInfo; isMe: boolean }) {
     return (
         <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all
-            ${!player.inCave ? 'opacity-50 border-stone-800 bg-stone-900/40' : ''}
-            ${player.inCave && isMe ? 'border-amber-600/50 bg-amber-950/30' : ''}
-            ${player.inCave && !isMe ? 'border-stone-700 bg-stone-900/60' : ''}
+            ${!player.inCave ? 'opacity-50 border-stone-200 dark:border-stone-800 bg-stone-100/40 dark:bg-stone-900/40' : ''}
+            ${player.inCave && isMe ? 'border-amber-400/50 dark:border-amber-600/50 bg-amber-50/80 dark:bg-amber-950/30' : ''}
+            ${player.inCave && !isMe ? 'border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60' : ''}
         `}>
             {/* Status indicator */}
-            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${player.inCave ? 'bg-green-400 animate-pulse' : 'bg-stone-600'}`} />
+            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${player.inCave ? 'bg-green-500 dark:bg-green-400 animate-pulse' : 'bg-stone-300 dark:bg-stone-600'}`} />
 
             {/* Name */}
-            <span className={`text-sm font-semibold flex-1 ${isMe ? 'text-amber-300' : 'text-stone-300'}`}>
+            <span className={`text-sm font-semibold flex-1 ${isMe ? 'text-amber-700 dark:text-amber-300' : 'text-stone-700 dark:text-stone-300'}`}>
                 {player.username}
-                {isMe && <span className="text-stone-500 text-xs font-normal ml-1">(moi)</span>}
+                {isMe && <span className="text-stone-400 dark:text-stone-500 text-xs font-normal ml-1">(moi)</span>}
             </span>
 
             {/* Cave status */}
             {player.inCave ? (
-                <span className="text-xs text-stone-500">
+                <span className="text-xs text-stone-400 dark:text-stone-500">
                     {player.hasDecided ? '✅ décidé' : '⏳ réfléchit…'}
                 </span>
             ) : (
-                <span className="text-xs text-stone-500">🏕️ au camp</span>
+                <span className="text-xs text-stone-400 dark:text-stone-500">🏕️ au camp</span>
             )}
 
             {/* Hand rubies (only for me) */}
             {isMe && player.inCave && (
-                <div className="flex items-center gap-1 text-sm text-amber-400 font-bold">
+                <div className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 font-bold">
                     <span>💎</span>
                     <span>{player.handRubies}</span>
                 </div>
@@ -172,76 +173,13 @@ function PlayerRow({ player, isMe }: { player: PlayerInfo; isMe: boolean }) {
 
             {/* Safe total (only for me) */}
             {isMe && (
-                <div className="flex items-center gap-1 text-sm text-stone-400">
+                <div className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
                     <span>🔒</span>
-                    <span className="font-semibold text-stone-200">
+                    <span className="font-semibold text-stone-700 dark:text-stone-200">
                         {player.safeRubies + player.safeDiamonds * 5}
                     </span>
                 </div>
             )}
-        </div>
-    );
-}
-
-// ── Game over screen ──────────────────────────────────────────────────────────
-
-function GameOverScreen({
-    scores,
-    winnerId,
-    myUserId,
-    onLeave,
-}: {
-    scores: FinalScore[];
-    winnerId: string | null;
-    myUserId: string;
-    onLeave: () => void;
-}) {
-    const won = winnerId === myUserId;
-
-    return (
-        <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-stone-900 border border-stone-700 rounded-2xl p-8 max-w-md w-full mx-4 space-y-6 shadow-2xl">
-                <div className="text-center">
-                    <div className="text-5xl mb-3">{won ? '🏆' : '💀'}</div>
-                    <h2 className={`text-2xl font-black ${won ? 'text-amber-400' : 'text-stone-400'}`}>
-                        {won ? 'Victoire !' : 'Partie terminée'}
-                    </h2>
-                    <p className="text-stone-500 text-sm mt-1">Fin de l'expédition dans la grotte de Tacora</p>
-                </div>
-
-                {/* Scores */}
-                <div className="space-y-2">
-                    {scores.map((s, i) => (
-                        <div
-                            key={s.userId}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border
-                                ${i === 0 ? 'border-amber-600 bg-amber-950/40' : 'border-stone-700 bg-stone-800/40'}
-                            `}
-                        >
-                            <span className="text-lg font-black text-stone-400 w-6 text-center">
-                                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
-                            </span>
-                            <span className={`flex-1 font-semibold text-sm ${s.userId === myUserId ? 'text-amber-300' : 'text-stone-300'}`}>
-                                {s.username}
-                                {s.userId === myUserId && <span className="text-stone-500 text-xs ml-1">(moi)</span>}
-                            </span>
-                            <div className="text-right">
-                                <div className="text-amber-400 font-black">{s.score} pts</div>
-                                <div className="text-stone-500 text-[10px]">
-                                    {s.safeRubies}💎 + {s.safeDiamonds}⬡
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                <button
-                    onClick={onLeave}
-                    className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-black font-black text-sm transition-all"
-                >
-                    Retour à l'accueil
-                </button>
-            </div>
         </div>
     );
 }
@@ -275,14 +213,14 @@ export default function DiamantPage() {
     const canDecide = state.decisionPhase && amInCave && state.myDecision === null;
 
     return (
-        <div className="min-h-screen bg-stone-950 text-white flex flex-col"
-            style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(120,80,20,0.15) 0%, transparent 70%)' }}>
+        <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-white flex flex-col"
+            style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(120,80,20,0.1) 0%, transparent 70%)' }}>
 
             {/* Header */}
-            <header className="border-b border-stone-800 px-4 py-3 flex items-center justify-between gap-4">
+            <header className="border-b border-stone-200 dark:border-stone-800 px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <span className="text-xl">💎</span>
-                    <h1 className="text-base font-black tracking-tight text-amber-100">Diamant</h1>
+                    <h1 className="text-base font-black tracking-tight text-amber-800 dark:text-amber-100">Diamant</h1>
                 </div>
 
                 {/* Round indicator */}
@@ -291,26 +229,26 @@ export default function DiamantPage() {
                         <div
                             key={i}
                             className={`w-2.5 h-2.5 rounded-full transition-all ${i < state.round - 1
-                                ? 'bg-stone-600'
+                                ? 'bg-stone-400 dark:bg-stone-600'
                                 : i === state.round - 1
                                     ? 'bg-amber-400 shadow-lg shadow-amber-400/50'
-                                    : 'bg-stone-800 border border-stone-700'
+                                    : 'bg-stone-200 border border-stone-300 dark:bg-stone-800 dark:border-stone-700'
                                 }`}
                         />
                     ))}
-                    <span className="text-stone-400 text-xs ml-1">
+                    <span className="text-stone-500 dark:text-stone-400 text-xs ml-1">
                         Manche {state.round}/{state.totalRounds}
                     </span>
                 </div>
 
                 {/* My safe score */}
                 {me && (
-                    <div className="flex items-center gap-2 bg-stone-900 border border-stone-700 rounded-xl px-3 py-1.5">
-                        <span className="text-xs text-stone-400">Coffre</span>
-                        <span className="text-amber-400 font-black text-sm">
+                    <div className="flex items-center gap-2 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-1.5">
+                        <span className="text-xs text-stone-500 dark:text-stone-400">Coffre</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-black text-sm">
                             {me.safeRubies + me.safeDiamonds * 5}
                         </span>
-                        <span className="text-stone-600 text-xs">pts</span>
+                        <span className="text-stone-400 dark:text-stone-600 text-xs">pts</span>
                     </div>
                 )}
             </header>
@@ -318,7 +256,7 @@ export default function DiamantPage() {
             {/* Error toast */}
             {state.error && (
                 <div
-                    className="mx-4 mt-3 px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm flex justify-between items-center cursor-pointer"
+                    className="mx-4 mt-3 px-4 py-2 bg-red-50 dark:bg-red-500/20 border border-red-300 dark:border-red-500/50 rounded-lg text-red-600 dark:text-red-300 text-sm flex justify-between items-center cursor-pointer"
                     onClick={clearError}
                 >
                     <span>⚠️ {state.error}</span>
@@ -332,9 +270,8 @@ export default function DiamantPage() {
 
                     {/* Waiting */}
                     {state.phase === 'waiting' && (
-                        <div className="flex flex-col items-center gap-4 py-16">
-                            <div className="w-12 h-12 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-stone-400">En attente des explorateurs…</p>
+                        <div className="py-16">
+                            <LoadingSpinner fullScreen={false} message="En attente des explorateurs…" />
                         </div>
                     )}
 
@@ -344,9 +281,9 @@ export default function DiamantPage() {
 
                             {/* Double danger banner */}
                             {state.doubleDanger && (
-                                <div className="px-4 py-3 bg-red-950/80 border border-red-700 rounded-xl text-center animate-pulse">
+                                <div className="px-4 py-3 bg-red-50/80 dark:bg-red-950/80 border border-red-300 dark:border-red-700 rounded-xl text-center animate-pulse">
                                     <span className="text-2xl mr-2">{DANGER_EMOJI[state.doubleDanger]}</span>
-                                    <span className="text-red-300 font-black">
+                                    <span className="text-red-700 dark:text-red-300 font-black">
                                         Double {DANGER_LABELS[state.doubleDanger]} ! Tout le monde sort les mains vides…
                                     </span>
                                 </div>
@@ -357,9 +294,9 @@ export default function DiamantPage() {
                                 <div className={`px-4 py-2.5 rounded-xl text-center text-sm font-semibold border
                                     ${state.decisionPhase
                                         ? amInCave
-                                            ? 'bg-amber-950/40 border-amber-700/50 text-amber-300'
-                                            : 'bg-stone-900 border-stone-700 text-stone-500'
-                                        : 'bg-stone-900/60 border-stone-800 text-stone-400'
+                                            ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-300/50 dark:border-amber-700/50 text-amber-700 dark:text-amber-300'
+                                            : 'bg-stone-100 dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-500'
+                                        : 'bg-stone-50/60 dark:bg-stone-900/60 border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400'
                                     }`}>
                                     {state.decisionPhase
                                         ? amInCave
@@ -378,17 +315,14 @@ export default function DiamantPage() {
 
                             {/* Timer */}
                             {state.decisionPhase && state.decisionEndsAt && amInCave && (
-                                <TimerBar endsAt={state.decisionEndsAt} duration={15} />
+                                <TimerBar endsAt={state.decisionEndsAt} duration={45} />
                             )}
 
                             {/* Cards path */}
                             {state.revealedCards.length > 0 && (
                                 <div className="relative">
-                                    {/* Cave path background */}
-                                    <div className="absolute inset-0 rounded-2xl"
-                                        style={{ background: 'linear-gradient(90deg, rgba(30,20,10,0.8) 0%, rgba(20,15,5,0.6) 100%)' }} />
-                                    <div className="relative p-4 rounded-2xl border border-stone-800">
-                                        <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-3 font-semibold">
+                                    <div className="p-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-amber-50/50 dark:bg-stone-950/60">
+                                        <p className="text-[10px] text-stone-400 dark:text-stone-600 uppercase tracking-widest mb-3 font-semibold">
                                             Chemin de la grotte — {state.revealedCards.length} carte{state.revealedCards.length > 1 ? 's' : ''}
                                         </p>
                                         <div className="flex gap-2 overflow-x-auto pb-2 items-center">
@@ -410,9 +344,9 @@ export default function DiamantPage() {
                             {/* Last card info */}
                             {state.lastCard && !state.doubleDanger && (
                                 <div className={`px-4 py-3 rounded-xl border text-sm
-                                    ${state.lastCard.type === 'treasure' ? 'bg-amber-950/30 border-amber-800/50 text-amber-300' : ''}
-                                    ${state.lastCard.type === 'danger' ? 'bg-red-950/30 border-red-800/50 text-red-300' : ''}
-                                    ${state.lastCard.type === 'relic' ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300' : ''}
+                                    ${state.lastCard.type === 'treasure' ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-300/50 dark:border-amber-800/50 text-amber-700 dark:text-amber-300' : ''}
+                                    ${state.lastCard.type === 'danger' ? 'bg-red-50/80 dark:bg-red-950/30 border-red-300/50 dark:border-red-800/50 text-red-700 dark:text-red-300' : ''}
+                                    ${state.lastCard.type === 'relic' ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300/50 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300' : ''}
                                 `}>
                                     {state.lastCard.type === 'treasure' && (
                                         <span>💎 Trésor de <strong>{state.lastCard.value}</strong> rubis —
@@ -441,8 +375,8 @@ export default function DiamantPage() {
                                         return (
                                             <div key={d.userId} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs
                                                 ${d.decision === 'leave'
-                                                    ? 'border-stone-600 bg-stone-800/60 text-stone-400'
-                                                    : 'border-amber-800/50 bg-amber-950/30 text-amber-400'
+                                                    ? 'border-stone-300 dark:border-stone-600 bg-stone-100/60 dark:bg-stone-800/60 text-stone-500 dark:text-stone-400'
+                                                    : 'border-amber-400/50 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400'
                                                 }`}>
                                                 <span>{d.decision === 'leave' ? '🏕️' : '⚡'}</span>
                                                 <span className="font-semibold">{player?.username ?? d.userId}</span>
@@ -461,10 +395,10 @@ export default function DiamantPage() {
                                         disabled={state.myDecision !== null}
                                         className={`py-5 rounded-2xl border-2 font-black text-base transition-all
                                             ${state.myDecision === 'continue'
-                                                ? 'border-amber-500 bg-amber-500/20 text-amber-300 scale-105'
+                                                ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300 scale-105'
                                                 : state.myDecision !== null
-                                                    ? 'border-stone-700 bg-stone-900 text-stone-600 opacity-40'
-                                                    : 'border-amber-700 bg-amber-950/40 text-amber-300 hover:border-amber-500 hover:bg-amber-950/60 hover:scale-105 active:scale-100'
+                                                    ? 'border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 text-stone-400 dark:text-stone-600 opacity-40'
+                                                    : 'border-amber-400 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:border-amber-500 hover:bg-amber-100/80 dark:hover:bg-amber-950/60 hover:scale-105 active:scale-100'
                                             }`}
                                     >
                                         <div className="flex flex-col items-center gap-1">
@@ -478,10 +412,10 @@ export default function DiamantPage() {
                                         disabled={state.myDecision !== null}
                                         className={`py-5 rounded-2xl border-2 font-black text-base transition-all
                                             ${state.myDecision === 'leave'
-                                                ? 'border-stone-400 bg-stone-700/40 text-stone-200 scale-105'
+                                                ? 'border-stone-500 bg-stone-200/60 dark:bg-stone-700/40 text-stone-700 dark:text-stone-200 scale-105'
                                                 : state.myDecision !== null
-                                                    ? 'border-stone-700 bg-stone-900 text-stone-600 opacity-40'
-                                                    : 'border-stone-600 bg-stone-900/60 text-stone-300 hover:border-stone-400 hover:bg-stone-800/60 hover:scale-105 active:scale-100'
+                                                    ? 'border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 text-stone-400 dark:text-stone-600 opacity-40'
+                                                    : 'border-stone-300 dark:border-stone-600 bg-stone-100/60 dark:bg-stone-900/60 text-stone-600 dark:text-stone-300 hover:border-stone-400 hover:bg-stone-200/60 dark:hover:bg-stone-800/60 hover:scale-105 active:scale-100'
                                             }`}
                                     >
                                         <div className="flex flex-col items-center gap-1">
@@ -495,14 +429,14 @@ export default function DiamantPage() {
 
                             {/* Hors de la grotte */}
                             {!amInCave && state.decisionPhase && (
-                                <div className="px-4 py-4 bg-stone-900/60 border border-stone-800 rounded-xl text-center text-stone-500 text-sm">
+                                <div className="px-4 py-4 bg-stone-100/60 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 rounded-xl text-center text-stone-400 dark:text-stone-500 text-sm">
                                     🏕️ Vous êtes au campement — en attente de la fin du tour…
                                 </div>
                             )}
 
                             {/* Players */}
                             <div className="space-y-2">
-                                <p className="text-[10px] text-stone-600 uppercase tracking-widest font-semibold">Explorateurs</p>
+                                <p className="text-[10px] text-stone-400 dark:text-stone-600 uppercase tracking-widest font-semibold">Explorateurs</p>
                                 {state.players.map((p) => (
                                     <PlayerRow key={p.userId} player={p} isMe={p.userId === myUserId} />
                                 ))}
@@ -515,11 +449,13 @@ export default function DiamantPage() {
 
             {/* Game over */}
             {state.phase === 'finished' && (
-                <GameOverScreen
-                    scores={state.finalScores}
-                    winnerId={state.winnerId}
-                    myUserId={myUserId}
+                <GameOverModal
+                    emoji={state.winnerId === myUserId ? '🏆' : '💀'}
+                    title={state.winnerId === myUserId ? 'Victoire !' : 'Partie terminée'}
+                    subtitle="Fin de l'expédition dans la grotte de Tacora"
+                    onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                     onLeave={() => router.push('/')}
+                    asModal
                 />
             )}
         </div>

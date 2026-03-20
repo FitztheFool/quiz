@@ -31,6 +31,7 @@ enum GameType {
   JUST_ONE
   BATTLESHIP
   DIAMANT
+  IMPOSTOR
 }
 
 model Account {

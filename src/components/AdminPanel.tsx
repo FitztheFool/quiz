@@ -9,6 +9,7 @@ import { GAME_EMOJI_MAP } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal'
 import GameFilterPills, { type GameFilter } from '@/components/GameFilterPills';
 import GameStatCards from '@/components/GameStatCards';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 
 interface AdminUser {
@@ -39,7 +40,7 @@ interface AdminCategory {
     _count: { quizzes: number };
 }
 
-type GameType = 'QUIZ' | 'UNO' | 'TABOO' | 'SKYJOW' | 'YAHTZEE' | 'PUISSANCE4';
+type GameType = 'QUIZ' | 'UNO' | 'TABOO' | 'SKYJOW' | 'YAHTZEE' | 'PUISSANCE4' | 'JUST_ONE' | 'BATTLESHIP' | 'DIAMANT';
 
 interface RecentActivity {
     createdAt: string;
@@ -100,6 +101,9 @@ const GAME_BADGE: Record<GameType, string> = {
     SKYJOW: 'bg-sky-100    dark:bg-sky-900/40    text-sky-700    dark:text-sky-400',
     YAHTZEE: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
     PUISSANCE4: 'bg-rose-100  dark:bg-rose-900/40  text-rose-700   dark:text-rose-400',
+    JUST_ONE:   'bg-teal-100  dark:bg-teal-900/40  text-teal-700   dark:text-teal-400',
+    BATTLESHIP: 'bg-cyan-100  dark:bg-cyan-900/40  text-cyan-700   dark:text-cyan-400',
+    DIAMANT:    'bg-amber-100 dark:bg-amber-900/40 text-amber-700  dark:text-amber-400',
 };
 
 function CollapseSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
@@ -362,7 +366,7 @@ export default function AdminPanel() {
             {activeTab === 'stats' ? (
                 loadingStats && !stats ? (
                     <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" />
+                        <LoadingSpinner fullScreen={false} />
                     </div>
                 ) : (
                     <div id="admin-stats" className="scroll-mt-24">
@@ -517,7 +521,7 @@ export default function AdminPanel() {
                 )
             ) : loading ? (
                 <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent" />
+                    <LoadingSpinner fullScreen={false} />
                 </div>
             ) : (
                 <>

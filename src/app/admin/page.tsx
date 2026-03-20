@@ -4,7 +4,6 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import AdminPanel from '@/components/AdminPanel';
 
 export default function AdminPage() {
@@ -19,15 +18,7 @@ export default function AdminPage() {
         }
     }, [status, session, router]);
 
-    if (status === 'loading') {
-        return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-                <LoadingSpinner />
-            </div>
-        );
-    }
-
-    if (!session || session.user?.role !== 'ADMIN') return null;
+    if (status === 'loading' || !session || session.user?.role !== 'ADMIN') return null;
 
     return (
         <main className="flex-1 p-4 md:p-8">

@@ -140,13 +140,13 @@ export default function JustOnePage() {
         if (joinedRef.current) return;
         joinedRef.current = true;
 
-        socket.emit('game:join', { roomId: lobbyId, playerName: myName, userId: me });
+        socket.emit('just-one:join', { lobbyId, playerName: myName, userId: me });
 
-        socket.on('room:players', ({ players }: { players: Player[] }) => {
+        socket.on('just-one:players', ({ players }: { players: Player[] }) => {
             setPlayers(players);
         });
 
-        socket.on('round:start', (payload) => {
+        socket.on('just-one:roundStart', (payload) => {
             setRound(r => r + 1);
             setRoundState('WAITING');
             setGuesserId(payload.guesserId);
@@ -162,31 +162,31 @@ export default function JustOnePage() {
             startTimer(30);
         });
 
-        socket.on('round:writeClues', ({ wordIndex }) => {
+        socket.on('just-one:writeClues', ({ wordIndex }) => {
             setCurrentWordIndex(wordIndex)
             setRoundState('WRITE_CLUES')
             startTimer(60)
         })
 
-        socket.on('clue:submitted', ({ playerId }: { playerId: string }) => {
+        socket.on('just-one:clueSubmitted', ({ playerId }: { playerId: string }) => {
             setSubmittedPlayers(prev =>
                 prev.includes(playerId) ? prev : [...prev, playerId]
             );
         });
 
-        socket.on('clues:validated', ({ allClues }: { allClues: Clue[] }) => {
+        socket.on('just-one:cluesValidated', ({ allClues }: { allClues: Clue[] }) => {
             setRoundState('VALIDATE_CLUES');
             setValidatedClues(allClues);
             stopTimer();
         });
 
-        socket.on('guess:start', ({ validClues }: { validClues: string[] }) => {
+        socket.on('just-one:guessStart', ({ validClues }: { validClues: string[] }) => {
             setRoundState('GUESS_PHASE');
             setValidClues(validClues);
             startTimer(30);
         });
 
-        socket.on('round:result', (result: RoundResult) => {
+        socket.on('just-one:roundResult', (result: RoundResult) => {
             setRoundState('RESOLUTION');
             setLastResult(result);
             setScore(result.score);
@@ -194,21 +194,21 @@ export default function JustOnePage() {
             stopTimer();
         });
 
-        socket.on('game:end', (payload: { score: number; level: string }) => {
+        socket.on('just-one:gameEnd', (payload: { score: number; level: string }) => {
             setRoundState('END_GAME');
             setFinalScore(payload);
             stopTimer();
         });
 
         return () => {
-            socket.off('room:players');
-            socket.off('round:start');
-            socket.off('round:writeClues');
-            socket.off('clue:submitted');
-            socket.off('clues:validated');
-            socket.off('guess:start');
-            socket.off('round:result');
-            socket.off('game:end');
+            socket.off('just-one:players');
+            socket.off('just-one:roundStart');
+            socket.off('just-one:writeClues');
+            socket.off('just-one:clueSubmitted');
+            socket.off('just-one:cluesValidated');
+            socket.off('just-one:guessStart');
+            socket.off('just-one:roundResult');
+            socket.off('just-one:gameEnd');
             joinedRef.current = false;
         };
     }, [socket, lobbyId, status, me]);
@@ -266,7 +266,7 @@ export default function JustOnePage() {
                         <div className="flex justify-center gap-3 flex-wrap">
                             {[1, 2, 3, 4, 5].map(i => (
                                 <button key={i}
-                                    onClick={() => socket?.emit('game:pickWord', { roomId: lobbyId, wordIndex: i - 1 })}
+                                    onClick={() => socket?.emit('just-one:pickWord', { lobbyId, wordIndex: i - 1 })}
                                     className="w-14 h-14 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold transition-all shadow-lg shadow-blue-500/20 hover:scale-105">
                                     {i}
                                 </button>
@@ -340,7 +340,7 @@ export default function JustOnePage() {
                                 onChange={e => setMyClue(e.target.value.toUpperCase())}
                                 onKeyDown={e => {
                                     if (e.key === 'Enter' && myClue.trim()) {
-                                        socket?.emit('game:submitClue', { roomId: lobbyId, clue: myClue.trim() });
+                                        socket?.emit('just-one:submitClue', { lobbyId, clue: myClue.trim() });
                                         setClueSubmitted(true);
                                     }
                                 }}
@@ -352,12 +352,12 @@ export default function JustOnePage() {
                             <button
                                 onClick={() => {
                                     if (!myClue.trim()) return;
-                                    socket?.emit('game:submitClue', { roomId: lobbyId, clue: myClue.trim() });
+                                    socket?.emit('just-one:submitClue', { lobbyId, clue: myClue.trim() });
                                     setClueSubmitted(true);
                                 }}
                                 disabled={!myClue.trim()}
                                 className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition-all">
-                                Envoyer mon indice ✉️
+                                Envoyer mon indice
                             </button>
                         </div>
                     ) : (
@@ -421,7 +421,7 @@ export default function JustOnePage() {
                             onChange={e => setMyGuess(e.target.value.toUpperCase())}
                             onKeyDown={e => {
                                 if (e.key === 'Enter' && myGuess.trim()) {
-                                    socket?.emit('game:submitGuess', { roomId: lobbyId, guess: myGuess.trim() });
+                                    socket?.emit('just-one:submitGuess', { lobbyId, guess: myGuess.trim() });
                                 }
                             }}
                             placeholder="Ta réponse…"
@@ -431,14 +431,14 @@ export default function JustOnePage() {
                         />
                         <div className="flex gap-3">
                             <button
-                                onClick={() => socket?.emit('game:submitGuess', { roomId: lobbyId, guess: null })}
+                                onClick={() => socket?.emit('just-one:submitGuess', { lobbyId, guess: null })}
                                 className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-slate-600/50 text-gray-500 dark:text-slate-400 text-sm font-semibold hover:border-gray-400 transition-all">
                                 ⏭️ Passer
                             </button>
                             <button
                                 onClick={() => {
                                     if (!myGuess.trim()) return;
-                                    socket?.emit('game:submitGuess', { roomId: lobbyId, guess: myGuess.trim() });
+                                    socket?.emit('just-one:submitGuess', { lobbyId, guess: myGuess.trim() });
                                 }}
                                 disabled={!myGuess.trim()}
                                 className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition-all">

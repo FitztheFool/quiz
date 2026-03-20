@@ -1,5 +1,4 @@
 // src/app/api/words/route.ts
-// app/api/words/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';

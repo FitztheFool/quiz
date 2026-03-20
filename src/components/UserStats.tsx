@@ -2,6 +2,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
 import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal';
@@ -43,6 +44,7 @@ const GAME_BADGE: Record<string, string> = {
     PUISSANCE4: 'bg-rose-100   dark:bg-rose-900/40   text-rose-700   dark:text-rose-400',
     JUST_ONE: 'bg-teal-100   dark:bg-teal-900/40   text-teal-700   dark:text-teal-400',
     BATTLESHIP: 'bg-cyan-100   dark:bg-cyan-900/40   text-cyan-700   dark:text-cyan-400',
+    DIAMANT:    'bg-amber-100  dark:bg-amber-900/40  text-amber-700  dark:text-amber-400',
 };
 
 const GAME_BADGE_ACTIVE: Record<string, string> = {
@@ -54,6 +56,7 @@ const GAME_BADGE_ACTIVE: Record<string, string> = {
     PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
     JUST_ONE: 'bg-teal-600   text-white border-teal-600',
     BATTLESHIP: 'bg-cyan-600   text-white border-cyan-600',
+    DIAMANT:    'bg-amber-500  text-white border-amber-500',
 };
 
 function CollapseSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
@@ -120,7 +123,7 @@ export default function UserStats({ username, currentUsername }: Props) {
 
     if (initialLoading) return (
         <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+            <LoadingSpinner fullScreen={false} />
         </div>
     );
 
@@ -131,7 +134,7 @@ export default function UserStats({ username, currentUsername }: Props) {
 
             {/* Statistiques — repliable */}
             <CollapseSection title="🎮 Statistiques">
-                <GameStatCards gameStats={stats.gameStats} />
+                <GameStatCards gameStats={Object.fromEntries(Object.entries(stats.gameStats).filter(([, v]) => v.count > 0))} />
             </CollapseSection>
 
             {/* Activité récente — repliable */}
@@ -147,7 +150,7 @@ export default function UserStats({ username, currentUsername }: Props) {
                 <div className={`relative transition-opacity duration-150 ${refetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                     {refetching && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+                            <LoadingSpinner fullScreen={false} />
                         </div>
                     )}
 

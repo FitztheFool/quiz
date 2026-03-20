@@ -373,13 +373,7 @@ export default function skyjowGamePage() {
 
     // ── Render guards ──────────────────────────────────────────────────────────
 
-    if (status === 'loading') {
-        return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-                <div className="text-slate-300 text-lg animate-pulse">Connexion…</div>
-            </div>
-        );
-    }
+    if (status === 'loading') return <LoadingSpinner />;
 
     // ── Écran fin de partie ────────────────────────────────────────────────────
 

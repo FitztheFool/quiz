@@ -42,6 +42,79 @@ interface UserAnswer {
     freeText?: string;
 }
 
+// Calcul local du score (utilisé pour les anonymes uniquement)
+function computeScoreLocally(quiz: Quiz, answers: UserAnswer[]): { score: number; totalPoints: number; questionResults: QuestionResult[] } {
+    let score = 0;
+    let totalPoints = 0;
+    const questionResults: QuestionResult[] = [];
+
+    for (const q of quiz.questions) {
+        totalPoints += q.points;
+        const userAnswer = answers.find(a => a.questionId === q.id);
+        let isCorrect = false;
+        let earnedPoints = 0;
+        let userAnswerText = '';
+        let correctAnswerText = '';
+
+        if (q.type === 'TRUE_FALSE') {
+            const selected = q.answers?.find(a => a.id === userAnswer?.answerId);
+            userAnswerText = selected?.text || '';
+            correctAnswerText = q.answers?.find(a => a.isCorrect)?.text || '';
+            isCorrect = selected?.isCorrect === true;
+            earnedPoints = isCorrect ? q.points : 0;
+            if (isCorrect) score += q.points;
+        } else if (q.type === 'MCQ') {
+            const selectedIds = userAnswer?.answerIds || [];
+            const correctIds = q.answers?.filter(a => a.isCorrect).map(a => a.id) || [];
+            userAnswerText = selectedIds.map(id => q.answers?.find(a => a.id === id)?.text || '').filter(Boolean).join(', ');
+            correctAnswerText = q.answers?.filter(a => a.isCorrect).map(a => a.text).join(', ') || '';
+            isCorrect = selectedIds.length === correctIds.length && selectedIds.every(id => correctIds.includes(id));
+            earnedPoints = isCorrect ? q.points : 0;
+            if (isCorrect) score += q.points;
+        } else if (q.type === 'TEXT') {
+            const userText = (userAnswer?.freeText || '').trim().toLowerCase();
+            const correctText = (q.answers?.[0]?.text || q.correctAnswerText || '').trim().toLowerCase();
+            isCorrect = userText.length > 0 && userText === correctText;
+            userAnswerText = userAnswer?.freeText || '';
+            correctAnswerText = q.answers?.[0]?.text || q.correctAnswerText || '';
+            earnedPoints = isCorrect ? q.points : 0;
+            if (isCorrect) score += q.points;
+        } else if (q.type === 'MULTI_TEXT') {
+            const userTexts = userAnswer?.freeText?.split('||').map(t => t.trim()) ?? [];
+            const correctTexts = q.answers?.map(a => a.text) || [];
+            const userTextsLower = userTexts.map(t => t.toLowerCase());
+            const correctTextsLower = correctTexts.map(t => t.trim().toLowerCase());
+            const strictOrder = q.strictOrder ?? false;
+            userAnswerText = userTexts.join(', ');
+            correctAnswerText = correctTexts.join(', ');
+            let correctCount = 0;
+            if (strictOrder) {
+                correctCount = userTextsLower.filter((t, i) => t === correctTextsLower[i]).length;
+            } else {
+                correctCount = userTextsLower.filter(t => correctTextsLower.includes(t)).length;
+            }
+            const pointsPerAnswer = correctTextsLower.length > 0 ? q.points / correctTextsLower.length : 0;
+            earnedPoints = Math.round(correctCount * pointsPerAnswer);
+            isCorrect = correctCount === correctTextsLower.length;
+            score += earnedPoints;
+        }
+
+        questionResults.push({
+            questionId: q.id,
+            questionText: q.text,
+            type: q.type,
+            points: q.points,
+            earnedPoints,
+            strictOrder: q.strictOrder,
+            isCorrect,
+            userAnswerText,
+            correctAnswerText,
+        });
+    }
+
+    return { score, totalPoints, questionResults };
+}
+
 export default function QuizPage() {
     const params = useParams();
     const router = useRouter();
@@ -49,6 +122,10 @@ export default function QuizPage() {
     const lobbyCode = searchParams.get('lobby');
     const { data: session, status } = useSession();
     const quizId = params?.id as string;
+
+    // ID stable pour les sessions solo (pas de lobby)
+    const [soloLobbyId] = useState(() => crypto.randomUUID());
+    const effectiveLobbyId = lobbyCode ?? soloLobbyId;
 
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [loading, setLoading] = useState(true);
@@ -76,8 +153,8 @@ export default function QuizPage() {
     const socket = useMemo(() => getQuizSocket(), []);
 
     const [timeMode, setTimeMode] = useState<'per_question' | 'total' | 'none' | null>(null);
-    const [timePerQuestion, setTimePerQuestion] = useState(15);
-    const timePerQuestionRef = useRef(15);
+    const [timePerQuestion, setTimePerQuestion] = useState(0);
+    const timePerQuestionRef = useRef(0);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
     const timerStartedRef = useRef(false);
 
@@ -90,15 +167,6 @@ export default function QuizPage() {
     useEffect(() => { currentQuestionIndexRef.current = currentQuestionIndex; }, [currentQuestionIndex]);
     useEffect(() => { quizRef.current = quiz; }, [quiz]);
 
-    useEffect(() => {
-        if (!lobbyCode) return;
-        const mode = sessionStorage.getItem(`lobby_timeMode_${lobbyCode}`) as 'per_question' | 'total' | 'none' | null;
-        const tpq = Number(sessionStorage.getItem(`lobby_timePerQuestion_${lobbyCode}`)) || 15;
-        timePerQuestionRef.current = tpq;
-        setTimeMode(mode);
-        setTimePerQuestion(tpq);
-    }, [lobbyCode]);
-
     const setUserAnswersAndRef = (answers: UserAnswer[]) => {
         userAnswersRef.current = answers;
         setUserAnswers(answers);
@@ -110,17 +178,30 @@ export default function QuizPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [quizId, status]);
 
+    // Rejoindre le quiz-server dès qu'on a userId (solo ou lobby)
     useEffect(() => {
-        if (!lobbyCode || !quizId || !session?.user?.id || !timeMode) return;
+        if (!quizId || !session?.user?.id) return;
         socket?.emit('quiz:join', {
-            lobbyId: lobbyCode,
+            lobbyId: effectiveLobbyId,
             quizId,
             userId: session.user.id,
             username: session.user.username ?? session.user.email ?? 'User',
-            timeMode,
-            timePerQuestion: timePerQuestionRef.current,
         });
-    }, [lobbyCode, quizId, session?.user?.id, timeMode, socket]);
+    }, [effectiveLobbyId, quizId, session?.user?.id, socket]);
+
+    // Recevoir les options de session depuis le quiz-server
+    useEffect(() => {
+        if (!socket) return;
+        const handler = ({ timeMode: tm, timePerQuestion: tpq }: { timeMode: string; timePerQuestion: number }) => {
+            const mode = tm as 'per_question' | 'total' | 'none';
+            setTimeMode(mode);
+            setTimePerQuestion(tpq);
+            timePerQuestionRef.current = tpq;
+        };
+        socket.on('quiz:sessionInfo', handler);
+        return () => { socket.off('quiz:sessionInfo', handler); };
+    }, [socket]);
+
 
     const checkMultiText = (userTexts: string[], correctTexts: string[], strictOrder: boolean) => {
         const u = userTexts.map(t => t.trim().toLowerCase());
@@ -138,89 +219,37 @@ export default function QuizPage() {
         return answer;
     }, []);
 
-    const submitQuiz = useCallback(async (answers: UserAnswer[]) => {
+    const submitQuiz = useCallback((answers: UserAnswer[]) => {
         const currentQuiz = quizRef.current;
         if (!currentQuiz) return;
+        setIsSubmitting(true);
+        setError(null);
 
-        try {
-            setIsSubmitting(true);
-            setError(null);
+        // Calcul local immédiat pour l'affichage
+        const { score, totalPoints, questionResults } = computeScoreLocally(currentQuiz, answers);
+        const payload = {
+            score,
+            totalPoints,
+            quizTitle: currentQuiz.title,
+            isOwnQuiz: currentQuiz.creatorId === session?.user?.id,
+            questionResults,
+            lobbyCode: lobbyCode ?? null,
+        };
+        sessionStorage.setItem(`quiz_result_${quizId}`, JSON.stringify(payload));
 
-            const res = await fetch(`/api/quiz/${quizId}/submit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answers }),
+        // Si authentifié : envoyer aussi au quiz-server pour validation anti-triche et sauvegarde
+        if (session?.user?.id) {
+            socket?.emit('quiz:playerFinished', {
+                answers,
+                lobbyId: effectiveLobbyId,
+                userId: session.user.id,
+                username: session.user.username ?? session.user.email ?? 'User',
+                quizId,
             });
-            if (!res.ok) throw new Error('Erreur lors de la soumission du quiz');
-            const result = await res.json();
-
-            const questionResults: QuestionResult[] = currentQuiz.questions.map((q) => {
-                const userAnswer = answers.find(a => a.questionId === q.id);
-                let userAnswerText = '', correctAnswerText = '', isCorrect = false, earnedPoints = 0;
-
-                if (q.type === 'TEXT') {
-                    userAnswerText = userAnswer?.freeText || '';
-                    correctAnswerText = q.answers?.[0]?.text || q.correctAnswerText || '';
-                    isCorrect = userAnswerText.toLowerCase() === correctAnswerText.toLowerCase();
-                    earnedPoints = isCorrect ? q.points : 0;
-                } else if (q.type === 'MULTI_TEXT') {
-                    const userTexts = userAnswer?.freeText?.split('||') ?? [];
-                    const correctTexts = q.answers?.map(a => a.text) || [];
-                    userAnswerText = userTexts.join(', ');
-                    correctAnswerText = correctTexts.join(', ');
-                    isCorrect = checkMultiText(userTexts, correctTexts, q.strictOrder ?? false);
-                    const correctCount = userTexts.filter(t => correctTexts.some(c => c.trim().toLowerCase() === t.trim().toLowerCase())).length;
-                    earnedPoints = Math.round((correctCount / correctTexts.length) * q.points);
-                } else if (q.type === 'TRUE_FALSE') {
-                    const selected = q.answers?.find(a => a.id === userAnswer?.answerId);
-                    userAnswerText = selected?.text || '';
-                    correctAnswerText = q.answers?.find(a => a.isCorrect)?.text || '';
-                    isCorrect = selected?.isCorrect === true;
-                    earnedPoints = isCorrect ? q.points : 0;
-                } else if (q.type === 'MCQ') {
-                    const selectedIds = userAnswer?.answerIds || [];
-                    const correctIds = q.answers?.filter(a => a.isCorrect).map(a => a.id) || [];
-                    userAnswerText = selectedIds.map(id => q.answers?.find(a => a.id === id)?.text || '').filter(Boolean).join(', ');
-                    correctAnswerText = q.answers?.filter(a => a.isCorrect).map(a => a.text).join(', ') || '';
-                    isCorrect = selectedIds.length === correctIds.length && selectedIds.every(id => correctIds.includes(id));
-                    earnedPoints = isCorrect ? q.points : 0;
-                }
-
-                return {
-                    questionId: q.id,
-                    questionText: q.text,
-                    type: q.type,
-                    points: q.points,
-                    earnedPoints,
-                    strictOrder: q.strictOrder,
-                    isCorrect,
-                    userAnswerText,
-                    correctAnswerText,
-                };
-            });
-
-            const payload = {
-                score: result.score,
-                totalPoints: result.totalPoints,
-                quizTitle: currentQuiz.title,
-                isOwnQuiz: currentQuiz.creatorId === session?.user?.id,
-                questionResults,
-                lobbyCode: lobbyCode ?? null,
-            };
-            sessionStorage.setItem(`quiz_result_${quizId}`, JSON.stringify(payload));
-
-            if (lobbyCode) {
-                socket?.emit('quiz:playerFinished', { totalScore: result.score, questionResults });
-            }
-
-            router.push(`/quiz/${quizId}/result${lobbyCode ? `?lobby=${lobbyCode}` : ''}`);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-        } finally {
-            setIsSubmitting(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [quizId, lobbyCode, session?.user?.id, socket, router]);
+
+        router.push(`/quiz/${quizId}/result${lobbyCode ? `?lobby=${lobbyCode}` : ''}`);
+    }, [session?.user?.id, lobbyCode, socket, quizId, router]);
 
     const handleNextQuestionFromTimer = useCallback(() => {
         const currentQuiz = quizRef.current;
@@ -244,21 +273,22 @@ export default function QuizPage() {
             setShowFeedback(false);
             setIsCorrect(false);
 
-            if (lobbyCode) {
+            if (session?.user?.id) {
                 socket?.emit('quiz:playerProgress', {
                     currentQuestion: nextIndex + 1,
                     totalQuestions: currentQuiz.questions.length,
                 });
             }
         }
-    }, [buildCurrentAnswer, submitQuiz]);
+    }, [buildCurrentAnswer, submitQuiz, session?.user?.id, socket]);
 
     useEffect(() => {
-        if (!lobbyCode || !timeMode || timeMode === 'none' || !quiz) return;
+        if (!timeMode || timeMode === 'none' || !quiz || !session?.user?.id) return;
         if (timeMode === 'total' && timerStartedRef.current) return;
         if (timeMode === 'total') timerStartedRef.current = true;
 
         const duration = timePerQuestionRef.current;
+        if (!duration) return;
         setTimeLeft(duration);
 
         const interval = setInterval(() => {
@@ -274,7 +304,7 @@ export default function QuizPage() {
 
         return () => { clearInterval(interval); clearTimeout(timeout); };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentQuestionIndex, quiz?.id, timeMode, lobbyCode]);
+    }, [currentQuestionIndex, quiz?.id, timeMode, session?.user?.id]);
 
     const fetchQuiz = async () => {
         try {
@@ -289,7 +319,7 @@ export default function QuizPage() {
             }
             setQuiz(data);
 
-            if (lobbyCode) {
+            if (session?.user?.id) {
                 socket?.emit('quiz:playerProgress', {
                     currentQuestion: 1,
                     totalQuestions: data.questions.length,
@@ -350,7 +380,7 @@ export default function QuizPage() {
             setShowFeedback(false);
             setIsCorrect(false);
 
-            if (lobbyCode) {
+            if (session?.user?.id) {
                 socket?.emit('quiz:playerProgress', {
                     currentQuestion: nextIndex + 1,
                     totalQuestions: quiz.questions.length,
@@ -429,7 +459,7 @@ export default function QuizPage() {
                         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-3 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
                     </div>
 
-                    {lobbyCode && timeMode && timeMode !== 'none' && timeLeft !== null && (
+                    {timeMode && timeMode !== 'none' && timeLeft !== null && timePerQuestion > 0 && (
                         <div className="mt-4">
                             <p className={`text-sm font-medium mb-1 ${timeLeft <= 10 ? 'text-red-500 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
                                 {timeMode === 'total'

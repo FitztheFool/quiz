@@ -186,7 +186,11 @@ export async function GET(req: NextRequest) {
         }),
     }));
 
+    // Initialise tous les jeux à 0 pour qu'ils apparaissent même sans données
     const gameStats: Record<string, { count: number; points: number; rounds: number }> = {};
+    for (const g of Object.values(GAME_CONFIG)) {
+        gameStats[g.gameType] = { count: 0, points: 0, rounds: 0 };
+    }
 
     for (const row of gameStatsByType) {
         gameStats[row.gameType] = {

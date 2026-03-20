@@ -73,8 +73,8 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
     }, [username]);
 
     if (loading) return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-            <LoadingSpinner />
+        <div className="flex-1 flex items-center justify-center p-8">
+            <LoadingSpinner fullScreen={false} />
         </div>
     );
 

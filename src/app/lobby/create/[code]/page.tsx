@@ -31,7 +31,11 @@ type LobbyMeta = {
     tabooOptions?: { turnDuration: number; totalRounds: number; trapWordCount: number; maxAttempts: number; trapDuration: number };
     quizOptions?: { timeMode: string; timePerQuestion: number };
     skyjowOptions?: { eliminateRows: boolean };
+    battleshipOptions?: { gridSize: number; turnTime: number };
+    impostorOptions?: { rounds: number; timePerRound: number };
 };
+
+
 
 type LobbyState = {
     hostId: string | null;
@@ -45,6 +49,8 @@ type LobbyState = {
     unoOptions?: { stackable: boolean; jumpIn: boolean; teamMode: string; teamWinMode: string };
     tabooOptions?: { turnDuration: number; totalRounds: number; trapWordCount: number; maxAttempts: number; trapDuration: number };
     skyjowOptions?: { eliminateRows: boolean };
+    battleshipOptions?: { gridSize: number; turnTime: number };
+    impostorOptions?: { rounds: number; timePerRound: number };
     timeMode?: string;
     timePerQuestion?: number;
     quizId?: string | null;
@@ -94,58 +100,112 @@ function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onCh
     );
 }
 
-function QuizSearch({ isHost, onSelect, selectedId, selectedTitle }: {
+function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories }: {
     isHost: boolean;
     onSelect: (id: string, title: string) => void;
     selectedId?: string;
     selectedTitle?: string;
+    categories: { id: string; name: string; _count: { quizzes: number } }[];
 }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<{ id: string; title: string; _count: { questions: number } }[]>([]);
     const [open, setOpen] = useState(false);
+    const [catOpen, setCatOpen] = useState(false);
+    const [categoryId, setCategoryId] = useState('');
     const searchTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const search = (q: string) => {
+    const selectedCategory = categories.find(c => c.id === categoryId) ?? null;
+
+    const search = (q: string, catId?: string) => {
         setQuery(q);
         setOpen(true);
         if (searchTimer.current) clearTimeout(searchTimer.current);
-        if (!q.trim()) { setResults([]); return; }
+        const activeCatId = catId !== undefined ? catId : categoryId;
+        if (!q.trim() && !activeCatId) { setResults([]); return; }
         searchTimer.current = setTimeout(async () => {
-            const res = await fetch(`/api/quiz?search=${encodeURIComponent(q)}&page=1&pageSize=6`);
+            const params = new URLSearchParams({ page: '1', pageSize: '6' });
+            if (q.trim()) params.set('search', q);
+            if (activeCatId) params.set('categoryId', activeCatId);
+            const res = await fetch(`/api/quiz?${params}`);
             if (!res.ok) return;
             const data = await res.json();
             setResults(Array.isArray(data) ? data : data.quizzes ?? []);
         }, 300);
     };
 
+    const handleCategoryChange = (catId: string) => {
+        setCategoryId(catId);
+        setCatOpen(false);
+        if (selectedId) onSelect('', '');
+        search(query, catId);
+        setOpen(true);
+    };
+
     const displayValue = selectedId && selectedTitle ? selectedTitle : query;
+    const isSelected = !!(selectedId && selectedTitle);
 
     return (
-        <div className="relative w-full">
-            <input
-                type="text"
-                value={displayValue}
-                onChange={e => { if (selectedId) onSelect('', ''); search(e.target.value); }}
-                onFocus={() => { if (query) setOpen(true); }}
-                onBlur={() => setTimeout(() => setOpen(false), 150)}
-                placeholder="Rechercher un quiz…"
-                disabled={!isHost}
-                className="w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-1.5 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            {open && results.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-hidden">
-                    {results.map(q => (
-                        <button key={q.id} onMouseDown={() => { onSelect(q.id, q.title); setQuery(''); setOpen(false); }}
-                            className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${selectedId === q.id ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
-                            <span className="font-medium truncate">{q.title}</span>
-                            <span className="text-gray-400 dark:text-slate-500 flex-shrink-0 ml-2">{q._count.questions}q</span>
-                        </button>
-                    ))}
+        <div className="w-full space-y-2">
+            {/* Category custom dropdown */}
+            {categories.length > 0 && (
+                <div className="relative">
+                    <button
+                        type="button"
+                        onClick={() => isHost && setCatOpen(v => !v)}
+                        onBlur={() => setTimeout(() => setCatOpen(false), 150)}
+                        className="w-full flex items-center justify-between bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60">
+                        <span className={selectedCategory ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-slate-500'}>
+                            {selectedCategory ? selectedCategory.name : 'Toutes les catégories'}
+                        </span>
+                        <span className="text-gray-400 dark:text-slate-500 flex-shrink-0 ml-2">
+                            {selectedCategory ? `(${selectedCategory._count.quizzes})` : '▾'}
+                        </span>
+                    </button>
+                    {catOpen && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                            <button onMouseDown={() => handleCategoryChange('')}
+                                className={`w-full px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${!categoryId ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
+                                <span>Toutes les catégories</span>
+                            </button>
+                            {categories.map(c => (
+                                <button key={c.id} onMouseDown={() => handleCategoryChange(c.id)}
+                                    className={`w-full px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${categoryId === c.id ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
+                                    <span className="truncate">{c.name}</span>
+                                    <span className="text-gray-400 dark:text-slate-500 flex-shrink-0 ml-2">({c._count.quizzes})</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
-            {selectedId && selectedTitle && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">✅ {selectedTitle}</p>
-            )}
+
+            {/* Quiz search input */}
+            <div className="relative">
+                <input
+                    type="text"
+                    value={displayValue}
+                    onChange={e => { if (selectedId) onSelect('', ''); search(e.target.value); }}
+                    onFocus={() => { if (query || categoryId) { search(query); setOpen(true); } }}
+                    onBlur={() => setTimeout(() => setOpen(false), 150)}
+                    placeholder="Rechercher un quiz…"
+                    readOnly={!isHost}
+                    className={`w-full bg-gray-100 dark:bg-slate-700/60 border rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${isSelected ? 'border-green-500/60 pr-7' : 'border-gray-300 dark:border-slate-600/50'}`}
+                />
+                {isSelected && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none">✅</span>
+                )}
+                {open && results.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-hidden">
+                        {results.map(q => (
+                            <button key={q.id} onMouseDown={() => { onSelect(q.id, q.title); setQuery(''); setOpen(false); }}
+                                className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${selectedId === q.id ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
+                                <span className="font-medium truncate">{q.title}</span>
+                                <span className="text-gray-400 dark:text-slate-500 flex-shrink-0 ml-2">{q._count.questions}q</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -170,6 +230,7 @@ export default function LobbyCodePage() {
     const [isPublic, setIsPublicState] = useState(false);
     const [selectedQuizId, setSelectedQuizId] = useState<string | undefined>();
     const [selectedQuizTitle, setSelectedQuizTitle] = useState('');
+    const [categories, setCategories] = useState<{ id: string; name: string; _count: { quizzes: number } }[]>([]);
     const [unoTeamMode, setUnoTeamMode] = useState<'none' | '2v2'>('none');
     const [unoTeamWinMode, setUnoTeamWinMode] = useState<'one' | 'both'>('one');
     const [unoStackable, setUnoStackable] = useState(false);
@@ -186,12 +247,26 @@ export default function LobbyCodePage() {
     const [gridSize, setGridSize] = useState(10);
     const [turnTime, setTurnTime] = useState(30);
     const [autoPlace, setAutoPlace] = useState(true);
+    const [impostorRounds, setImpostorRounds] = useState(1);
+    const [impostorTime, setImpostorTime] = useState(60);
     const { setLobbyId } = useChat();
 
     useEffect(() => {
         setLobbyId(lobbyId);
         return () => setLobbyId(null);
     }, [lobbyId]);
+
+    useEffect(() => {
+        fetch('/api/categories').then(r => r.ok ? r.json() : []).then(setCategories).catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        if (!selectedQuizId || selectedQuizTitle) return;
+        fetch(`/api/quiz/${selectedQuizId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data?.title) setSelectedQuizTitle(data.title); })
+            .catch(() => {});
+    }, [selectedQuizId]);
 
     const myTeam: 0 | 1 | undefined = useMemo(() => {
         if (!teams || !session?.user?.id) return undefined;
@@ -229,6 +304,7 @@ export default function LobbyCodePage() {
                 unoOptions: state.unoOptions ?? prev?.unoOptions,
                 tabooOptions: state.tabooOptions ?? prev?.tabooOptions,
                 skyjowOptions: state.skyjowOptions ?? prev?.skyjowOptions,
+                battleshipOptions: state.battleshipOptions ?? prev?.battleshipOptions,
                 quizOptions: state.timeMode
                     ? { timeMode: state.timeMode, timePerQuestion: state.timePerQuestion ?? 15 }
                     : prev?.quizOptions,
@@ -237,7 +313,9 @@ export default function LobbyCodePage() {
             setMaxPlayersState(state.maxPlayers ?? 8);
             setTeams(state.teams ?? null);
             setIsPublicState(state.isPublic ?? false);
-            if (state.quizId) setSelectedQuizId(state.quizId);
+            if (state.quizId) {
+                setSelectedQuizId(prev => { if (prev !== state.quizId) setSelectedQuizTitle(''); return state.quizId!; });
+            }
             if (state.unoOptions) {
                 setUnoTeamMode((state.unoOptions.teamMode as 'none' | '2v2') ?? 'none');
                 setUnoTeamWinMode((state.unoOptions.teamWinMode as 'one' | 'both') ?? 'one');
@@ -254,6 +332,11 @@ export default function LobbyCodePage() {
             if (state.timeMode) setQuizTimeMode(state.timeMode as 'per_question' | 'total' | 'none');
             if (state.timePerQuestion) setQuizTimePerQuestion(state.timePerQuestion);
             if (state.skyjowOptions) setSkyjowEliminateRows(state.skyjowOptions.eliminateRows ?? false);
+            if (state.battleshipOptions) {
+                setGridSize(state.battleshipOptions.gridSize ?? 10);
+                setTurnTime(state.battleshipOptions.turnTime ?? 30);
+            }
+            if (state.impostorOptions) { setImpostorRounds(state.impostorOptions.rounds ?? 1); setImpostorTime(state.impostorOptions.timePerRound ?? 60); }
 
             // ── canStart via GAME_CONFIG ──────────────────────────────────
             const count = state.players?.length ?? 0;
@@ -295,13 +378,17 @@ export default function LobbyCodePage() {
                 if (m.tabooOptions) { setTabooTurnDuration(m.tabooOptions.turnDuration); setTabooTotalRounds(m.tabooOptions.totalRounds); setTabooTrapWordCount(m.tabooOptions.trapWordCount); setTabooMaxAttempts(m.tabooOptions.maxAttempts); setTabooTrapDuration(m.tabooOptions.trapDuration); }
                 if (m.quizOptions) { setQuizTimeMode(m.quizOptions.timeMode as 'per_question' | 'total' | 'none'); setQuizTimePerQuestion(m.quizOptions.timePerQuestion); }
                 if (m.skyjowOptions) setSkyjowEliminateRows(m.skyjowOptions.eliminateRows);
+                if (m.battleshipOptions) { setGridSize(m.battleshipOptions.gridSize); setTurnTime(m.battleshipOptions.turnTime); }
+                if (m.impostorOptions) { setImpostorRounds(m.impostorOptions.rounds ?? 1); setImpostorTime(m.impostorOptions.timePerRound ?? 60); }
             }
             socket.emit('lobby:join', { lobbyId, userId: meUserId, username: meUsername, title: m?.title, description: m?.description, maxPlayers: m?.maxPlayers, isPublic: m?.isPublic });
             if (m?.gameType && m.gameType !== 'quiz') setTimeout(() => socket.emit('lobby:setGameType', { gameType: m!.gameType }), 300);
             if (m?.unoOptions) setTimeout(() => socket.emit('lobby:setUnoOptions', m!.unoOptions), 400);
             if (m?.tabooOptions) setTimeout(() => socket.emit('lobby:setTabooOptions', m!.tabooOptions), 400);
             if (m?.skyjowOptions) setTimeout(() => socket.emit('lobby:setSkyjowOptions', m!.skyjowOptions), 400);
-            if (m?.quizOptions) { const qo = m.quizOptions; setTimeout(() => { socket.emit('lobby:setTimeMode', { timeMode: qo.timeMode }); socket.emit('lobby:setTimePerQuestion', { timePerQuestion: qo.timePerQuestion }); }, 400); }
+            if (m?.battleshipOptions) setTimeout(() => socket.emit('lobby:setBattleshipOptions', m!.battleshipOptions), 400);
+            if (m?.impostorOptions) setTimeout(() => socket.emit('lobby:setImpostorOptions', m!.impostorOptions), 400);
+            if (m?.quizOptions) setTimeout(() => socket.emit('lobby:setQuizOptions', m!.quizOptions), 400);
         }
 
         return () => {
@@ -462,7 +549,7 @@ export default function LobbyCodePage() {
                             <OptionRow label="Taille de la grille">
                                 <OptionSelect
                                     value={gridSize}
-                                    onChange={v => { setGridSize(Number(v)); socket?.emit('lobby:setBattleshipOptions', { gridSize: Number(v) }); }}
+                                    onChange={v => { const g = Number(v); setGridSize(g); socket?.emit('lobby:setBattleshipOptions', { gridSize: g, turnTime }); }}
                                     options={[8, 10, 12].map(n => ({ v: n, label: `${n}×${n}` }))}
                                     disabled={!isHost}
                                 />
@@ -470,7 +557,7 @@ export default function LobbyCodePage() {
                             <OptionRow label="Temps par tour">
                                 <OptionSelect
                                     value={turnTime}
-                                    onChange={v => { setTurnTime(Number(v)); socket?.emit('lobby:setBattleshipOptions', { turnTime: Number(v) }); }}
+                                    onChange={v => { const t = Number(v); setTurnTime(t); socket?.emit('lobby:setBattleshipOptions', { gridSize, turnTime: t }); }}
                                     options={[10, 20, 30, 60, 90, 120].map(t => ({ v: t, label: `${t}s` }))}
                                     disabled={!isHost}
                                 />
@@ -482,10 +569,10 @@ export default function LobbyCodePage() {
                     {gameType === 'taboo' && (
                         <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
                             <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Taboo</p>
-                            <OptionRow label="Durée d'un tour"><OptionSelect value={tabooTurnDuration} onChange={v => { setTabooTurnDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { turnDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180, 240, 300].map(t => ({ v: t, label: `${t}s` }))} disabled={!isHost} /></OptionRow>
+                            <OptionRow label="Durée d'un tour"><OptionSelect value={tabooTurnDuration} onChange={v => { setTabooTurnDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { turnDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180, 240, 300].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
                             <OptionRow label="Rounds"><OptionSelect value={tabooTotalRounds} onChange={v => { setTabooTotalRounds(Number(v)); socket?.emit('lobby:setTabooOptions', { totalRounds: Number(v) }); }} options={[1, 2, 3, 4, 5, 7, 10].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} /></OptionRow>
                             <OptionRow label="Mots piégés"><OptionSelect value={tabooTrapWordCount} onChange={v => { setTabooTrapWordCount(Number(v)); socket?.emit('lobby:setTabooOptions', { trapWordCount: Number(v) }); }} options={[2, 3, 4, 5, 6, 7, 8, 10].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
-                            <OptionRow label="Temps mots piégés"><OptionSelect value={tabooTrapDuration} onChange={v => { setTabooTrapDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { trapDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180].map(t => ({ v: t, label: `${t}s` }))} disabled={!isHost} /></OptionRow>
+                            <OptionRow label="Temps mots piégés"><OptionSelect value={tabooTrapDuration} onChange={v => { setTabooTrapDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { trapDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
                             <OptionRow label="Tentatives max"><OptionSelect value={tabooMaxAttempts} onChange={v => { setTabooMaxAttempts(Number(v)); socket?.emit('lobby:setTabooOptions', { maxAttempts: Number(v) }); }} options={[3, 5, 7, 10, 15, 20, 30].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
                         </div>
                     )}
@@ -494,23 +581,37 @@ export default function LobbyCodePage() {
                     {gameType === 'quiz' && (
                         <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
                             <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Quiz</p>
-                            <OptionRow label="Quiz">
+                            <div className="space-y-1">
+                                <p className="text-xs text-gray-500 dark:text-slate-400">Quiz</p>
                                 <QuizSearch isHost={isHost} selectedId={selectedQuizId} selectedTitle={selectedQuizTitle}
+                                    categories={categories}
                                     onSelect={(id, title) => {
                                         setSelectedQuizId(id || undefined);
                                         setSelectedQuizTitle(title);
                                         if (id) socket?.emit('lobby:setQuiz', { quizId: id });
                                     }} />
-                            </OptionRow>
-                            <OptionRow label="Mode de temps">
-                                <OptionSelect value={quizTimeMode} onChange={v => { setQuizTimeMode(v as typeof quizTimeMode); socket?.emit('lobby:setTimeMode', { timeMode: v }); }}
-                                    options={[{ v: 'per_question', label: 'Par question' }, { v: 'total', label: 'Temps total' }, { v: 'none', label: 'Sans limite' }]} disabled={!isHost} />
-                            </OptionRow>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs text-gray-500 dark:text-slate-400">Mode de temps</p>
+                                <select value={quizTimeMode}
+                                    onChange={e => { setQuizTimeMode(e.target.value as typeof quizTimeMode); socket?.emit('lobby:setQuizOptions', { timeMode: e.target.value, timePerQuestion: quizTimePerQuestion }); }}
+                                    className="w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
+                                    <option value="per_question">Par question</option>
+                                    <option value="total">Temps total</option>
+                                    <option value="none">Sans limite</option>
+                                </select>
+                            </div>
                             {quizTimeMode !== 'none' && (
-                                <OptionRow label={quizTimeMode === 'total' ? 'Temps total' : 'Temps / question'}>
-                                    <OptionSelect value={quizTimePerQuestion} onChange={v => { setQuizTimePerQuestion(Number(v)); socket?.emit('lobby:setTimePerQuestion', { timePerQuestion: Number(v) }); }}
-                                        options={(quizTimeMode === 'total' ? [60, 120, 180, 300, 600, 900, 1200, 1800, 3600] : [5, 10, 15, 20, 30, 45, 60, 90, 120]).map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} />
-                                </OptionRow>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-500 dark:text-slate-400">{quizTimeMode === 'total' ? 'Temps total' : 'Temps / question'}</p>
+                                    <select value={quizTimePerQuestion}
+                                        onChange={e => { setQuizTimePerQuestion(Number(e.target.value)); socket?.emit('lobby:setQuizOptions', { timeMode: quizTimeMode, timePerQuestion: Number(e.target.value) }); }}
+                                        className="w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
+                                        {(quizTimeMode === 'total' ? [60, 120, 180, 300, 600, 900, 1200, 1800, 3600] : [5, 10, 15, 20, 30, 45, 60, 90, 120]).map(t => (
+                                            <option key={t} value={t}>{formatTime(t)}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             )}
                         </div>
                     )}
@@ -520,6 +621,21 @@ export default function LobbyCodePage() {
                         <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
                             <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Skyjow</p>
                             <Toggle checked={skyjowEliminateRows} onChange={v => { setSkyjowEliminateRows(v); socket?.emit('lobby:setSkyjowOptions', { eliminateRows: v }); }} label="Éliminer les lignes (4 identiques)" disabled={!isHost} />
+                        </div>
+                    )}
+
+                    {/* Options Imposteur */}
+                    {gameType === 'impostor' && (
+                        <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Imposteur</p>
+                            <OptionRow label="Rounds">
+                                <OptionSelect value={impostorRounds} onChange={v => { setImpostorRounds(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: Number(v), timePerRound: impostorTime }); }}
+                                    options={[1, 2, 3, 4, 5].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} />
+                            </OptionRow>
+                            <OptionRow label="Temps par round">
+                                <OptionSelect value={impostorTime} onChange={v => { setImpostorTime(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: impostorRounds, timePerRound: Number(v) }); }}
+                                    options={[30, 45, 60, 90, 120].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} />
+                            </OptionRow>
                         </div>
                     )}
 

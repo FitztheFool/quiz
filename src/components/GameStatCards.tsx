@@ -23,6 +23,7 @@ const GAME_BADGE: Record<string, string> = {
     PUISSANCE4: 'bg-rose-100   dark:bg-rose-900/40   text-rose-700   dark:text-rose-400',
     JUST_ONE: 'bg-teal-100   dark:bg-teal-900/40   text-teal-700   dark:text-teal-400',
     BATTLESHIP: 'bg-cyan-100   dark:bg-cyan-900/40   text-cyan-700   dark:text-cyan-400',
+    DIAMANT:    'bg-amber-100  dark:bg-amber-900/40  text-amber-700  dark:text-amber-400',
 };
 
 export default function GameStatCards({ gameStats, columns = 4 }: Props) {

@@ -1,14 +1,13 @@
-// src/app/battleship/[lobbyId]/page.tsx
+// src/app/Battleship/[lobbyId]/page.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useBattleship } from '@/hooks/useBattleship';
-import PlacementPhase from '@/components/battleship/PlacementPhase';
-import BattleshipBoard from '@/components/battleship/BattleshipBoard';
+import PlacementPhase from '@/components/Battleship/PlacementPhase';
+import BattleshipBoard from '@/components/Battleship/BattleshipBoard';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import FloatingChat from '@/components/Chat/FloatingChat';
 import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
 
@@ -33,11 +32,11 @@ function TurnTimerBar({ endsAt, duration }: { endsAt: number; duration: number }
 
     return (
         <div className="w-full space-y-1">
-            <div className="flex justify-between text-xs text-slate-400">
+            <div className="flex justify-between text-xs text-slate-500">
                 <span>Temps restant</span>
-                <span className={`font-mono font-bold ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : ''}`}>{timeLeft}s</span>
+                <span className={`font-mono font-bold ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : ''}`}>{timeLeft}s</span>
             </div>
-            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all duration-200 ${color}`}
                     style={{ width: `${pct}%` }}
@@ -98,10 +97,10 @@ export default function BattleshipPage() {
     const me = state.players.find((p) => p?.userId === myUserId) ?? null;
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+        <div className="min-h-screen bg-sky-50 text-slate-900 flex flex-col">
 
             {/* Header */}
-            <header className="border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-4">
+            <header className="border-b border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <span className="text-xl">⚓</span>
                     <h1 className="text-base font-bold tracking-tight">Bataille Navale</h1>
@@ -109,12 +108,12 @@ export default function BattleshipPage() {
 
                 {/* Players */}
                 <div className="flex items-center gap-2 text-sm">
-                    <span className={`px-3 py-1 rounded-full border text-xs font-semibold transition-all ${isMyTurn && state.phase === 'playing' ? 'border-blue-400 bg-blue-500/20 text-blue-300' : 'border-slate-700 text-slate-400'}`}>
+                    <span className={`px-3 py-1 rounded-full border text-xs font-semibold transition-all ${isMyTurn && state.phase === 'playing' ? 'border-blue-500 bg-blue-100 text-blue-700' : 'border-slate-300 text-slate-500'}`}>
                         {me?.username ?? 'Vous'}
                         {isMyTurn && state.phase === 'playing' && ' ⚡'}
                     </span>
-                    <span className="text-slate-600">VS</span>
-                    <span className={`px-3 py-1 rounded-full border text-xs font-semibold transition-all ${!isMyTurn && state.phase === 'playing' ? 'border-orange-400 bg-orange-500/20 text-orange-300' : 'border-slate-700 text-slate-400'}`}>
+                    <span className="text-slate-400">VS</span>
+                    <span className={`px-3 py-1 rounded-full border text-xs font-semibold transition-all ${!isMyTurn && state.phase === 'playing' ? 'border-orange-400 bg-orange-50 text-orange-600' : 'border-slate-300 text-slate-500'}`}>
                         {opponent?.username ?? (state.phase === 'waiting' ? 'En attente…' : 'Adversaire')}
                         {!isMyTurn && state.phase === 'playing' && ' ⚡'}
                     </span>
@@ -124,7 +123,7 @@ export default function BattleshipPage() {
                 {state.phase === 'playing' && (
                     <button
                         onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                        className="text-xs text-red-400 hover:text-red-300 border border-red-900 hover:border-red-700 px-3 py-1.5 rounded-lg transition-all"
+                        className="text-xs text-red-500 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition-all"
                     >
                         🏳️ Abandonner
                     </button>
@@ -134,7 +133,7 @@ export default function BattleshipPage() {
             {/* Error toast */}
             {state.error && (
                 <div
-                    className="mx-4 mt-3 px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm flex justify-between items-center cursor-pointer"
+                    className="mx-4 mt-3 px-4 py-2 bg-red-50 border border-red-300 rounded-lg text-red-600 text-sm flex justify-between items-center cursor-pointer"
                     onClick={clearError}
                 >
                     <span>⚠️ {state.error}</span>
@@ -144,16 +143,13 @@ export default function BattleshipPage() {
 
             {/* Body */}
             <main className="flex flex-1 overflow-hidden">
-                {/* Div fantôme = même largeur que sidebar chat pour rééquilibrer */}
-
                 <div className="flex-1 overflow-y-auto py-6 flex flex-col items-center gap-6">
 
                     {/* Waiting */}
                     {state.phase === 'waiting' && (
-                        <div className="flex flex-col items-center gap-4 py-16">
-                            <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-slate-400">En attente du second joueur…</p>
-                            <p className="text-slate-600 text-xs font-mono">{lobbyId}</p>
+                        <div className="flex flex-col items-center gap-2 py-16">
+                            <LoadingSpinner fullScreen={false} message="En attente du second joueur…" />
+                            <p className="text-slate-400 text-xs font-mono">{lobbyId}</p>
                         </div>
                     )}
 
@@ -170,7 +166,7 @@ export default function BattleshipPage() {
                     {/* Playing */}
                     {state.phase === 'playing' && (
                         <div className="flex flex-col items-center gap-4 w-full">
-                            <div className={`px-4 py-2 rounded-xl text-center text-sm font-semibold ${isMyTurn ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}`}>
+                            <div className={`px-4 py-2 rounded-xl text-center text-sm font-semibold ${isMyTurn ? 'bg-blue-100 text-blue-700 border border-blue-400' : 'bg-orange-50 text-orange-600 border border-orange-300'}`}>
                                 {isMyTurn ? '🎯 C\'est votre tour — Choisissez une case à tirer !' : `⏳ Tour de ${opponent?.username ?? 'l\'adversaire'}…`}
                             </div>
                             {state.turnEndsAt && (

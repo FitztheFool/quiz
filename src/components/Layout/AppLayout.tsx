@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import type { TabType } from '@/types/dashboard';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -35,7 +36,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
     }, [pathname]);
 
-    if (status === 'loading') return <>{children}</>;
+    if (status === 'loading') return (
+        <div className="flex-1 flex items-center justify-center py-16">
+            <LoadingSpinner fullScreen={false} />
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">

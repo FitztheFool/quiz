@@ -68,8 +68,16 @@ export const GAME_CONFIG = {
         label: 'Diamant',
         icon: '💎',
         higherIsBetter: true,
-        scoreLabel: 'Rubis',
-        description: "Explorez la grotte de Tacora et ramassez un maximum de rubis ! Chaque tour, décidez de continuer ou de sortir prudemment. Si le même danger apparaît deux fois, tous ceux encore dans la grotte repartent les mains vides. Le joueur avec le plus de rubis dans son coffre à la fin des 5 manches gagne.",
+        scoreLabel: 'Points',
+        description: "Explorez la grotte de Tacora et ramassez un maximum de diamants ! Chaque tour, décidez de continuer ou de sortir prudemment. Si le même danger apparaît deux fois, tous ceux encore dans la grotte repartent les mains vides. Le joueur avec le plus de rubis dans son coffre à la fin des 5 manches gagne.",
+    },
+    impostor: {
+        gameType: 'IMPOSTOR' as const,
+        label: 'Imposteur',
+        icon: '🎭',
+        higherIsBetter: true,
+        scoreLabel: 'Victoires',
+        description: "Un imposteur se cache parmi vous ! Les joueurs normaux reçoivent un mot secret et doivent donner des indices sans se trahir. L'imposteur improvise sans connaître le mot. Après les tours de parole, votez pour éliminer le suspect !",
     },
 } as const;
 
@@ -98,7 +106,8 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     puissance4: [2],
     'just-one': [3, 4, 5, 6, 7],
     battleship: [2],
-    diamant: [3, 4, 5, 6, 7, 8],
+    diamant: [2, 3, 4, 5, 6, 7, 8],
+    impostor: [4, 5, 6, 7, 8],
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
@@ -106,7 +115,8 @@ export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
     taboo: 4,
     'just-one': 3,
     battleship: 2,
-    diamant: 3,
+    diamant: 2,
+    impostor: 4,
 };
 
 export const EXACT_PLAYERS: Partial<Record<GameType, number>> = {
@@ -118,8 +128,7 @@ export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
     yahtzee: '🎲 Yahtzee — aucune option.',
     puissance4: '🔘 Puissance 4 — exactement 2 joueurs.',
     'just-one': `${GAME_CONFIG['just-one'].icon} Just One — 3 à 7 joueurs.`,
-    battleship: `${GAME_CONFIG.battleship.icon} Bataille Navale — exactement 2 joueurs.`,
-    diamant: `${GAME_CONFIG.diamant.icon} Diamant — 3 à 8 joueurs.`,
+    diamant: `${GAME_CONFIG.diamant.icon} Diamant — 2 à 8 joueurs.`,
 };
 
 export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string) => string>> = {
@@ -131,4 +140,5 @@ export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string) => string>>
     'just-one': (id) => `/just-one/${id}`,
     battleship: (id) => `/battleship/${id}`,
     diamant: (id) => `/diamant/${id}`,
+    impostor: (id) => `/impostor/${id}`,
 };

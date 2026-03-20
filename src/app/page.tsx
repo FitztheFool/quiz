@@ -50,7 +50,7 @@ export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [categoryId, setCategoryId] = useState('');
     const [page, setPage] = useState(1);
-    const [code, setCode] = useState('');
+    const [lobbyCode, setCode] = useState('');
     useEffect(() => { setCode(crypto.randomUUID()); }, []);
 
     const fetchQuizzes = useCallback(async (p = 1, s = '', cat = '') => {
@@ -115,7 +115,7 @@ export default function HomePage() {
                                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-px active:translate-y-0">
                                     🎮 Rejoindre une partie
                                 </Link>
-                                <Link href={`/lobby/create/${code}`}
+                                <Link href={`/lobby/create/${lobbyCode}`}
                                     className="px-6 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white font-bold text-sm rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:-translate-y-px active:translate-y-0">
                                     ✨ Créer un lobby
                                 </Link>

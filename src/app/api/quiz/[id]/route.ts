@@ -59,8 +59,13 @@ export async function GET(
       );
     }
 
-    // Quiz privé : seul le créateur peut y accéder
-    if (!quiz.isPublic && quiz.creatorId !== session?.user?.id) {
+    // Bypass pour les appels serveur-à-serveur (quiz-server)
+    const authHeader = request.headers.get('authorization');
+    const internalKey = process.env.INTERNAL_API_KEY;
+    const isInternalRequest = internalKey && authHeader === `Bearer ${internalKey}`;
+
+    // Quiz privé : seul le créateur peut y accéder (ou appel interne)
+    if (!quiz.isPublic && quiz.creatorId !== session?.user?.id && !isInternalRequest) {
       return NextResponse.json(
         { error: "Vous n'avez pas accès à ce quiz privé" },
         { status: 403 }

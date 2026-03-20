@@ -147,9 +147,13 @@ export function useDiamant({
         });
         socketRef.current = socket;
 
-        socket.on('connect', () => {
+        let joinAttempts = 0;
+        const joinRoom = () => {
+            joinAttempts++;
             socket.emit('diamant:join', { lobbyId, userId, username });
-        });
+        };
+
+        socket.on('connect', joinRoom);
 
         // ── Joined ────────────────────────────────────────────────────────────
         socket.on('diamant:joined', (payload: any) => {
@@ -259,6 +263,11 @@ export function useDiamant({
 
         // ── Error ─────────────────────────────────────────────────────────────
         socket.on('diamant:error', (payload: { message: string }) => {
+            if (payload.message === 'Room not found' && joinAttempts < 6) {
+                // configure n'est peut-être pas encore arrivé au serveur — retry
+                setTimeout(joinRoom, 500);
+                return;
+            }
             setState((prev) => ({ ...prev, error: payload.message }));
         });
 

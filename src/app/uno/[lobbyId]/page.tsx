@@ -125,7 +125,6 @@ export default function UnoPage() {
     const lobbyId = params?.code ?? '';
 
     const joinedRef = useRef(false);
-    const resultSavedRef = useRef(false);
     const socket = useMemo(() => getUnoSocket(), []);
 
     const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
@@ -152,20 +151,6 @@ export default function UnoPage() {
         username: session?.user?.username ?? session?.user?.email ?? 'Joueur',
     }), [session]);
 
-    const saveResult = useCallback(async (finalScores: FinalScore[], gameId?: string) => {
-        if (resultSavedRef.current || !me.userId) return;
-        resultSavedRef.current = true;
-        try {
-            await fetch('/api/uno/result', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ finalScores, gameId }),
-            });
-        } catch (err) {
-            console.error('[UNO] saveResult failed:', err);
-            resultSavedRef.current = false;
-        }
-    }, [me.userId]);
 
     useEffect(() => {
         if (!socket) return;
@@ -184,9 +169,6 @@ export default function UnoPage() {
             if (inactivityIntervalRef.current) {
                 clearInterval(inactivityIntervalRef.current);
                 inactivityIntervalRef.current = null;
-            }
-            if (s.status === 'FINISHED' && s.finalScores && !s.spectator) {
-                saveResult(s.finalScores, s.gameId);
             }
         };
 
@@ -231,7 +213,7 @@ export default function UnoPage() {
             socket.off('uno:playerKicked', onPlayerKicked);
             if (inactivityIntervalRef.current) clearInterval(inactivityIntervalRef.current);
         };
-    }, [socket, status, me.userId, lobbyId, saveResult]);
+    }, [socket, status, me.userId, lobbyId]);
 
     const isPlayable = useCallback((card: Card): boolean => {
         if (!gameState || !gameState.isMyTurn || gameState.spectator) return false;

@@ -1,9 +1,9 @@
 // src/app/leaderboard/[game]/page.tsx
 import { redirect } from 'next/navigation';
 import LeaderboardView from '@/components/LeaderboardView';
+import { GameType as Game, GAME_OPTIONS } from '@/lib/gameConfig';
 
-type Game = 'uno' | 'skyjow' | 'taboo' | 'quiz' | 'yahtzee' | 'puissance4' | 'just-one' | 'battleship';
-const VALID_GAMES: Game[] = ['uno', 'skyjow', 'taboo', 'quiz', 'yahtzee', 'puissance4', 'just-one', 'battleship'];
+const VALID_GAMES = GAME_OPTIONS.map(g => g.value);
 
 type Props = {
     params: Promise<{ game: string }>;

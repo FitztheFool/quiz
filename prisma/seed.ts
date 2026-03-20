@@ -58,36 +58,19 @@ async function main() {
         update: {},
         create: { email: 'random@quiz.app', username: 'Aléatoire', role: 'RANDOM', passwordHash: defaultPasswordHash },
     });
+
     const anonUser = await prisma.user.upsert({
         where: { email: 'user@quiz.app' },
         update: {},
         create: { email: 'user@quiz.app', username: 'User', role: 'USER', passwordHash: defaultPasswordHash },
     });
-    const anonUser1 = await prisma.user.upsert({
-        where: { email: 'user1@quiz.app' },
-        update: {},
-        create: { email: 'user1@quiz.app', username: 'User1', role: 'USER', passwordHash: defaultPasswordHash },
-    });
-    const anonUser2 = await prisma.user.upsert({
-        where: { email: 'user2@quiz.app' },
-        update: {},
-        create: { email: 'user2@quiz.app', username: 'User2', role: 'USER', passwordHash: defaultPasswordHash },
-    });
-    const anonUser3 = await prisma.user.upsert({
-        where: { email: 'user3@quiz.app' },
-        update: {},
-        create: { email: 'user3@quiz.app', username: 'User3', role: 'USER', passwordHash: defaultPasswordHash },
-    });
-    const anonUser4 = await prisma.user.upsert({
-        where: { email: 'user4@quiz.app' },
-        update: {},
-        create: { email: 'user4@quiz.app', username: 'User4', role: 'USER', passwordHash: defaultPasswordHash },
-    });
-    const anonUser5 = await prisma.user.upsert({
-        where: { email: 'user5@quiz.app' },
-        update: {},
-        create: { email: 'user5@quiz.app', username: 'User5', role: 'USER', passwordHash: defaultPasswordHash },
-    });
+    const [anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10] = await Promise.all(
+        Array.from({ length: 10 }, (_, i) => prisma.user.upsert({
+            where: { email: `user${i + 1}@quiz.app` },
+            update: {},
+            create: { email: `user${i + 1}@quiz.app`, username: `User${i + 1}`, role: 'USER', passwordHash: defaultPasswordHash },
+        }))
+    );
     const farosUser = await prisma.user.upsert({
         where: { email: 'faros@quiz.app' },
         update: {},
@@ -101,6 +84,11 @@ async function main() {
     console.log(`✅ Utilisateur créé: ${anonUser3.username}`);
     console.log(`✅ Utilisateur créé: ${anonUser4.username}`);
     console.log(`✅ Utilisateur créé: ${anonUser5.username}`);
+    console.log(`✅ Utilisateur créé: ${anonUser6.username}`);
+    console.log(`✅ Utilisateur créé: ${anonUser7.username}`);
+    console.log(`✅ Utilisateur créé: ${anonUser8.username}`);
+    console.log(`✅ Utilisateur créé: ${anonUser9.username}`);
+    console.log(`✅ Utilisateur créé: ${anonUser10.username}`);
     console.log(`✅ Utilisateur créé: ${farosUser.username}`);
 
     // ─── 3. MOTS ────────────────────────────────────────────────────────
@@ -398,6 +386,118 @@ async function main() {
                 { content: "La blockchain est une technologie de stockage de données décentralisée", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
             ]
         },
+        // ── Musique ────────────────────────────────────────────────────────────
+        {
+            title: "Les Beatles", description: "Le groupe légendaire de Liverpool", categoryId: musique.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "De quelle ville les Beatles sont-ils originaires ?", type: "MCQ", points: 1, answers: [{ content: "Londres", isCorrect: false }, { content: "Manchester", isCorrect: false }, { content: "Liverpool", isCorrect: true }, { content: "Birmingham", isCorrect: false }] },
+                { content: "Combien de membres composaient les Beatles ?", type: "MCQ", points: 1, answers: [{ content: "3", isCorrect: false }, { content: "4", isCorrect: true }, { content: "5", isCorrect: false }, { content: "6", isCorrect: false }] },
+                { content: "John Lennon a été assassiné en 1980", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel album des Beatles se termine par une face B vide ?", type: "MCQ", points: 3, answers: [{ content: "Abbey Road", isCorrect: false }, { content: "Sgt. Pepper's", isCorrect: false }, { content: "Let It Be", isCorrect: false }, { content: "Revolver", isCorrect: false }] },
+                { content: "Qui était le batteur des Beatles ?", type: "MCQ", points: 1, answers: [{ content: "John Lennon", isCorrect: false }, { content: "Paul McCartney", isCorrect: false }, { content: "George Harrison", isCorrect: false }, { content: "Ringo Starr", isCorrect: true }] },
+                { content: "Hey Jude dure plus de 7 minutes", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Tubes des Années 80", description: "La décennie synthé et néon", categoryId: musique.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Quel artiste a sorti l'album 'Thriller' en 1982 ?", type: "MCQ", points: 1, answers: [{ content: "Prince", isCorrect: false }, { content: "Michael Jackson", isCorrect: true }, { content: "David Bowie", isCorrect: false }, { content: "Madonna", isCorrect: false }] },
+                { content: "Thriller est l'album le plus vendu de tous les temps", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "De quel pays vient ABBA ?", type: "MCQ", points: 1, answers: [{ content: "Norvège", isCorrect: false }, { content: "Danemark", isCorrect: false }, { content: "Suède", isCorrect: true }, { content: "Finlande", isCorrect: false }] },
+                { content: "Quel groupe a sorti 'Don't You (Forget About Me)' en 1985 ?", type: "MCQ", points: 2, answers: [{ content: "Duran Duran", isCorrect: false }, { content: "The Cure", isCorrect: false }, { content: "Simple Minds", isCorrect: true }, { content: "Depeche Mode", isCorrect: false }] },
+                { content: "Madonna est surnommée la 'Queen of Pop'", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel instrument est emblématique de la musique des années 80 ?", type: "MCQ", points: 2, answers: [{ content: "Violon", isCorrect: false }, { content: "Synthétiseur", isCorrect: true }, { content: "Trompette", isCorrect: false }, { content: "Contrebasse", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Rap et Hip-Hop", description: "Culture urbaine et flow", categoryId: musique.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Dans quelle ville le hip-hop est-il né dans les années 1970 ?", type: "MCQ", points: 2, answers: [{ content: "Los Angeles", isCorrect: false }, { content: "Chicago", isCorrect: false }, { content: "New York", isCorrect: true }, { content: "Atlanta", isCorrect: false }] },
+                { content: "Eminem est d'origine afro-américaine", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: false }, { content: "Faux", isCorrect: true }] },
+                { content: "Quel rappeur français a sorti l'album 'PNL' ?", type: "MCQ", points: 2, answers: [{ content: "Booba", isCorrect: false }, { content: "Nekfeu", isCorrect: false }, { content: "PNL", isCorrect: true }, { content: "Stromae", isCorrect: false }] },
+                { content: "Le rap est l'un des quatre piliers du hip-hop", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel artiste se cache derrière le surnom 'Slim Shady' ?", type: "TEXT", points: 2, answers: [{ content: "Eminem", isCorrect: true }] },
+                { content: "Jay-Z a fondé le label Roc Nation", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Chanson Française", description: "De Brel à Stromae", categoryId: musique.id, isPublic: true, randomizeQuestions: false,
+            questions: [
+                { content: "Quelle chanteuse française est surnommée 'La Môme' ?", type: "MCQ", points: 1, answers: [{ content: "Barbara", isCorrect: false }, { content: "Édith Piaf", isCorrect: true }, { content: "Dalida", isCorrect: false }, { content: "Juliette Gréco", isCorrect: false }] },
+                { content: "Jacques Brel est français", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: false }, { content: "Faux", isCorrect: true }] },
+                { content: "Stromae est de nationalité belge", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel chanteur a popularisé 'Ne me quitte pas' ?", type: "MCQ", points: 2, answers: [{ content: "Serge Gainsbourg", isCorrect: false }, { content: "Charles Aznavour", isCorrect: false }, { content: "Jacques Brel", isCorrect: true }, { content: "Georges Brassens", isCorrect: false }] },
+                { content: "Quel instrument Serge Gainsbourg jouait-il principalement ?", type: "MCQ", points: 2, answers: [{ content: "Guitare", isCorrect: false }, { content: "Piano", isCorrect: true }, { content: "Saxophone", isCorrect: false }, { content: "Violon", isCorrect: false }] },
+                { content: "Quel est le vrai prénom de Stromae ?", type: "TEXT", points: 3, answers: [{ content: "Paul", isCorrect: true }] },
+            ]
+        },
+        {
+            title: "Instruments de Musique", description: "Cordes, vents et percussions", categoryId: musique.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Combien de cordes possède une guitare classique ?", type: "MCQ", points: 1, answers: [{ content: "4", isCorrect: false }, { content: "5", isCorrect: false }, { content: "6", isCorrect: true }, { content: "7", isCorrect: false }] },
+                { content: "Le piano est à la fois un instrument à cordes et à percussion", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel instrument est associé aux orchestres classiques comme instrument soliste par excellence ?", type: "MCQ", points: 2, answers: [{ content: "Flûte", isCorrect: false }, { content: "Violon", isCorrect: true }, { content: "Alto", isCorrect: false }, { content: "Hautbois", isCorrect: false }] },
+                { content: "La contrebasse est plus grande que le violoncelle", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel instrument joue Yo-Yo Ma ?", type: "MCQ", points: 2, answers: [{ content: "Violon", isCorrect: false }, { content: "Alto", isCorrect: false }, { content: "Violoncelle", isCorrect: true }, { content: "Contrebasse", isCorrect: false }] },
+                { content: "Quel est l'instrument à vent le plus grave de l'orchestre ?", type: "TEXT", points: 3, answers: [{ content: "Tuba", isCorrect: true }] },
+            ]
+        },
+        // ── Pop Culture ────────────────────────────────────────────────────────
+        {
+            title: "Harry Potter", description: "Le monde des sorciers", categoryId: popCulture.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Quel est le nom de l'école de sorcellerie de Harry Potter ?", type: "TEXT", points: 1, answers: [{ content: "Poudlard", isCorrect: true }] },
+                { content: "Dans quelle maison Harry Potter est-il placé ?", type: "MCQ", points: 1, answers: [{ content: "Serpentard", isCorrect: false }, { content: "Poufsouffle", isCorrect: false }, { content: "Gryffondor", isCorrect: true }, { content: "Serdaigle", isCorrect: false }] },
+                { content: "Hermione Granger est la meilleure amie de Harry Potter", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel sort tue instantanément ?", type: "MCQ", points: 2, answers: [{ content: "Expecto Patronum", isCorrect: false }, { content: "Avada Kedavra", isCorrect: true }, { content: "Expelliarmus", isCorrect: false }, { content: "Crucio", isCorrect: false }] },
+                { content: "J.K. Rowling a écrit les 7 tomes de Harry Potter", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Comment s'appelle le journal sorcier dans Harry Potter ?", type: "MCQ", points: 2, answers: [{ content: "La Gazette Magique", isCorrect: false }, { content: "La Gazette du Sorcier", isCorrect: true }, { content: "Le Courrier des Sorciers", isCorrect: false }, { content: "Le Monde Enchanté", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Marvel et Super-Héros", description: "L'univers cinématographique Marvel", categoryId: popCulture.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Quel super-héros porte un costume rouge et bleu avec une toile d'araignée ?", type: "TEXT", points: 1, answers: [{ content: "Spider-Man", isCorrect: true }] },
+                { content: "Thor est le dieu de la foudre dans la mythologie nordique", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel métal compose le bouclier de Captain America ?", type: "MCQ", points: 2, answers: [{ content: "Titane", isCorrect: false }, { content: "Adamantium", isCorrect: false }, { content: "Vibranium", isCorrect: true }, { content: "Acier inoxydable", isCorrect: false }] },
+                { content: "Tony Stark est le vrai nom de Batman", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: false }, { content: "Faux", isCorrect: true }] },
+                { content: "Quel film a lancé le MCU (Marvel Cinematic Universe) en 2008 ?", type: "MCQ", points: 2, answers: [{ content: "Thor", isCorrect: false }, { content: "Captain America", isCorrect: false }, { content: "Iron Man", isCorrect: true }, { content: "The Avengers", isCorrect: false }] },
+                { content: "Quel personnage dit la réplique 'I am Groot' ?", type: "TEXT", points: 1, answers: [{ content: "Groot", isCorrect: true }] },
+            ]
+        },
+        {
+            title: "Séries TV Incontournables", description: "Les grandes séries de la décennie", categoryId: popCulture.id, isPublic: true, randomizeQuestions: false,
+            questions: [
+                { content: "Dans quelle série trouve-t-on les personnages Walter White et Jesse Pinkman ?", type: "MCQ", points: 1, answers: [{ content: "Narcos", isCorrect: false }, { content: "Breaking Bad", isCorrect: true }, { content: "Ozark", isCorrect: false }, { content: "Dexter", isCorrect: false }] },
+                { content: "Game of Thrones est basé sur les romans de George R.R. Martin", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Combien de saisons compte 'Friends' ?", type: "MCQ", points: 2, answers: [{ content: "8", isCorrect: false }, { content: "9", isCorrect: false }, { content: "10", isCorrect: true }, { content: "12", isCorrect: false }] },
+                { content: "Stranger Things se déroule dans les années 1980", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Dans quelle série fictive 'Los Alamos' est-il au cœur de l'intrigue ?", type: "MCQ", points: 3, answers: [{ content: "The Crown", isCorrect: false }, { content: "Black Mirror", isCorrect: false }, { content: "Better Call Saul", isCorrect: false }, { content: "Breaking Bad", isCorrect: true }] },
+                { content: "Qui est le créateur de la série 'The Office' (version américaine) ?", type: "MCQ", points: 3, answers: [{ content: "Seth MacFarlane", isCorrect: false }, { content: "Greg Daniels", isCorrect: true }, { content: "Ricky Gervais", isCorrect: false }, { content: "Steve Carell", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Jeux Vidéo Pop Culture", description: "Icônes du gaming", categoryId: popCulture.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Dans quelle série de jeux vidéo incarne-t-on Link ?", type: "MCQ", points: 1, answers: [{ content: "Final Fantasy", isCorrect: false }, { content: "The Legend of Zelda", isCorrect: true }, { content: "Dragon Quest", isCorrect: false }, { content: "Metroid", isCorrect: false }] },
+                { content: "Fortnite est un jeu de type Battle Royale", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel personnage de jeu vidéo est associé à une casquette rouge et à des champignons ?", type: "TEXT", points: 1, answers: [{ content: "Mario", isCorrect: true }] },
+                { content: "Sonic est un personnage de Nintendo", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: false }, { content: "Faux", isCorrect: true }] },
+                { content: "Quel est le studio derrière la saga 'The Witcher' ?", type: "MCQ", points: 2, answers: [{ content: "Ubisoft", isCorrect: false }, { content: "CD Projekt Red", isCorrect: true }, { content: "Rockstar Games", isCorrect: false }, { content: "Bethesda", isCorrect: false }] },
+                { content: "League of Legends est un jeu de type MOBA", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Cinéma Pop Culture", description: "Blockbusters et films cultes", categoryId: popCulture.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Qui a réalisé la trilogie 'Le Seigneur des Anneaux' ?", type: "MCQ", points: 2, answers: [{ content: "Steven Spielberg", isCorrect: false }, { content: "James Cameron", isCorrect: false }, { content: "Peter Jackson", isCorrect: true }, { content: "Christopher Nolan", isCorrect: false }] },
+                { content: "Avatar (2009) est le film le plus rentable de l'histoire du cinéma", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quelle saga met en scène Vin Diesel dans un rôle principal de course automobile ?", type: "MCQ", points: 1, answers: [{ content: "Rush", isCorrect: false }, { content: "Fast & Furious", isCorrect: true }, { content: "Speed Racer", isCorrect: false }, { content: "Driven", isCorrect: false }] },
+                { content: "Quentin Tarantino est connu pour ses dialogues et sa violence stylisée", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Dans quel film la réplique 'May the Force be with you' est-elle célèbre ?", type: "TEXT", points: 1, answers: [{ content: "Star Wars", isCorrect: true }] },
+                { content: "Quel acteur joue le rôle de Jack Dawson dans Titanic ?", type: "MCQ", points: 1, answers: [{ content: "Brad Pitt", isCorrect: false }, { content: "Leonardo DiCaprio", isCorrect: true }, { content: "Tom Hanks", isCorrect: false }, { content: "Matt Damon", isCorrect: false }] },
+            ]
+        },
     ];
 
     console.log(`\n🎯 Création de ${quizData.length} quiz...`);
@@ -454,6 +554,8 @@ async function main() {
     const anonUser1Quizzes = shuffle([...allQuizzes]).slice(0, 20);
     const anonUser2Quizzes = shuffle([...allQuizzes]).slice(0, 20);
     const anonUser3Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+    const anonUser4Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+    const anonUser5Quizzes = shuffle([...allQuizzes]).slice(0, 20);
 
     for (let i = 0; i < farosQuizzes.length; i++) {
         const quiz = farosQuizzes[i];
@@ -480,13 +582,25 @@ async function main() {
             data: { userId: anonUser3.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
         });
     }
+    for (let i = 0; i < anonUser4Quizzes.length; i++) {
+        const quiz = anonUser4Quizzes[i];
+        await prisma.attempt.create({
+            data: { userId: anonUser3.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
+        });
+    }
+    for (let i = 0; i < anonUser4Quizzes.length; i++) {
+        const quiz = anonUser4Quizzes[i];
+        await prisma.attempt.create({
+            data: { userId: anonUser3.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
+        });
+    }
 
-    console.log('✅ 20 attempts Quiz créés pour Faros, User1, User2 et User3');
+    console.log('✅ 20 attempts Quiz créés pour Faros, User1, User2, User3, User4 et User5');
 
     // ─── 6. Parties UNO ───────────────────────────────────────────────────────
     console.log('\n🎴 Création des parties UNO...');
 
-    const unoPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const unoPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
     const totalUnoGames = 80;
     const unoGameDates: Date[] = [];
 
@@ -525,7 +639,7 @@ async function main() {
     // ─── 7. Parties SKYJOW ────────────────────────────────────────────────────
     console.log('\n🂠 Création des parties Skyjow...');
 
-    const skyjowPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const skyjowPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
     const totalSkyjowGames = 60;
     const skyjowGameDates: Date[] = [];
 
@@ -573,7 +687,7 @@ async function main() {
     // ─── 8. Parties TABOO ────────────────────────────────────────────────────
     console.log('\n🗣️ Création des parties Taboo...');
 
-    const tabooPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const tabooPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10];
     const totalTabooGames = 40;
     const tabooGameDates: Date[] = [];
 
@@ -642,7 +756,7 @@ async function main() {
     // ─── 9. Parties YAHTZEE ───────────────────────────────────────────────────
     console.log('\n🎲 Création des parties Yahtzee...');
 
-    const yahtzeePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const yahtzeePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
     const totalYahtzeeGames = 50;
     const yahtzeeGameDates: Date[] = [];
 
@@ -688,7 +802,7 @@ async function main() {
     // ─── 10. Parties PUISSANCE4 ───────────────────────────────────────────────
     console.log('\n🔴 Création des parties Puissance 4...');
 
-    const p4Players = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const p4Players = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
     const totalP4Games = 30;
 
     for (let g = 0; g < totalP4Games; g++) {
@@ -727,7 +841,7 @@ async function main() {
     // ─── 11. Parties JUST ONE ─────────────────────────────────────────────────
     console.log('\n🔤 Création des parties Just One...');
 
-    const justOnePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const justOnePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
     const totalJustOneGames = 35;
 
     for (let g = 0; g < totalJustOneGames; g++) {
@@ -763,7 +877,7 @@ async function main() {
     // ─── 12. Parties BATTLESHIP ───────────────────────────────────────────────
     console.log('\n🚢 Création des parties Bataille Navale...');
 
-    const battleshipPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5];
+    const battleshipPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10];
     const totalBattleshipGames = 30;
 
     for (let g = 0; g < totalBattleshipGames; g++) {
@@ -796,6 +910,51 @@ async function main() {
         console.log(`  ✅ Partie Battleship ${g + 1}/${totalBattleshipGames} — ${player1.username} vs ${player2.username} — gagnant: ${players[winnerIndex].username}`);
     }
     console.log(`✅ ${totalBattleshipGames} parties Bataille Navale créées`);
+
+    // ─── 13. Parties DIAMANT ──────────────────────────────────────────────────
+    console.log('\n💎 Création des parties Diamant...');
+
+    const diamantPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10];
+    const totalDiamantGames = 40;
+
+    for (let g = 0; g < totalDiamantGames; g++) {
+        const gameId = crypto.randomUUID();
+        const baseDaysAgo = Math.floor((g / totalDiamantGames) * 70);
+        const jitterHours = Math.floor(Math.random() * 24);
+        const gameDate = new Date(Date.now() - baseDaysAgo * 24 * 60 * 60 * 1000 - jitterHours * 60 * 60 * 1000);
+
+        const playerCount = Math.floor(Math.random() * 5) + 2; // 2 à 6 joueurs
+        const participants = shufflePlayers(diamantPlayers).slice(0, Math.min(playerCount, diamantPlayers.length));
+
+        // Score Diamant : rubis sécurisés, entre 0 et 50, + reliques (5 pts chacune)
+        const scores = participants.map(() => {
+            const rubies = Math.floor(Math.random() * 45);
+            const diamonds = Math.random() < 0.3 ? Math.floor(Math.random() * 3) + 1 : 0;
+            return rubies + diamonds * 5;
+        });
+
+        // Classement basé sur le score (plus haut = meilleur)
+        const ranked = [...participants]
+            .map((player, i) => ({ player, score: scores[i] }))
+            .sort((a, b) => b.score - a.score);
+
+        for (let p = 0; p < ranked.length; p++) {
+            await prisma.attempt.create({
+                data: {
+                    userId: ranked[p].player.id,
+                    score: ranked[p].score,
+                    gameType: 'DIAMANT',
+                    placement: p + 1,
+                    gameId,
+                    quizId: null,
+                    trapScore: 0,
+                    createdAt: new Date(gameDate.getTime() + p * 1000),
+                },
+            });
+        }
+        console.log(`  ✅ Partie Diamant ${g + 1}/${totalDiamantGames} — ${playerCount} joueurs — scores: ${ranked.map(r => r.score).join(', ')}`);
+    }
+    console.log(`✅ ${totalDiamantGames} parties Diamant créées`);
 
     console.log(`\n✨ Seed terminé ! ${createdCount} quiz créés avec succès.`);
 }
