@@ -428,6 +428,7 @@ export default function LobbyCodePage() {
     if (status !== 'authenticated' || !session?.user?.id) return null;
 
     const me = session.user.id;
+    const isAdmin = (session.user as any).role === 'ADMIN';
     const isHost = hostId === me;
     const selectedGame = GAME_OPTIONS.find(g => g.value === gameType);
     const isMaxLocked = gameType === 'puissance4' || (gameType === 'uno' && unoTeamMode === '2v2');
@@ -459,6 +460,12 @@ export default function LobbyCodePage() {
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isHost ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-200 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400'}`}>
                             {isHost ? '👑 Host' : '👤 Participant'}
                         </span>
+                        {isAdmin && !isHost && (
+                            <button onClick={() => socket?.emit('lobby:claimHost')}
+                                className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-500/25 transition-colors cursor-pointer">
+                                🛡️ Prendre le contrôle
+                            </button>
+                        )}
                     </div>
                 </div>
 
