@@ -82,7 +82,7 @@ function OptionSelect({ value, onChange, options, disabled }: {
 }) {
     return (
         <select value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
-            className="bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-1.5 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            className="font-sans bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-1.5 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
             {options.map(o => <option key={o.v} value={o.v} className="bg-white dark:bg-slate-800">{o.label}</option>)}
         </select>
     );
@@ -114,8 +114,21 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, c
     const [open, setOpen] = useState(false);
     const [catOpen, setCatOpen] = useState(false);
     const searchTimer = useRef<NodeJS.Timeout | null>(null);
+    const catContainerRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const selectedCategory = categories.find(c => c.id === categoryId) ?? null;
+
+    useEffect(() => {
+        if (!catOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (catContainerRef.current && !catContainerRef.current.contains(e.target as Node)) {
+                setCatOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [catOpen]);
 
     const search = (q: string, catId?: string) => {
         setQuery(q);
@@ -124,13 +137,13 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, c
         const activeCatId = catId !== undefined ? catId : categoryId;
         if (!q.trim() && !activeCatId) { setResults([]); return; }
         searchTimer.current = setTimeout(async () => {
-            const params = new URLSearchParams({ page: '1', pageSize: '6' });
+            const params = new URLSearchParams({ page: '1', pageSize: '12' });
             if (q.trim()) params.set('search', q);
             if (activeCatId) params.set('categoryId', activeCatId);
             const res = await fetch(`/api/quiz?${params}`);
             if (!res.ok) return;
             const data = await res.json();
-            setResults(Array.isArray(data) ? data : data.quizzes ?? []);
+            setResults(Array.isArray(data) ? data : (data.quizzes ?? []));
         }, 300);
     };
 
@@ -140,6 +153,7 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, c
         if (selectedId) onSelect('', '');
         search(query, catId);
         setOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 0);
     };
 
     const displayValue = selectedId && selectedTitle ? selectedTitle : query;
@@ -149,12 +163,11 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, c
         <div className="w-full space-y-2">
             {/* Category custom dropdown */}
             {categories.length > 0 && (
-                <div className="relative">
+                <div className="relative" ref={catContainerRef}>
                     <button
                         type="button"
                         onClick={() => isHost && setCatOpen(v => !v)}
-                        onBlur={() => setTimeout(() => setCatOpen(false), 150)}
-                        className="w-full flex items-center justify-between bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60">
+                        className="font-sans w-full flex items-center justify-between bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60">
                         <span className={selectedCategory ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-slate-500'}>
                             {selectedCategory ? selectedCategory.name : 'Toutes les catégories'}
                         </span>
@@ -163,7 +176,7 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, c
                         </span>
                     </button>
                     {catOpen && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto font-sans">
                             <button onMouseDown={() => handleCategoryChange('')}
                                 className={`w-full px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${!categoryId ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
                                 <span>Toutes les catégories</span>
@@ -184,19 +197,20 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, c
             <div className="relative">
                 <input
                     type="text"
+                    ref={inputRef}
                     value={displayValue}
                     onChange={e => { if (selectedId) onSelect('', ''); search(e.target.value); }}
                     onFocus={() => { if (query || categoryId) { search(query); setOpen(true); } }}
                     onBlur={() => setTimeout(() => setOpen(false), 150)}
                     placeholder="Rechercher un quiz…"
                     readOnly={!isHost}
-                    className={`w-full bg-gray-100 dark:bg-slate-700/60 border rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${isSelected ? 'border-green-500/60 pr-7' : 'border-gray-300 dark:border-slate-600/50'}`}
+                    className={`font-sans w-full bg-gray-100 dark:bg-slate-700/60 border rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${isSelected ? 'border-green-500/60 pr-7' : 'border-gray-300 dark:border-slate-600/50'}`}
                 />
                 {isSelected && (
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none">✅</span>
                 )}
                 {open && results.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-hidden">
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-y-auto max-h-64 font-sans">
                         {results.map(q => (
                             <button key={q.id} onMouseDown={() => { onSelect(q.id, q.title); setQuery(''); setOpen(false); }}
                                 className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${selectedId === q.id ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
@@ -595,7 +609,6 @@ export default function LobbyCodePage() {
                                     onSelect={(id, title) => {
                                         setSelectedQuizId(id || undefined);
                                         setSelectedQuizTitle(title);
-                                        if (!id) setSelectedQuizCategoryId('');
                                         if (id) socket?.emit('lobby:setQuiz', { quizId: id });
                                     }} />
                             </div>
@@ -603,7 +616,7 @@ export default function LobbyCodePage() {
                                 <p className="text-xs text-gray-500 dark:text-slate-400">Mode de temps</p>
                                 <select value={quizTimeMode}
                                     onChange={e => { setQuizTimeMode(e.target.value as typeof quizTimeMode); socket?.emit('lobby:setQuizOptions', { timeMode: e.target.value, timePerQuestion: quizTimePerQuestion }); }}
-                                    className="w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
+                                    className="font-sans w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
                                     <option value="per_question">Par question</option>
                                     <option value="total">Temps total</option>
                                     <option value="none">Sans limite</option>
@@ -614,7 +627,7 @@ export default function LobbyCodePage() {
                                     <p className="text-xs text-gray-500 dark:text-slate-400">{quizTimeMode === 'total' ? 'Temps total' : 'Temps / question'}</p>
                                     <select value={quizTimePerQuestion}
                                         onChange={e => { setQuizTimePerQuestion(Number(e.target.value)); socket?.emit('lobby:setQuizOptions', { timeMode: quizTimeMode, timePerQuestion: Number(e.target.value) }); }}
-                                        className="w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
+                                        className="font-sans w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
                                         {(quizTimeMode === 'total' ? [60, 120, 180, 300, 600, 900, 1200, 1800, 3600] : [5, 10, 15, 20, 30, 45, 60, 90, 120]).map(t => (
                                             <option key={t} value={t}>{formatTime(t)}</option>
                                         ))}
@@ -662,7 +675,7 @@ export default function LobbyCodePage() {
                             <label className="block text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Joueurs max</label>
                             {isHost ? (
                                 <select value={maxPlayers} onChange={e => { setMaxPlayersState(Number(e.target.value)); socket?.emit('lobby:setMeta', { maxPlayers: Number(e.target.value) }); }} disabled={isMaxLocked}
-                                    className="w-full bg-gray-100 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-600/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/60 transition-all appearance-none cursor-pointer disabled:opacity-50">
+                                    className="font-sans w-full bg-gray-100 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-600/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/60 transition-all appearance-none cursor-pointer disabled:opacity-50">
                                     {MAX_PLAYERS_BY_GAME[gameType].map(n => <option key={n} value={n} className="bg-white dark:bg-slate-800">{n} joueurs</option>)}
                                 </select>
                             ) : (
@@ -755,8 +768,24 @@ export default function LobbyCodePage() {
                                 <div key={p.userId} className="flex items-center gap-3 bg-gray-100 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-3 py-2">
                                     <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                                     <span className="text-sm text-gray-900 dark:text-white font-medium flex-1">{p.username}</span>
-                                    {p.userId === hostId && <span className="text-xs text-yellow-500 dark:text-yellow-400">👑 Host</span>}
+                                    {p.userId === hostId && <span className="text-xs text-yellow-500 dark:text-yellow-400">👑</span>}
                                     {p.userId === me && <span className="text-xs text-gray-400 dark:text-slate-500">(moi)</span>}
+                                    {isHost && p.userId !== me && (
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                            <button
+                                                onClick={() => socket?.emit('lobby:transferHost', { targetUserId: p.userId })}
+                                                title="Transférer le statut d'hôte"
+                                                className="text-xs px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/20 transition-colors">
+                                                👑
+                                            </button>
+                                            <button
+                                                onClick={() => socket?.emit('lobby:kick', { targetUserId: p.userId })}
+                                                title="Expulser"
+                                                className="text-xs px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-500 dark:text-red-400 hover:bg-red-500/20 transition-colors">
+                                                ✕
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                             {players.length === 0 && <div className="text-center py-4 text-gray-400 dark:text-slate-500 text-sm">En attente de joueurs…</div>}
