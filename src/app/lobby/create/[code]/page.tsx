@@ -100,18 +100,19 @@ function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onCh
     );
 }
 
-function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories }: {
+function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, categoryId, onCategoryChange }: {
     isHost: boolean;
     onSelect: (id: string, title: string) => void;
     selectedId?: string;
     selectedTitle?: string;
     categories: { id: string; name: string; _count: { quizzes: number } }[];
+    categoryId: string;
+    onCategoryChange: (catId: string) => void;
 }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<{ id: string; title: string; _count: { questions: number } }[]>([]);
     const [open, setOpen] = useState(false);
     const [catOpen, setCatOpen] = useState(false);
-    const [categoryId, setCategoryId] = useState('');
     const searchTimer = useRef<NodeJS.Timeout | null>(null);
 
     const selectedCategory = categories.find(c => c.id === categoryId) ?? null;
@@ -134,7 +135,7 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories }:
     };
 
     const handleCategoryChange = (catId: string) => {
-        setCategoryId(catId);
+        onCategoryChange(catId);
         setCatOpen(false);
         if (selectedId) onSelect('', '');
         search(query, catId);
@@ -230,6 +231,7 @@ export default function LobbyCodePage() {
     const [isPublic, setIsPublicState] = useState(false);
     const [selectedQuizId, setSelectedQuizId] = useState<string | undefined>();
     const [selectedQuizTitle, setSelectedQuizTitle] = useState('');
+    const [selectedQuizCategoryId, setSelectedQuizCategoryId] = useState('');
     const [categories, setCategories] = useState<{ id: string; name: string; _count: { quizzes: number } }[]>([]);
     const [unoTeamMode, setUnoTeamMode] = useState<'none' | '2v2'>('none');
     const [unoTeamWinMode, setUnoTeamWinMode] = useState<'one' | 'both'>('one');
@@ -264,7 +266,10 @@ export default function LobbyCodePage() {
         if (!selectedQuizId || selectedQuizTitle) return;
         fetch(`/api/quiz/${selectedQuizId}`)
             .then(r => r.ok ? r.json() : null)
-            .then(data => { if (data?.title) setSelectedQuizTitle(data.title); })
+            .then(data => {
+                if (data?.title) setSelectedQuizTitle(data.title);
+                if (data?.category?.id) setSelectedQuizCategoryId(data.category.id);
+            })
             .catch(() => {});
     }, [selectedQuizId]);
 
@@ -314,7 +319,7 @@ export default function LobbyCodePage() {
             setTeams(state.teams ?? null);
             setIsPublicState(state.isPublic ?? false);
             if (state.quizId) {
-                setSelectedQuizId(prev => { if (prev !== state.quizId) setSelectedQuizTitle(''); return state.quizId!; });
+                setSelectedQuizId(prev => { if (prev !== state.quizId) { setSelectedQuizTitle(''); setSelectedQuizCategoryId(''); } return state.quizId!; });
             }
             if (state.unoOptions) {
                 setUnoTeamMode((state.unoOptions.teamMode as 'none' | '2v2') ?? 'none');
@@ -585,9 +590,12 @@ export default function LobbyCodePage() {
                                 <p className="text-xs text-gray-500 dark:text-slate-400">Quiz</p>
                                 <QuizSearch isHost={isHost} selectedId={selectedQuizId} selectedTitle={selectedQuizTitle}
                                     categories={categories}
+                                    categoryId={selectedQuizCategoryId}
+                                    onCategoryChange={catId => setSelectedQuizCategoryId(catId)}
                                     onSelect={(id, title) => {
                                         setSelectedQuizId(id || undefined);
                                         setSelectedQuizTitle(title);
+                                        if (!id) setSelectedQuizCategoryId('');
                                         if (id) socket?.emit('lobby:setQuiz', { quizId: id });
                                     }} />
                             </div>

@@ -19,6 +19,7 @@ export async function GET(
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
+        category: { select: { id: true, name: true } },
         creator: {
           select: {
             id: true,
@@ -75,6 +76,7 @@ export async function GET(
     const formattedQuiz = {
       id: quiz.id,
       title: quiz.title,
+      category: quiz.category ?? null,
       description: quiz.description || '',
       isPublic: quiz.isPublic,
       randomizeQuestions: quiz.randomizeQuestions,

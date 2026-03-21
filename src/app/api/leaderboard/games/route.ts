@@ -112,9 +112,9 @@ export async function GET(req: NextRequest) {
                 const avgScore = gamesPlayed > 0 ? Math.round(totalScore / gamesPlayed) : 0;
                 const wins = data.placements.filter(p => p === 1).length;
                 const draws = data.draws;
-                const score = game === 'skyjow' || game === 'just-one' ? avgScore
+                const score = game === 'skyjow' || game === 'just_one' ? avgScore
                     : game === 'puissance4' || game === 'battleship' ? wins
-                    : totalScore;
+                        : totalScore;
                 const totalRounds = roundsByUser.get(userId) ?? 0;
 
                 let detail: string;
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
                     case 'puissance4':
                         detail = `${wins} victoire${wins > 1 ? 's' : ''} · ${draws} nul${draws > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
-                    case 'just-one':
+                    case 'just_one':
                         detail = `Score moyen ${avgScore}/13 · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
                     case 'battleship':
