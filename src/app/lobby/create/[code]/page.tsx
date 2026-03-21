@@ -273,7 +273,7 @@ export default function LobbyCodePage() {
     }, [lobbyId]);
 
     useEffect(() => {
-        fetch('/api/categories').then(r => r.ok ? r.json() : []).then(setCategories).catch(() => {});
+        fetch('/api/categories').then(r => r.ok ? r.json() : []).then(setCategories).catch(() => { });
     }, []);
 
     useEffect(() => {
@@ -284,7 +284,7 @@ export default function LobbyCodePage() {
                 if (data?.title) setSelectedQuizTitle(data.title);
                 if (data?.category?.id) setSelectedQuizCategoryId(data.category.id);
             })
-            .catch(() => {});
+            .catch(() => { });
     }, [selectedQuizId]);
 
     const myTeam: 0 | 1 | undefined = useMemo(() => {
@@ -428,7 +428,7 @@ export default function LobbyCodePage() {
     if (status !== 'authenticated' || !session?.user?.id) return null;
 
     const me = session.user.id;
-    const isAdmin = (session.user as any).role === 'ADMIN';
+    const isAdmin = session.user.role === 'ADMIN';
     const isHost = hostId === me;
     const selectedGame = GAME_OPTIONS.find(g => g.value === gameType);
     const isMaxLocked = gameType === 'puissance4' || (gameType === 'uno' && unoTeamMode === '2v2');
@@ -460,12 +460,6 @@ export default function LobbyCodePage() {
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isHost ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-200 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400'}`}>
                             {isHost ? '👑 Host' : '👤 Participant'}
                         </span>
-                        {isAdmin && !isHost && (
-                            <button onClick={() => socket?.emit('lobby:claimHost')}
-                                className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-500/25 transition-colors cursor-pointer">
-                                🛡️ Prendre le contrôle
-                            </button>
-                        )}
                     </div>
                 </div>
 
@@ -785,6 +779,13 @@ export default function LobbyCodePage() {
                                     <span className="text-sm text-gray-900 dark:text-white font-medium flex-1">{p.username}</span>
                                     {p.userId === hostId && <span className="text-xs text-yellow-500 dark:text-yellow-400">👑</span>}
                                     {p.userId === me && <span className="text-xs text-gray-400 dark:text-slate-500">(moi)</span>}
+                                    {isAdmin && !isHost && p.userId === me && (
+                                        <button onClick={() => socket?.emit('lobby:claimHost')}
+                                            title="Prendre le contrôle (admin)"
+                                            className="text-xs px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 transition-colors">
+                                            🛡️
+                                        </button>
+                                    )}
                                     {isHost && p.userId !== me && (
                                         <div className="flex items-center gap-1 flex-shrink-0">
                                             <button

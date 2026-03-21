@@ -66,6 +66,7 @@ export interface DiamantState {
     // Phase décision
     decisionPhase: boolean;
     decisionEndsAt: number | null;
+    decisionDuration: number;
     myDecision: 'continue' | 'leave' | null;
     // Dernière résolution
     lastDecisions: DecisionResult[];
@@ -111,6 +112,7 @@ export function useDiamant({
         players: [],
         decisionPhase: false,
         decisionEndsAt: null,
+        decisionDuration: 30,
         myDecision: null,
         lastDecisions: [],
         lastLeavingPlayers: [],
@@ -214,6 +216,7 @@ export function useDiamant({
                 ...applyPublicState(prev, payload.state),
                 decisionPhase: true,
                 decisionEndsAt: payload.endsAt,
+                decisionDuration: payload.duration ?? prev.decisionDuration,
                 myDecision: null,
                 lastDecisions: [],
                 lastLeavingPlayers: [],

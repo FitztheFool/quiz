@@ -256,29 +256,29 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
 
     const teamBorder = myTeam === 0 ? 'bg-blue-500/10 border-blue-500/20'
         : myTeam === 1 ? 'bg-red-500/10 border-red-500/20'
-        : 'bg-white/5 border-white/10';
+        : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10';
 
     return (
         <div className={`border rounded-2xl p-6 max-w-md w-full ${teamBorder}`}>
             <div className="flex items-center justify-between mb-2">
                 <p className="text-orange-400 font-bold text-sm">⏳ Phase des pièges</p>
                 {game.trapStarted && game.trapTimeLeft !== null ? (
-                    <span className={`text-sm font-bold tabular-nums ${game.trapTimeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white/60'}`}>
+                    <span className={`text-sm font-bold tabular-nums ${game.trapTimeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-gray-700 dark:text-white/60'}`}>
                         {game.trapTimeLeft}s
                     </span>
                 ) : (
-                    <span className="text-white/30 text-xs">Démarrage…</span>
+                    <span className="text-gray-400 dark:text-white/30 text-xs">Démarrage…</span>
                 )}
             </div>
 
-            <div className="w-full h-1.5 bg-white/10 rounded-full mb-5 overflow-hidden">
+            <div className="w-full h-1.5 bg-gray-200 dark:bg-white/10 rounded-full mb-5 overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-1000"
                     style={{ width: `${trapPct}%`, backgroundColor: trapColor }} />
             </div>
 
             {myTeam !== null && wordToPiege ? (
                 <div className="mb-5 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                    <p className="text-xs text-white/40 uppercase tracking-widest mb-1">
+                    <p className="text-xs text-gray-500 dark:text-white/40 uppercase tracking-widest mb-1">
                         Mot à piéger — équipe {myTeam === 0 ? '🔴 Rouge' : '🔵 Bleue'}
                     </p>
                     <p style={{ fontFamily: "'Bebas Neue', cursive" }}
@@ -287,17 +287,17 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
                     </p>
                 </div>
             ) : myTeam !== null ? (
-                <div className="mb-5 p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-white/30 text-sm animate-pulse">Chargement du mot…</p>
+                <div className="mb-5 p-4 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-center">
+                    <p className="text-gray-400 dark:text-white/30 text-sm animate-pulse">Chargement du mot…</p>
                 </div>
             ) : null}
 
             {myTeam !== null && (
                 <div className="space-y-2 text-left">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs text-white/30">
+                        <p className="text-xs text-gray-400 dark:text-white/30">
                             ✏️ Pièges de l'équipe
-                            {!rich && <span className="ml-1 text-white/20">(badges disponibles après mise à jour serveur)</span>}
+                            {!rich && <span className="ml-1 text-gray-400 dark:text-white/20">(badges disponibles après mise à jour serveur)</span>}
                         </p>
                         {rich && teammates.length > 0 && (
                             <div className="flex gap-1.5">
@@ -326,7 +326,7 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
                 </div>
             )}
 
-            <p className="text-white/20 text-xs mt-4 text-center">
+            <p className="text-gray-400 dark:text-white/20 text-xs mt-4 text-center">
                 La partie démarre automatiquement à la fin du chrono…
             </p>
         </div>
@@ -348,7 +348,7 @@ function TrapSlotInput({ index, value, ownerInfo, onChange }: {
         ? `${colors.border} ${colors.bg}`
         : isMe && value
         ? 'border-orange-500/40 bg-orange-500/5'
-        : 'border-white/10 bg-white/5';
+        : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5';
 
     return (
         <div className="relative">
@@ -357,9 +357,9 @@ function TrapSlotInput({ index, value, ownerInfo, onChange }: {
                 onChange={e => onChange(index, e.target.value)}
                 placeholder={`Mot piégé ${index + 1}`}
                 className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-24
-                    focus:outline-none placeholder:text-white/20 transition-colors duration-150
+                    focus:outline-none placeholder:text-gray-400 dark:placeholder:text-white/20 transition-colors duration-150
                     ${borderClass}
-                    ${ownerUsername ? 'text-white/50' : 'text-white focus:border-orange-400/70'}`}
+                    ${ownerUsername ? 'text-gray-500 dark:text-white/50' : 'text-gray-900 dark:text-white focus:border-orange-400/70'}`}
             />
             {ownerUsername && colors && (
                 <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5
@@ -369,7 +369,7 @@ function TrapSlotInput({ index, value, ownerInfo, onChange }: {
             )}
             {isMe && value && !ownerUsername && (
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5
-                    rounded-full pointer-events-none bg-orange-500/15 text-orange-300/70">
+                    rounded-full pointer-events-none bg-orange-500/15 text-orange-600 dark:text-orange-300/70">
                     moi
                 </span>
             )}

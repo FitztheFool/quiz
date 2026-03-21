@@ -48,13 +48,13 @@ function TimerBar({ endsAt, duration }: { endsAt: number; duration: number }) {
 
     return (
         <div className="w-full space-y-1">
-            <div className="flex justify-between text-xs text-stone-500 dark:text-stone-400">
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                 <span>Temps pour décider</span>
                 <span className={`font-mono font-bold ${timeLeft <= 5 ? 'text-red-500 dark:text-red-400 animate-pulse' : ''}`}>
                     {timeLeft}s
                 </span>
             </div>
-            <div className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all duration-200 ${color}`}
                     style={{ width: `${pct}%` }}
@@ -85,22 +85,22 @@ function ExpeditionCard({
 
     return (
         <div
-            className={`relative flex-shrink-0 w-20 rounded-xl border-2 transition-all duration-300
-                ${isLast ? 'scale-110 shadow-2xl z-10' : 'opacity-80'}
-                ${isTreasure ? 'border-amber-600 bg-amber-50/80 dark:bg-amber-950/60' : ''}
-                ${isDanger ? 'border-red-600 bg-red-50/80 dark:bg-red-950/60' : ''}
-                ${isRelicCard ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/60' : ''}
+            className={`relative flex-shrink-0 w-28 rounded-2xl border-2 transition-all duration-300
+                ${isLast ? 'scale-110 shadow-2xl z-10' : 'opacity-75'}
+                ${isTreasure ? 'border-amber-500 bg-amber-100 dark:bg-amber-950/60' : ''}
+                ${isDanger ? 'border-red-500 bg-red-100 dark:bg-red-950/60' : ''}
+                ${isRelicCard ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-950/60' : ''}
             `}
-            style={{ minHeight: '96px' }}
+            style={{ minHeight: '130px' }}
         >
-            <div className="flex flex-col items-center justify-center gap-1 p-2 h-full">
+            <div className="flex flex-col items-center justify-center gap-1.5 p-3 h-full">
                 {isTreasure && (
                     <>
-                        <span className="text-2xl">💎</span>
-                        <span className="text-amber-700 dark:text-amber-300 font-black text-lg leading-none">{card.value}</span>
-                        <span className="text-amber-600 text-[10px]">rubis</span>
+                        <span className="text-4xl">💎</span>
+                        <span className="text-amber-800 dark:text-amber-300 font-black text-2xl leading-none">{card.value}</span>
+                        <span className="text-amber-700 dark:text-amber-400 text-xs font-semibold">rubis</span>
                         {rubisOnCard > 0 && (
-                            <div className="absolute -top-2 -right-2 bg-amber-500 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
+                            <div className="absolute -top-2.5 -right-2.5 bg-amber-500 text-black text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow">
                                 {rubisOnCard}
                             </div>
                         )}
@@ -108,20 +108,20 @@ function ExpeditionCard({
                 )}
                 {isDanger && (
                     <>
-                        <span className="text-2xl">{DANGER_EMOJI[card.danger!] ?? '⚠️'}</span>
-                        <span className="text-red-700 dark:text-red-300 text-[10px] text-center leading-tight font-semibold">
+                        <span className="text-4xl">{DANGER_EMOJI[card.danger!] ?? '⚠️'}</span>
+                        <span className="text-red-800 dark:text-red-300 text-xs text-center leading-tight font-semibold">
                             {DANGER_LABELS[card.danger!] ?? card.danger}
                         </span>
                     </>
                 )}
                 {isRelicCard && (
                     <>
-                        <span className="text-2xl">🏺</span>
-                        <span className="text-emerald-700 dark:text-emerald-300 text-[10px] text-center leading-tight font-semibold">
+                        <span className="text-4xl">🏺</span>
+                        <span className="text-emerald-800 dark:text-emerald-300 text-xs text-center leading-tight font-semibold">
                             Relique
                         </span>
                         {isRelic && (
-                            <div className="absolute -top-2 -right-2 bg-emerald-500 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
+                            <div className="absolute -top-2.5 -right-2.5 bg-emerald-500 text-black text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow">
                                 ✓
                             </div>
                         )}
@@ -129,7 +129,7 @@ function ExpeditionCard({
                 )}
             </div>
             {/* Index */}
-            <div className="absolute bottom-1 left-0 right-0 text-center text-[9px] text-stone-400 dark:text-stone-600 font-mono">
+            <div className="absolute bottom-1.5 left-0 right-0 text-center text-[10px] text-gray-400 dark:text-gray-500 font-mono">
                 #{index + 1}
             </div>
         </div>
@@ -141,26 +141,26 @@ function ExpeditionCard({
 function PlayerRow({ player, isMe }: { player: PlayerInfo; isMe: boolean }) {
     return (
         <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all
-            ${!player.inCave ? 'opacity-50 border-stone-200 dark:border-stone-800 bg-stone-100/40 dark:bg-stone-900/40' : ''}
-            ${player.inCave && isMe ? 'border-amber-400/50 dark:border-amber-600/50 bg-amber-50/80 dark:bg-amber-950/30' : ''}
-            ${player.inCave && !isMe ? 'border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60' : ''}
+            ${!player.inCave ? 'border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900/40' : ''}
+            ${player.inCave && isMe ? 'border-amber-400 dark:border-amber-600/50 bg-amber-100 dark:bg-amber-950/30' : ''}
+            ${player.inCave && !isMe ? 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40' : ''}
         `}>
             {/* Status indicator */}
-            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${player.inCave ? 'bg-green-500 dark:bg-green-400 animate-pulse' : 'bg-stone-300 dark:bg-stone-600'}`} />
+            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${player.inCave ? 'bg-green-500 dark:bg-green-400 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />
 
             {/* Name */}
-            <span className={`text-sm font-semibold flex-1 ${isMe ? 'text-amber-700 dark:text-amber-300' : 'text-stone-700 dark:text-stone-300'}`}>
+            <span className={`text-sm font-semibold flex-1 ${isMe ? 'text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300'}`}>
                 {player.username}
-                {isMe && <span className="text-stone-400 dark:text-stone-500 text-xs font-normal ml-1">(moi)</span>}
+                {isMe && <span className="text-gray-400 dark:text-gray-500 text-xs font-normal ml-1">(moi)</span>}
             </span>
 
             {/* Cave status */}
             {player.inCave ? (
-                <span className="text-xs text-stone-400 dark:text-stone-500">
+                <span className="text-xs text-gray-400 dark:text-gray-500">
                     {player.hasDecided ? '✅ décidé' : '⏳ réfléchit…'}
                 </span>
             ) : (
-                <span className="text-xs text-stone-400 dark:text-stone-500">🏕️ au camp</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">🏕️ au camp</span>
             )}
 
             {/* Hand rubies (only for me) */}
@@ -173,9 +173,9 @@ function PlayerRow({ player, isMe }: { player: PlayerInfo; isMe: boolean }) {
 
             {/* Safe total (only for me) */}
             {isMe && (
-                <div className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
+                <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                     <span>🔒</span>
-                    <span className="font-semibold text-stone-700 dark:text-stone-200">
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">
                         {player.safeRubies + player.safeDiamonds * 5}
                     </span>
                 </div>
@@ -213,44 +213,46 @@ export default function DiamantPage() {
     const canDecide = state.decisionPhase && amInCave && state.myDecision === null;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-white flex flex-col"
-            style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(120,80,20,0.1) 0%, transparent 70%)' }}>
+        <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
 
             {/* Header */}
-            <header className="border-b border-stone-200 dark:border-stone-800 px-4 py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
+            <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
+                {/* Left slot */}
+                <div className="w-48 shrink-0 flex items-center gap-2">
                     <span className="text-xl">💎</span>
                     <h1 className="text-base font-black tracking-tight text-amber-800 dark:text-amber-100">Diamant</h1>
                 </div>
 
-                {/* Round indicator */}
-                <div className="flex items-center gap-2">
+                {/* Center slot — round dots + label */}
+                <div className="flex-1 flex justify-center items-center gap-2">
                     {Array.from({ length: state.totalRounds }, (_, i) => (
                         <div
                             key={i}
                             className={`w-2.5 h-2.5 rounded-full transition-all ${i < state.round - 1
-                                ? 'bg-stone-400 dark:bg-stone-600'
+                                ? 'bg-gray-400 dark:bg-gray-600'
                                 : i === state.round - 1
                                     ? 'bg-amber-400 shadow-lg shadow-amber-400/50'
-                                    : 'bg-stone-200 border border-stone-300 dark:bg-stone-800 dark:border-stone-700'
+                                    : 'bg-gray-200 border border-gray-300 dark:bg-gray-800 dark:border-gray-700'
                                 }`}
                         />
                     ))}
-                    <span className="text-stone-500 dark:text-stone-400 text-xs ml-1">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">
                         Manche {state.round}/{state.totalRounds}
                     </span>
                 </div>
 
-                {/* My safe score */}
-                {me && (
-                    <div className="flex items-center gap-2 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-1.5">
-                        <span className="text-xs text-stone-500 dark:text-stone-400">Coffre</span>
-                        <span className="text-amber-600 dark:text-amber-400 font-black text-sm">
-                            {me.safeRubies + me.safeDiamonds * 5}
-                        </span>
-                        <span className="text-stone-400 dark:text-stone-600 text-xs">pts</span>
-                    </div>
-                )}
+                {/* Right slot — my safe score */}
+                <div className="w-48 shrink-0 flex justify-end">
+                    {me && (
+                        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-1.5">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Coffre</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-black text-sm">
+                                {me.safeRubies + me.safeDiamonds * 5}
+                            </span>
+                            <span className="text-gray-400 dark:text-gray-600 text-xs">pts</span>
+                        </div>
+                    )}
+                </div>
             </header>
 
             {/* Error toast */}
@@ -265,8 +267,8 @@ export default function DiamantPage() {
             )}
 
             {/* Body */}
-            <main className="flex flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-6 items-center">
+            <main className="flex-1 overflow-auto p-4 flex flex-col items-center gap-4">
+                <div className="w-full max-w-3xl flex flex-col gap-5">
 
                     {/* Waiting */}
                     {state.phase === 'waiting' && (
@@ -277,8 +279,7 @@ export default function DiamantPage() {
 
                     {/* Playing */}
                     {state.phase === 'playing' && (
-                        <div className="w-full max-w-3xl flex flex-col gap-5">
-
+                        <>
                             {/* Double danger banner */}
                             {state.doubleDanger && (
                                 <div className="px-4 py-3 bg-red-50/80 dark:bg-red-950/80 border border-red-300 dark:border-red-700 rounded-xl text-center animate-pulse">
@@ -294,9 +295,9 @@ export default function DiamantPage() {
                                 <div className={`px-4 py-2.5 rounded-xl text-center text-sm font-semibold border
                                     ${state.decisionPhase
                                         ? amInCave
-                                            ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-300/50 dark:border-amber-700/50 text-amber-700 dark:text-amber-300'
-                                            : 'bg-stone-100 dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-500'
-                                        : 'bg-stone-50/60 dark:bg-stone-900/60 border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400'
+                                            ? 'bg-amber-100 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/50 text-amber-800 dark:text-amber-300'
+                                            : 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600'
+                                        : 'bg-gray-50 dark:bg-gray-900/60 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400'
                                     }`}>
                                     {state.decisionPhase
                                         ? amInCave
@@ -315,17 +316,17 @@ export default function DiamantPage() {
 
                             {/* Timer */}
                             {state.decisionPhase && state.decisionEndsAt && amInCave && (
-                                <TimerBar endsAt={state.decisionEndsAt} duration={45} />
+                                <TimerBar endsAt={state.decisionEndsAt} duration={state.decisionDuration} />
                             )}
 
                             {/* Cards path */}
                             {state.revealedCards.length > 0 && (
                                 <div className="relative">
-                                    <div className="p-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-amber-50/50 dark:bg-stone-950/60">
-                                        <p className="text-[10px] text-stone-400 dark:text-stone-600 uppercase tracking-widest mb-3 font-semibold">
+                                    <div className="p-4 rounded-2xl border border-amber-200 dark:border-gray-800 bg-amber-50 dark:bg-amber-950/20">
+                                        <p className="text-[10px] text-amber-800 dark:text-gray-500 uppercase tracking-widest mb-3 font-semibold">
                                             Chemin de la grotte — {state.revealedCards.length} carte{state.revealedCards.length > 1 ? 's' : ''}
                                         </p>
-                                        <div className="flex gap-2 overflow-x-auto pb-2 items-center">
+                                        <div className="flex flex-wrap gap-2 py-4 px-2 items-center">
                                             {state.revealedCards.map((card, i) => (
                                                 <ExpeditionCard
                                                     key={card.id}
@@ -344,9 +345,9 @@ export default function DiamantPage() {
                             {/* Last card info */}
                             {state.lastCard && !state.doubleDanger && (
                                 <div className={`px-4 py-3 rounded-xl border text-sm
-                                    ${state.lastCard.type === 'treasure' ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-300/50 dark:border-amber-800/50 text-amber-700 dark:text-amber-300' : ''}
-                                    ${state.lastCard.type === 'danger' ? 'bg-red-50/80 dark:bg-red-950/30 border-red-300/50 dark:border-red-800/50 text-red-700 dark:text-red-300' : ''}
-                                    ${state.lastCard.type === 'relic' ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300/50 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300' : ''}
+                                    ${state.lastCard.type === 'treasure' ? 'bg-amber-100 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/50 text-amber-800 dark:text-amber-300' : ''}
+                                    ${state.lastCard.type === 'danger' ? 'bg-red-100 dark:bg-red-950/30 border-red-300 dark:border-red-800/50 text-red-800 dark:text-red-300' : ''}
+                                    ${state.lastCard.type === 'relic' ? 'bg-emerald-100 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300' : ''}
                                 `}>
                                     {state.lastCard.type === 'treasure' && (
                                         <span>💎 Trésor de <strong>{state.lastCard.value}</strong> rubis —
@@ -367,25 +368,6 @@ export default function DiamantPage() {
                                 </div>
                             )}
 
-                            {/* Last decisions reveal */}
-                            {state.lastDecisions.length > 0 && !state.decisionPhase && (
-                                <div className="grid grid-cols-2 gap-2">
-                                    {state.lastDecisions.map((d) => {
-                                        const player = state.players.find((p) => p.userId === d.userId);
-                                        return (
-                                            <div key={d.userId} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs
-                                                ${d.decision === 'leave'
-                                                    ? 'border-stone-300 dark:border-stone-600 bg-stone-100/60 dark:bg-stone-800/60 text-stone-500 dark:text-stone-400'
-                                                    : 'border-amber-400/50 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400'
-                                                }`}>
-                                                <span>{d.decision === 'leave' ? '🏕️' : '⚡'}</span>
-                                                <span className="font-semibold">{player?.username ?? d.userId}</span>
-                                                <span className="ml-auto">{d.decision === 'leave' ? 'Sort' : 'Continue'}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
 
                             {/* Decision buttons */}
                             {state.decisionPhase && amInCave && (
@@ -397,8 +379,8 @@ export default function DiamantPage() {
                                             ${state.myDecision === 'continue'
                                                 ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300 scale-105'
                                                 : state.myDecision !== null
-                                                    ? 'border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 text-stone-400 dark:text-stone-600 opacity-40'
-                                                    : 'border-amber-400 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:border-amber-500 hover:bg-amber-100/80 dark:hover:bg-amber-950/60 hover:scale-105 active:scale-100'
+                                                    ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-600 opacity-40'
+                                                    : 'border-amber-400 dark:border-amber-700 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-950/60 hover:scale-105 active:scale-100'
                                             }`}
                                     >
                                         <div className="flex flex-col items-center gap-1">
@@ -412,10 +394,10 @@ export default function DiamantPage() {
                                         disabled={state.myDecision !== null}
                                         className={`py-5 rounded-2xl border-2 font-black text-base transition-all
                                             ${state.myDecision === 'leave'
-                                                ? 'border-stone-500 bg-stone-200/60 dark:bg-stone-700/40 text-stone-700 dark:text-stone-200 scale-105'
+                                                ? 'border-gray-500 bg-gray-200/60 dark:bg-gray-700/40 text-gray-700 dark:text-gray-200 scale-105'
                                                 : state.myDecision !== null
-                                                    ? 'border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 text-stone-400 dark:text-stone-600 opacity-40'
-                                                    : 'border-stone-300 dark:border-stone-600 bg-stone-100/60 dark:bg-stone-900/60 text-stone-600 dark:text-stone-300 hover:border-stone-400 hover:bg-stone-200/60 dark:hover:bg-stone-800/60 hover:scale-105 active:scale-100'
+                                                    ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-600 opacity-40'
+                                                    : 'border-gray-300 dark:border-gray-600 bg-gray-100/60 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:border-gray-400 hover:bg-gray-200/60 dark:hover:bg-gray-800/60 hover:scale-105 active:scale-100'
                                             }`}
                                     >
                                         <div className="flex flex-col items-center gap-1">
@@ -429,20 +411,19 @@ export default function DiamantPage() {
 
                             {/* Hors de la grotte */}
                             {!amInCave && state.decisionPhase && (
-                                <div className="px-4 py-4 bg-stone-100/60 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 rounded-xl text-center text-stone-400 dark:text-stone-500 text-sm">
+                                <div className="px-4 py-4 bg-gray-100 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl text-center text-gray-400 dark:text-gray-500 text-sm">
                                     🏕️ Vous êtes au campement — en attente de la fin du tour…
                                 </div>
                             )}
 
                             {/* Players */}
                             <div className="space-y-2">
-                                <p className="text-[10px] text-stone-400 dark:text-stone-600 uppercase tracking-widest font-semibold">Explorateurs</p>
+                                <p className="text-[10px] text-gray-600 dark:text-gray-500 uppercase tracking-widest font-semibold">Explorateurs</p>
                                 {state.players.map((p) => (
                                     <PlayerRow key={p.userId} player={p} isMe={p.userId === myUserId} />
                                 ))}
                             </div>
-
-                        </div>
+                        </>
                     )}
                 </div>
             </main>

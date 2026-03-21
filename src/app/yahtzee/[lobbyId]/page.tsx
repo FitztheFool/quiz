@@ -128,7 +128,7 @@ function TimerBadge({ timeLeft }: { timeLeft: number }) {
     <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold tabular-nums
       ${timeLeft <= 10 ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse'
         : timeLeft <= 30 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-          : 'bg-slate-700 text-slate-300'}`}>
+          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
       ⏱ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
     </div>
   );
@@ -209,12 +209,12 @@ export default function YahtzeePage() {
       >
         <div className="space-y-2">
           {sorted.map((p, i) => (
-            <div key={p.userId} className={`flex items-center justify-between px-4 py-3 rounded-xl ${i === 0 ? 'bg-amber-400/20 border border-amber-400/50' : 'bg-slate-700/50'}`}>
+            <div key={p.userId} className={`flex items-center justify-between px-4 py-3 rounded-xl ${i === 0 ? 'bg-amber-400/20 border border-amber-400/50' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}`}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
                 <span className={`font-bold ${p.userId === myId ? 'text-amber-300' : 'text-white'}`}>{p.username}{p.userId === myId && ' (moi)'}</span>
               </div>
-              <span className={`font-black text-xl ${i === 0 ? 'text-amber-400' : 'text-slate-300'}`}>{p.total} pts</span>
+              <span className={`font-black text-xl ${i === 0 ? 'text-amber-400' : 'text-gray-300'}`}>{p.total} pts</span>
             </div>
           ))}
         </div>
@@ -237,173 +237,178 @@ export default function YahtzeePage() {
         onMouseEnter={() => canScore && val === null && setHoveredCat(cat)}
         onMouseLeave={() => setHoveredCat(null)}
         className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all border
-          ${val !== null ? 'opacity-60 cursor-default border-transparent' : canScore ? 'cursor-pointer hover:bg-indigo-500/20 hover:border-indigo-500/40 border-transparent' : 'cursor-default border-transparent'}
-          ${isHovered ? 'bg-indigo-500/20 !border-indigo-500/40 scale-[1.01]' : ''}`}>
+          ${val !== null ? 'opacity-60 cursor-default border-transparent' : canScore ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-500/40 border-transparent' : 'cursor-default border-transparent'}
+          ${isHovered ? 'bg-blue-50 dark:bg-blue-900/20 !border-blue-300 dark:!border-blue-500/40 scale-[1.01]' : ''}`}>
         <div>
           <span className="font-semibold text-sm">{CAT_LABELS[cat]}</span>
-          <span className="text-xs text-slate-500 ml-2">{CAT_DESC[cat]}</span>
+          <span className="text-xs text-gray-500 ml-2">{CAT_DESC[cat]}</span>
         </div>
         <div className="text-right min-w-[40px]">
-          {val !== null ? <span className="font-black text-slate-300">{val}</span>
-            : isHovered && preview !== null ? <span className="font-black text-indigo-400">{preview}</span>
-              : <span className="text-slate-600">—</span>}
+          {val !== null ? <span className="font-black text-gray-300 dark:text-gray-300">{val}</span>
+            : isHovered && preview !== null ? <span className="font-black text-blue-600 dark:text-blue-400">{preview}</span>
+              : <span className="text-gray-400 dark:text-gray-600">—</span>}
         </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-slate-900/95 backdrop-blur border-b border-slate-700 px-4 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎲</span>
-            <div>
-              <h1 className="font-black text-lg leading-none">Yahtzee</h1>
-              <p className="text-xs text-slate-400">Tour {game.turn} / 13</p>
-            </div>
+      <div className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
+        {/* Left */}
+        <div className="w-48 shrink-0 flex items-center gap-2">
+          <span className="text-xl">🎲</span>
+          <div>
+            <span className="font-bold leading-none">Yahtzee</span>
+            <p className="text-xs text-gray-400 dark:text-gray-500 leading-none">Tour {game.turn} / 13</p>
           </div>
-          <div className="flex items-center gap-3">
-            <TimerBadge timeLeft={timeLeft} />
-            <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isMyTurn ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-slate-700 text-slate-400'}`}>
-              {isMyTurn ? '🎯 À vous de jouer !' : `⏳ Tour de ${currentPlayer?.username}`}
-            </span>
-          </div>
+        </div>
+        {/* Center */}
+        <div className="flex-1 flex justify-center">
+          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isMyTurn ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' : 'text-gray-400 dark:text-gray-500'}`}>
+            {isMyTurn ? '🎯 À vous de jouer !' : `⏳ Tour de ${currentPlayer?.username}`}
+          </span>
+        </div>
+        {/* Right */}
+        <div className="w-48 shrink-0 flex justify-end">
+          <TimerBadge timeLeft={timeLeft} />
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-4 grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6">
+      <div className="flex-1 overflow-auto p-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6">
 
-        {/* ── Left ─────────────────────────────────────────────────────── */}
-        <div className="space-y-4">
-          <div className="bg-slate-800 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-slate-300">{isMyTurn ? 'Vos dés' : `Dés de ${currentPlayer?.username}`}</h2>
-              {isMyTurn && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-400">Lancers restants :</span>
-                  <div className="flex gap-1">
-                    {[1, 2, 3].map(n => (
-                      <div key={n} className={`w-3 h-3 rounded-full ${(myPlayer?.rollsLeft ?? 0) >= n ? 'bg-indigo-400' : 'bg-slate-600'}`} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-center gap-3 mb-6">
-              {(isMyTurn ? myPlayer : currentPlayer)?.dice.map((val, i) => (
-                <Die key={i} value={val}
-                  held={(isMyTurn ? myPlayer : currentPlayer)?.held[i] ?? false}
-                  onClick={() => toggleHold(i)} rolling={rolling}
-                  disabled={!isMyTurn || (myPlayer?.rollsLeft ?? 3) === 3 || (myPlayer?.rollsLeft ?? 0) === 0} />
-              ))}
-            </div>
-            {isMyTurn && (
-              <div className="flex gap-3 justify-center">
-                <button onClick={roll} disabled={!canRoll}
-                  className={`px-8 py-3 rounded-xl font-black text-lg transition-all ${canRoll ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 hover:scale-105 active:scale-95' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>
-                  🎲 Lancer {myPlayer?.rollsLeft !== undefined && myPlayer.rollsLeft < 3 ? `(${myPlayer.rollsLeft} restant${myPlayer.rollsLeft > 1 ? 's' : ''})` : ''}
-                </button>
-              </div>
-            )}
-            {isMyTurn && myPlayer && myPlayer.rollsLeft < 3 && myPlayer.rollsLeft > 0 && (
-              <p className="text-center text-xs text-slate-500 mt-3">Cliquez sur un dé pour le garder, puis relancez ou marquez des points.</p>
-            )}
-            {isMyTurn && game.phase === 'scoring' && (
-              <p className="text-center text-sm text-amber-400 mt-3 font-semibold">✍️ Choisissez une catégorie à scorer ci-dessous</p>
-            )}
-          </div>
-
-          <div className="bg-slate-800 rounded-2xl p-5">
-            <h2 className="font-bold text-slate-300 mb-4">Votre feuille de score</h2>
-            <div className="mb-2">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Section haute</div>
-              <div className="space-y-1">{UPPER_CATS.map(cat => <ScoreRow key={cat} cat={cat} />)}</div>
-              <div className="flex justify-between px-3 py-2 mt-1 bg-slate-700/50 rounded-lg text-sm">
-                <span className="text-slate-400">Sous-total</span>
-                <span className="font-bold">{upperTotal} / 63</span>
-              </div>
-              {upperNeeded > 0 && (
-                <div className="px-3 py-1">
-                  <div className="flex justify-between text-xs text-slate-500 mb-1">
-                    <span>Progression bonus (+35)</span><span>{upperTotal}/63</span>
-                  </div>
-                  <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${Math.min(100, (upperTotal / 63) * 100)}%` }} />
-                  </div>
-                </div>
-              )}
-              {myPlayer?.upperBonus === 35 && <div className="px-3 py-1.5 text-center text-xs text-green-400 font-bold">✅ Bonus +35 débloqué !</div>}
-            </div>
-            <div className="mt-3">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Section basse</div>
-              <div className="space-y-1">{LOWER_CATS.map(cat => <ScoreRow key={cat} cat={cat} />)}</div>
-              {(myPlayer?.scoreCard.yahtzeeBonus ?? 0) > 0 && (
-                <div className="flex justify-between px-3 py-2 mt-1 bg-amber-400/10 border border-amber-400/30 rounded-lg text-sm">
-                  <span className="text-amber-400 font-semibold">🎲 Bonus Yahtzee</span>
-                  <span className="font-black text-amber-400">+{myPlayer?.scoreCard.yahtzeeBonus}</span>
-                </div>
-              )}
-              <div className="flex justify-between px-3 py-2.5 mt-2 bg-indigo-600/20 border border-indigo-500/30 rounded-lg">
-                <span className="font-black text-indigo-300">TOTAL</span>
-                <span className="font-black text-xl text-indigo-300">{myPlayer?.total ?? 0}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Right ────────────────────────────────────────────────────── */}
-        <div className="space-y-4">
-          <div className="bg-slate-800 rounded-2xl p-5">
-            <h2 className="font-bold text-slate-300 mb-4">Scores des joueurs</h2>
-            <div className="space-y-3">
-              {game.players.map((p, i) => {
-                const isCurrent = i === game.currentIndex;
-                const isMe = p.userId === myId;
-                const filled = Object.entries(p.scoreCard ?? {}).filter(([k, v]) => k !== 'yahtzeeBonus' && v !== null).length;
-                return (
-                  <div key={p.userId} className={`p-4 rounded-xl border transition-all ${isCurrent ? 'border-indigo-500/60 bg-indigo-500/10' : 'border-slate-700 bg-slate-700/30'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {isCurrent && <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />}
-                        <span className={`font-bold ${isMe ? 'text-indigo-300' : 'text-white'}`}>{p.username}{isMe && ' (moi)'}</span>
-                      </div>
-                      <span className="font-black text-xl">{p.total}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span>{filled}/13 catégories</span>
-                      <div className="w-24 h-1 bg-slate-600 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${(filled / 13) * 100}%` }} />
-                      </div>
+          {/* ── Left ─────────────────────────────────────────────────────── */}
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-gray-600 dark:text-gray-300">{isMyTurn ? 'Vos dés' : `Dés de ${currentPlayer?.username}`}</h2>
+                {isMyTurn && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Lancers restants :</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3].map(n => (
+                        <div key={n} className={`w-3 h-3 rounded-full ${(myPlayer?.rollsLeft ?? 0) >= n ? 'bg-blue-400' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                      ))}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-          {game.players.filter(p => p.userId !== myId).map(p => (
-            <details key={p.userId} className="bg-slate-800 rounded-2xl overflow-hidden">
-              <summary className="px-5 py-4 cursor-pointer font-semibold text-slate-300 flex items-center justify-between">
-                <span>Fiche de {p.username}</span>
-                <span className="text-slate-500 text-sm">{p.total} pts</span>
-              </summary>
-              <div className="px-5 pb-4 space-y-1">
-                {[...UPPER_CATS, ...LOWER_CATS].map(cat => (
-                  <div key={cat} className="flex justify-between text-sm py-1 border-b border-slate-700/50">
-                    <span className="text-slate-400">{CAT_LABELS[cat]}</span>
-                    <span className={p.scoreCard?.[cat as keyof ScoreCard] !== null ? 'font-bold text-slate-200' : 'text-slate-600'}>
-                      {p.scoreCard?.[cat as keyof ScoreCard] !== null ? p.scoreCard?.[cat as keyof ScoreCard] as number : '—'}
-                    </span>
-                  </div>
+                )}
+              </div>
+              <div className="flex justify-center gap-3 mb-6">
+                {(isMyTurn ? myPlayer : currentPlayer)?.dice.map((val, i) => (
+                  <Die key={i} value={val}
+                    held={(isMyTurn ? myPlayer : currentPlayer)?.held[i] ?? false}
+                    onClick={() => toggleHold(i)} rolling={rolling}
+                    disabled={!isMyTurn || (myPlayer?.rollsLeft ?? 3) === 3 || (myPlayer?.rollsLeft ?? 0) === 0} />
                 ))}
-                <div className="flex justify-between text-sm pt-2">
-                  <span className="font-bold text-indigo-300">Total</span>
-                  <span className="font-black text-indigo-300">{p.total}</span>
+              </div>
+              {isMyTurn && (
+                <div className="flex gap-3 justify-center">
+                  <button onClick={roll} disabled={!canRoll}
+                    className={`px-8 py-3 rounded-xl font-black text-lg transition-all ${canRoll ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:scale-105 active:scale-95' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}>
+                    🎲 Lancer {myPlayer?.rollsLeft !== undefined && myPlayer.rollsLeft < 3 ? `(${myPlayer.rollsLeft} restant${myPlayer.rollsLeft > 1 ? 's' : ''})` : ''}
+                  </button>
+                </div>
+              )}
+              {isMyTurn && myPlayer && myPlayer.rollsLeft < 3 && myPlayer.rollsLeft > 0 && (
+                <p className="text-center text-xs text-gray-500 mt-3">Cliquez sur un dé pour le garder, puis relancez ou marquez des points.</p>
+              )}
+              {isMyTurn && game.phase === 'scoring' && (
+                <p className="text-center text-sm text-amber-500 dark:text-amber-400 mt-3 font-semibold">✍️ Choisissez une catégorie à scorer ci-dessous</p>
+              )}
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
+              <h2 className="font-bold text-gray-600 dark:text-gray-300 mb-4">Votre feuille de score</h2>
+              <div className="mb-2">
+                <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Section haute</div>
+                <div className="space-y-1">{UPPER_CATS.map(cat => <ScoreRow key={cat} cat={cat} />)}</div>
+                <div className="flex justify-between px-3 py-2 mt-1 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm">
+                  <span className="text-gray-500">Sous-total</span>
+                  <span className="font-bold">{upperTotal} / 63</span>
+                </div>
+                {upperNeeded > 0 && (
+                  <div className="px-3 py-1">
+                    <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1">
+                      <span>Progression bonus (+35)</span><span>{upperTotal}/63</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${Math.min(100, (upperTotal / 63) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+                {myPlayer?.upperBonus === 35 && <div className="px-3 py-1.5 text-center text-xs text-green-500 dark:text-green-400 font-bold">✅ Bonus +35 débloqué !</div>}
+              </div>
+              <div className="mt-3">
+                <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Section basse</div>
+                <div className="space-y-1">{LOWER_CATS.map(cat => <ScoreRow key={cat} cat={cat} />)}</div>
+                {(myPlayer?.scoreCard.yahtzeeBonus ?? 0) > 0 && (
+                  <div className="flex justify-between px-3 py-2 mt-1 bg-amber-400/10 border border-amber-400/30 rounded-lg text-sm">
+                    <span className="text-amber-500 dark:text-amber-400 font-semibold">🎲 Bonus Yahtzee</span>
+                    <span className="font-black text-amber-500 dark:text-amber-400">+{myPlayer?.scoreCard.yahtzeeBonus}</span>
+                  </div>
+                )}
+                <div className="flex justify-between px-3 py-2.5 mt-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-500/30 rounded-lg">
+                  <span className="font-black text-blue-700 dark:text-blue-300">TOTAL</span>
+                  <span className="font-black text-xl text-blue-700 dark:text-blue-300">{myPlayer?.total ?? 0}</span>
                 </div>
               </div>
-            </details>
-          ))}
+            </div>
+          </div>
+
+          {/* ── Right ────────────────────────────────────────────────────── */}
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
+              <h2 className="font-bold text-gray-600 dark:text-gray-300 mb-4">Scores des joueurs</h2>
+              <div className="space-y-3">
+                {game.players.map((p, i) => {
+                  const isCurrent = i === game.currentIndex;
+                  const isMe = p.userId === myId;
+                  const filled = Object.entries(p.scoreCard ?? {}).filter(([k, v]) => k !== 'yahtzeeBonus' && v !== null).length;
+                  return (
+                    <div key={p.userId} className={`p-4 rounded-xl border transition-all ${isCurrent ? 'border-blue-500/60 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-900/10' : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {isCurrent && <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />}
+                          <span className={`font-bold ${isMe ? 'text-blue-600 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>{p.username}{isMe && ' (moi)'}</span>
+                        </div>
+                        <span className="font-black text-xl">{p.total}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                        <span>{filled}/13 catégories</span>
+                        <div className="w-24 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-400 rounded-full" style={{ width: `${(filled / 13) * 100}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {game.players.filter(p => p.userId !== myId).map(p => (
+              <details key={p.userId} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+                <summary className="px-5 py-4 cursor-pointer font-semibold text-gray-600 dark:text-gray-300 flex items-center justify-between">
+                  <span>Fiche de {p.username}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-sm">{p.total} pts</span>
+                </summary>
+                <div className="px-5 pb-4 space-y-1">
+                  {[...UPPER_CATS, ...LOWER_CATS].map(cat => (
+                    <div key={cat} className="flex justify-between text-sm py-1 border-b border-gray-100 dark:border-gray-700/50">
+                      <span className="text-gray-500 dark:text-gray-400">{CAT_LABELS[cat]}</span>
+                      <span className={p.scoreCard?.[cat as keyof ScoreCard] !== null ? 'font-bold text-gray-800 dark:text-gray-200' : 'text-gray-400 dark:text-gray-600'}>
+                        {p.scoreCard?.[cat as keyof ScoreCard] !== null ? p.scoreCard?.[cat as keyof ScoreCard] as number : '—'}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-sm pt-2">
+                    <span className="font-bold text-blue-600 dark:text-blue-300">Total</span>
+                    <span className="font-black text-blue-600 dark:text-blue-300">{p.total}</span>
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
         </div>
       </div>
     </div>

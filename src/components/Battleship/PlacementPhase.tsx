@@ -192,7 +192,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                     className={`w-8 h-8 border rounded-sm relative overflow-hidden transition-all
                         ${isSelected
                             ? 'border-blue-400 ring-1 ring-blue-400/60 cursor-grab'
-                            : 'border-slate-400 hover:border-slate-500 cursor-pointer'}
+                            : 'border-gray-400 dark:border-white/30 hover:border-gray-500 dark:hover:border-white/50 cursor-pointer'}
                         ${confirmed ? 'cursor-default' : ''}`}
                     onClick={() => handleCellClick(row, col)}
                     onMouseEnter={() => handleCellHover(row, col)}
@@ -212,7 +212,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
         return (
             <div
                 key={key}
-                className="w-8 h-8 border rounded-sm bg-sky-50 border-sky-300 hover:bg-sky-100 cursor-pointer transition-colors"
+                className="w-8 h-8 border rounded-sm bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-white/15 hover:bg-gray-200 dark:hover:bg-white/10 cursor-pointer transition-colors"
                 onClick={() => handleCellClick(row, col)}
                 onMouseEnter={() => handleCellHover(row, col)}
             />
@@ -291,15 +291,17 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
         onConfirm(ships);
     }, [confirmed, ships, onConfirm]);
 
-    const timerColor = timeLeft !== null && timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-slate-500';
+    const timerColor = timeLeft !== null && timeLeft <= 10
+        ? 'text-red-500 dark:text-red-400 animate-pulse'
+        : 'text-gray-500 dark:text-white/40';
 
     return (
         <div className="flex flex-col items-center gap-6 p-4 select-none">
 
             {/* Header */}
             <div className="text-center">
-                <h2 className="text-xl font-bold text-slate-900">Placez votre flotte</h2>
-                <p className="text-slate-500 text-sm mt-1">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Placez votre flotte</h2>
+                <p className="text-gray-500 dark:text-white/50 text-sm mt-1">
                     {confirmed
                         ? opponentReady ? '✅ Les deux joueurs sont prêts !' : '✅ Prêt — en attente de l\'adversaire…'
                         : selected
@@ -314,7 +316,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                     <span className={`font-mono font-bold ${timerColor}`}>⏱ {timeLeft}s</span>
                 )}
                 {opponentReady && !confirmed && (
-                    <span className="text-green-600 text-xs">⚡ L'adversaire est prêt</span>
+                    <span className="text-green-600 dark:text-green-400 text-xs">⚡ L'adversaire est prêt</span>
                 )}
             </div>
 
@@ -326,11 +328,11 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
             >
                 <div />
                 {COL_LABELS.map((l) => (
-                    <div key={l} className="text-center text-xs text-slate-400 font-mono" style={{ lineHeight: '32px' }}>{l}</div>
+                    <div key={l} className="text-center text-xs text-gray-400 dark:text-white/30 font-mono" style={{ lineHeight: '32px' }}>{l}</div>
                 ))}
                 {Array.from({ length: GRID_SIZE }, (_, ri) => (
                     <React.Fragment key={ri}>
-                        <div className="text-right text-xs text-slate-400 font-mono pr-1" style={{ lineHeight: '32px' }}>{ri + 1}</div>
+                        <div className="text-right text-xs text-gray-400 dark:text-white/30 font-mono pr-1" style={{ lineHeight: '32px' }}>{ri + 1}</div>
                         {Array.from({ length: GRID_SIZE }, (_, ci) => renderCell(ri, ci))}
                     </React.Fragment>
                 ))}
@@ -347,8 +349,8 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                             onClick={() => !confirmed && setSelected(isSelected ? null : config.name)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all
                                 ${isSelected
-                                    ? 'border-blue-500 bg-blue-100 text-blue-700'
-                                    : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400'}
+                                    ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                                    : 'border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-600 dark:text-white/60 hover:border-gray-400 dark:hover:border-white/40'}
                                 ${confirmed ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}
                         >
                             {/* Mini ship strip (toujours horizontal dans la liste) */}
@@ -365,7 +367,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                             </div>
                             <span>{config.name}</span>
                             {ship && (
-                                <span className="text-slate-400 text-[10px]">
+                                <span className="text-gray-400 dark:text-white/30 text-[10px]">
                                     {ship.horizontal ? '↔' : '↕'}
                                 </span>
                             )}
@@ -380,14 +382,14 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                     {selected && (
                         <button
                             onClick={rotateSelected}
-                            className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 text-sm hover:border-slate-400 hover:text-slate-900 transition-all"
+                            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 text-gray-600 dark:text-white/60 text-sm hover:border-gray-400 dark:hover:border-white/40 hover:text-gray-900 dark:hover:text-white transition-all"
                         >
                             🔄 Pivoter
                         </button>
                     )}
                     <button
                         onClick={handleAutoPlace}
-                        className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 text-sm hover:border-slate-400 hover:text-slate-900 transition-all"
+                        className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 text-gray-600 dark:text-white/60 text-sm hover:border-gray-400 dark:hover:border-white/40 hover:text-gray-900 dark:hover:text-white transition-all"
                     >
                         🎲 Placement auto
                     </button>

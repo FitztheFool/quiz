@@ -121,8 +121,8 @@ function UnoCard({ card, playable, selected, onClick, small }: {
 export default function UnoPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const params = useParams<{ code: string }>();
-    const lobbyId = params?.code ?? '';
+    const params = useParams<{ lobbyId: string }>();
+    const lobbyId = params?.lobbyId ?? '';
 
     const joinedRef = useRef(false);
     const socket = useMemo(() => getUnoSocket(), []);
@@ -271,24 +271,24 @@ export default function UnoPage() {
 
         const ScoreRow = ({ s, inTeam = false }: { s: FinalScore; inTeam?: boolean }) => (
             <div className={`flex items-center justify-between rounded-lg px-4 py-3
-                ${!inTeam && s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : inTeam ? '' : 'bg-slate-700'}
+                ${!inTeam && s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : inTeam ? '' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}
                 ${s.kicked ? 'opacity-60' : ''}`}>
                 <div className="flex items-center gap-3">
                     <span className="text-xl w-7 text-center">{RANK_MEDAL[s.rank] ?? `#${s.rank}`}</span>
                     <div>
                         <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-white">{s.username}</span>
-                            {s.userId === me.userId && !gameState.spectator && <span className="text-slate-400 text-xs">(moi)</span>}
-                            {s.kicked && <span className="text-xs bg-red-500/30 text-red-400 px-1.5 py-0.5 rounded">AFK</span>}
+                            <span className="font-semibold text-gray-900 dark:text-white">{s.username}</span>
+                            {s.userId === me.userId && !gameState.spectator && <span className="text-gray-400 dark:text-gray-500 text-xs">(moi)</span>}
+                            {s.kicked && <span className="text-xs bg-red-500/30 text-red-500 dark:text-red-400 px-1.5 py-0.5 rounded">AFK</span>}
                         </div>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                             {s.cardsLeft === 0 ? '0 carte restante' : `${s.cardsLeft} carte${s.cardsLeft > 1 ? 's' : ''} — ${s.pointsInHand} pts en main`}
                         </span>
                     </div>
                 </div>
                 <div className="text-right">
-                    <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-400' : 'text-slate-500'}`}>{s.score > 0 ? `+${s.score}` : '0'}</span>
-                    <div className="text-xs text-slate-500">pts</div>
+                    <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'}`}>{s.score > 0 ? `+${s.score}` : '0'}</span>
+                    <div className="text-xs text-gray-400 dark:text-gray-500">pts</div>
                 </div>
             </div>
         );
@@ -307,10 +307,10 @@ export default function UnoPage() {
                             const isWinner = winnerTeam === teamIdx;
                             const tc = TEAM_COLORS[teamIdx];
                             return (
-                                <div key={teamIdx} className={`rounded-xl border p-3 ${isWinner ? `${tc.bg} border-${teamIdx === 0 ? 'blue' : 'red'}-500/50` : 'bg-slate-700/50 border-slate-600'}`}>
+                                <div key={teamIdx} className={`rounded-xl border p-3 ${isWinner ? `${tc.bg} border-${teamIdx === 0 ? 'blue' : 'red'}-500/50` : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tc.badge}`}>{TEAM_NAMES[teamIdx]}</span>
-                                        {isWinner && <span className="text-yellow-400 text-sm font-bold">🏆 Vainqueurs</span>}
+                                        {isWinner && <span className="text-yellow-500 dark:text-yellow-400 text-sm font-bold">🏆 Vainqueurs</span>}
                                     </div>
                                     <div className="space-y-2">{teamScores.map(s => <ScoreRow key={s.userId} s={s} inTeam />)}</div>
                                 </div>
@@ -320,7 +320,7 @@ export default function UnoPage() {
                 ) : (
                     <div className="space-y-2">{scores.map(s => <ScoreRow key={s.userId} s={s} />)}</div>
                 )}
-                <p className="text-xs text-slate-500 mt-3">0–9 = valeur faciale · Skip/Reverse/+2 = 20 pts · Wild/+4 = 50 pts</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">0–9 = valeur faciale · Skip/Reverse/+2 = 20 pts · Wild/+4 = 50 pts</p>
             </GameOverModal>
         );
     }
@@ -330,35 +330,49 @@ export default function UnoPage() {
         const joined = lobbyState?.players.length ?? 0;
         const required = lobbyState?.options?.teamMode === '2v2' ? 4 : 2;
         return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-                <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md text-white text-center">
-                    <div className="text-5xl mb-4 animate-pulse">🃏</div>
-                    <h1 className="text-xl font-bold mb-1">Démarrage de la partie…</h1>
-                    {lobbyState?.options?.teamMode === '2v2' && (
-                        <p className="text-blue-400 text-xs font-semibold mb-2">Mode 2v2 · {joined}/{required} joueurs</p>
-                    )}
-                    <p className="text-gray-400 text-sm mb-6">
-                        {joined} joueur{joined > 1 ? 's' : ''} connecté{joined > 1 ? 's' : ''}…
-                    </p>
-                    <div className="space-y-2 text-left mb-6">
-                        {lobbyState?.players.map(p => (
-                            <div key={p.userId} className="bg-gray-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-                                <span className="text-green-400">✓</span>
-                                <span>{p.username}</span>
-                                {p.userId === lobbyState.hostId && <span className="text-yellow-400 text-xs">👑</span>}
-                                {p.userId === me.userId && <span className="text-gray-500 text-xs">(moi)</span>}
-                            </div>
-                        ))}
+            <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
+                {/* Top bar */}
+                <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
+                    <div className="w-48 shrink-0">
+                        <span className="font-bold">🃏 UNO</span>
                     </div>
-                    <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
-                        className="w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
-                        Retour au lobby
-                    </button>
-                    <button onClick={() => router.push('/')}
-                        className="mt-3 w-full py-3 rounded-xl bg-gray-700 text-gray-300 font-bold hover:bg-gray-600 transition">
-                        Quitter
-                    </button>
-                </div>
+                    <div className="flex-1 flex justify-center">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">En attente de joueurs…</span>
+                    </div>
+                    <div className="w-48 shrink-0 flex justify-end" />
+                </header>
+
+                {/* Content */}
+                <main className="flex-1 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 w-full max-w-md text-center">
+                        <div className="text-5xl mb-4 animate-pulse">🃏</div>
+                        <h1 className="text-xl font-bold mb-1">Démarrage de la partie…</h1>
+                        {lobbyState?.options?.teamMode === '2v2' && (
+                            <p className="text-blue-500 dark:text-blue-400 text-xs font-semibold mb-2">Mode 2v2 · {joined}/{required} joueurs</p>
+                        )}
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                            {joined} joueur{joined > 1 ? 's' : ''} connecté{joined > 1 ? 's' : ''}…
+                        </p>
+                        <div className="space-y-2 text-left mb-6">
+                            {lobbyState?.players.map(p => (
+                                <div key={p.userId} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                                    <span className="text-green-500 dark:text-green-400">✓</span>
+                                    <span>{p.username}</span>
+                                    {p.userId === lobbyState.hostId && <span className="text-yellow-500 dark:text-yellow-400 text-xs">👑</span>}
+                                    {p.userId === me.userId && <span className="text-gray-400 dark:text-gray-500 text-xs">(moi)</span>}
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
+                            className="w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
+                            Retour au lobby
+                        </button>
+                        <button onClick={() => router.push('/')}
+                            className="mt-3 w-full py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                            Quitter
+                        </button>
+                    </div>
+                </main>
             </div>
         );
     }
@@ -385,7 +399,7 @@ export default function UnoPage() {
 
         return (
             <div key={p.userId} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all
-                ${isActive ? 'bg-yellow-500/20 ring-2 ring-yellow-400' : tc ? `${tc.bg} ring-1 ${tc.ring}` : 'bg-gray-800'}
+                ${isActive ? 'bg-yellow-500/20 ring-2 ring-yellow-400' : tc ? `${tc.bg} ring-1 ${tc.ring}` : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}
                 ${isInactive ? 'ring-2 ring-orange-400' : ''}`}>
                 <div className="flex items-center gap-1.5">
                     {tc && is2v2 && (
@@ -403,28 +417,28 @@ export default function UnoPage() {
                     {Array.from({ length: Math.min(p.cardCount, 10) }).map((_, i) => (
                         <div key={i} className="w-3 h-5 bg-red-600 rounded-sm border border-white/20" />
                     ))}
-                    {p.cardCount > 10 && <span className="text-xs text-gray-400">+{p.cardCount - 10}</span>}
+                    {p.cardCount > 10 && <span className="text-xs text-gray-500 dark:text-gray-400">+{p.cardCount - 10}</span>}
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-400">{p.cardCount} carte{p.cardCount > 1 ? 's' : ''}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{p.cardCount} carte{p.cardCount > 1 ? 's' : ''}</span>
                     {p.cardCount === 1 && !p.saidUno && !gameState.spectator && (
                         <button onClick={() => socket?.emit('uno:callUno', { targetId: p.userId })}
                             className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-400 transition">
                             UNO !
                         </button>
                     )}
-                    {p.saidUno && <span className="text-xs text-yellow-400 font-bold">UNO!</span>}
+                    {p.saidUno && <span className="text-xs text-yellow-500 dark:text-yellow-400 font-bold">UNO!</span>}
                 </div>
             </div>
         );
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex flex-col select-none">
+        <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden select-none">
 
             {showColorPicker && !gameState.spectator && (
                 <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-                    <div className="bg-gray-800 rounded-2xl p-6 text-center">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 text-center">
                         <h2 className="font-bold text-lg mb-4">Choisir une couleur</h2>
                         <div className="grid grid-cols-2 gap-3">
                             {['red', 'green', 'blue', 'yellow'].map(c => (
@@ -438,57 +452,79 @@ export default function UnoPage() {
                 </div>
             )}
 
-            {/* Header */}
-            <div className="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
-                <div className="flex items-center gap-3">
-                    <span className="font-bold text-lg">🃏 UNO</span>
-                    <span className="text-gray-400 font-mono text-sm">{lobbyId}</span>
+            {/* Top bar */}
+            <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
+                {/* Left slot */}
+                <div className="w-48 shrink-0 flex items-center gap-2">
+                    <span className="font-bold">🃏 UNO</span>
                     {is2v2 && myTeamColor && (
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${myTeamColor.badge}`}>
                             {TEAM_NAMES[myTeam!]}
                         </span>
                     )}
                     {gameState.spectator && (
-                        <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded-full font-semibold">
+                        <span className="text-xs bg-purple-500/20 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-semibold">
                             👁 Spectateur
                         </span>
                     )}
+                </div>
+
+                {/* Center slot — turn indicator */}
+                <div className="flex-1 flex justify-center items-center gap-2">
                     {gameState.drawStack > 0 && (
                         <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
                             Stack +{gameState.drawStack}
                         </span>
                     )}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <span>{gameState.direction === 1 ? '↻' : '↺'}</span>
-                    <span>Couleur :</span>
-                    <span className={`w-5 h-5 rounded-full ${COLOR_MAP[gameState.currentColor]}`} />
-                </div>
-            </div>
-
-            {/* Joueurs — affichage différent en 2v2 */}
-            {is2v2 && !gameState.spectator ? (
-                <div className="px-4 py-3 space-y-2">
-                    {/* Adversaires */}
-                    <div className="flex justify-center gap-3 flex-wrap">
-                        <span className="text-xs text-red-400 font-semibold self-center">⚔️ Adversaires</span>
-                        {opponents.map(renderPlayer)}
-                    </div>
-                    {/* Coéquipiers */}
-                    {teammates.length > 0 && (
-                        <div className="flex justify-center gap-3 flex-wrap">
-                            <span className="text-xs text-blue-400 font-semibold self-center">🤝 Équipe</span>
-                            {teammates.map(renderPlayer)}
-                        </div>
+                    {!gameState.spectator && gameState.isMyTurn ? (
+                        <span className={`text-sm font-bold ${isMeInactive ? 'text-orange-500 animate-pulse' : 'text-yellow-500 dark:text-yellow-400 animate-pulse'}`}>
+                            {isMeInactive
+                                ? `⚠️ Joue vite ! exclusion dans ${inactivitySeconds}s`
+                                : '✨ À toi de jouer !'}
+                        </span>
+                    ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Tour de <span className="text-gray-900 dark:text-white font-bold">{currentPlayer?.username}</span>
+                            {inactivityUserId === currentPlayer?.userId && inactivitySeconds !== null && (
+                                <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded
+                                    ${inactivitySeconds <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-500 text-white'}`}>
+                                    ⏰ {inactivitySeconds}s
+                                </span>
+                            )}
+                        </span>
                     )}
                 </div>
-            ) : (
-                <div className="flex justify-center gap-4 px-4 py-3 flex-wrap">
-                    {otherPlayers.map(renderPlayer)}
-                </div>
-            )}
 
-            {/* Zone centrale */}
+                {/* Right slot — color dot + direction */}
+                <div className="w-48 shrink-0 flex justify-end items-center gap-2">
+                    <span className={`w-5 h-5 rounded-full ${COLOR_MAP[gameState.currentColor]} border-2 border-white dark:border-gray-800 shadow`} />
+                    <span className="text-gray-500 dark:text-gray-400 text-lg">{gameState.direction === 1 ? '↻' : '↺'}</span>
+                </div>
+            </header>
+
+            {/* Players zone */}
+            <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-2">
+                {is2v2 && !gameState.spectator ? (
+                    <div className="space-y-1.5">
+                        <div className="flex justify-center gap-3 flex-wrap">
+                            <span className="text-xs text-red-500 dark:text-red-400 font-semibold self-center">⚔️ Adversaires</span>
+                            {opponents.map(renderPlayer)}
+                        </div>
+                        {teammates.length > 0 && (
+                            <div className="flex justify-center gap-3 flex-wrap">
+                                <span className="text-xs text-blue-500 dark:text-blue-400 font-semibold self-center">🤝 Équipe</span>
+                                {teammates.map(renderPlayer)}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex justify-center gap-3 flex-wrap">
+                        {otherPlayers.map(renderPlayer)}
+                    </div>
+                )}
+            </div>
+
+            {/* Main area — draw pile + top card */}
             <div className="flex-1 flex items-center justify-center gap-8">
                 <div className="flex flex-col items-center gap-2">
                     <div
@@ -497,46 +533,25 @@ export default function UnoPage() {
                             ${!gameState.spectator && gameState.isMyTurn ? 'cursor-pointer hover:bg-red-600 hover:scale-105 transition-all' : 'opacity-60 cursor-default'}`}>
                         🃏
                     </div>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                         {gameState.drawStack > 0 ? `Piocher +${gameState.drawStack}` : 'Piocher'}
                     </span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
                     {gameState.topCard && <UnoCard card={gameState.topCard} />}
-                    <div className={`w-4 h-4 rounded-full ${COLOR_MAP[gameState.currentColor]} border-2 border-white`} />
+                    <div className={`w-4 h-4 rounded-full ${COLOR_MAP[gameState.currentColor]} border-2 border-white dark:border-gray-800`} />
                 </div>
             </div>
 
-            {/* Indicateur de tour */}
-            <div className="text-center py-2">
-                {!gameState.spectator && gameState.isMyTurn ? (
-                    <span className={`font-bold ${isMeInactive ? 'text-orange-400 animate-pulse' : 'text-yellow-400 animate-pulse'}`}>
-                        {isMeInactive
-                            ? `⚠️ Joue vite ! exclusion dans ${inactivitySeconds}s`
-                            : '✨ À toi de jouer !'}
-                    </span>
-                ) : (
-                    <span className="text-gray-400 text-sm">
-                        Tour de <span className="text-white font-semibold">{currentPlayer?.username}</span>
-                        {inactivityUserId === currentPlayer?.userId && inactivitySeconds !== null && (
-                            <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded
-                                ${inactivitySeconds <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-500 text-white'}`}>
-                                ⏰ {inactivitySeconds}s
-                            </span>
-                        )}
-                    </span>
-                )}
-            </div>
-
-            {/* Main du joueur + cartes coéquipier en 2v2 */}
+            {/* Hand zone */}
             {!gameState.spectator && (
-                <div className="bg-gray-800 border-t border-gray-700 px-4 py-4">
+                <div className="shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3">
 
                     {/* Cartes du coéquipier */}
                     {is2v2 && gameState.teammateHand && gameState.teammateHand.length > 0 && (
-                        <div className="mb-4">
+                        <div className="mb-3">
                             <div className="flex items-center gap-2 mb-2">
-                                <span className={`text-xs font-semibold ${myTeamColor?.text ?? 'text-gray-400'}`}>
+                                <span className={`text-xs font-semibold ${myTeamColor?.text ?? 'text-gray-500 dark:text-gray-400'}`}>
                                     🤝 Main de ton coéquipier ({gameState.teammateHand.length} cartes)
                                 </span>
                             </div>
@@ -550,24 +565,23 @@ export default function UnoPage() {
 
                     {/* Ma main */}
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-400">Ma main ({gameState.hand.length} cartes)</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Ma main ({gameState.hand.length} cartes)</span>
                         {gameState.hand.length === 2 && gameState.isMyTurn && (
                             <label className="flex items-center gap-2 cursor-pointer select-none">
-                                <span className="text-xs text-gray-400">UNO</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">UNO</span>
                                 <div
                                     onClick={() => setUnoReady(r => !r)}
                                     className={`relative w-10 h-6 rounded-full transition-colors duration-200
-                    ${unoReady ? 'bg-yellow-400' : 'bg-gray-600'}`}>
+                                        ${unoReady ? 'bg-yellow-400' : 'bg-gray-300 dark:bg-gray-600'}`}>
                                     <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200
-                    ${unoReady ? 'translate-x-5' : 'translate-x-1'}`} />
+                                        ${unoReady ? 'translate-x-5' : 'translate-x-1'}`} />
                                 </div>
                             </label>
                         )}
                         {gameState.hand.length === 1 && gameState.isMyTurn &&
                             !gameState.players.find(p => p.userId === me.userId)?.saidUno && (
                                 <span className={`text-xs px-3 py-1 rounded-full font-bold
-            ${unoReady ? 'bg-yellow-400 text-gray-900 animate-bounce' : 'bg-red-500 text-white animate-pulse'}
-`}>
+                                    ${unoReady ? 'bg-yellow-400 text-gray-900 animate-bounce' : 'bg-red-500 text-white animate-pulse'}`}>
                                     {unoReady ? '✅ UNO déclaré' : '⚠️ UNO non déclaré !'}
                                 </span>
                             )}
@@ -579,7 +593,7 @@ export default function UnoPage() {
                                 selected={selectedCard?.id === card.id}
                                 onClick={() => handleCardClick(card)} />
                         ))}
-                        {gameState.hand.length === 0 && <p className="text-gray-400 text-sm py-4">Aucune carte 🎉</p>}
+                        {gameState.hand.length === 0 && <p className="text-gray-500 dark:text-gray-400 text-sm py-4">Aucune carte 🎉</p>}
                     </div>
                 </div>
             )}

@@ -69,10 +69,10 @@ function TurnTimer({ turnStartedAt, turnDuration, active }: { turnStartedAt: num
 
     return (
         <div className="flex items-center gap-3 w-full max-w-xs mx-auto">
-            <span className={`text-2xl font-black tabular-nums w-12 text-right transition-colors ${urgent ? 'text-red-400 animate-pulse' : 'text-white/80'}`}>
+            <span className={`text-2xl font-black tabular-nums w-12 text-right transition-colors ${urgent ? 'text-red-400 animate-pulse' : 'text-gray-700 dark:text-gray-300'}`}>
                 {Math.ceil(remaining)}s
             </span>
-            <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all duration-200 ${urgent ? 'bg-red-400' : 'bg-white/60'}`}
                     style={{ width: `${pct}%` }}
@@ -176,6 +176,11 @@ export default function Puissance4Page() {
         ? players.find(p => p.colorIndex === gameState?.winner)
         : null;
 
+    // Determine the active player for header center
+    const player0 = players.find(p => p.colorIndex === 0);
+    const player1 = players.find(p => p.colorIndex === 1);
+    const activeTurn = gameState?.currentTurn;
+
     return (
         <>
             <style>{`
@@ -190,116 +195,156 @@ export default function Puissance4Page() {
         .col-hover { animation: pulse-glow 1.5s ease-in-out infinite; }
       `}</style>
 
-            <div
-                className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 gap-6"
-            >
+            <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
+
                 {/* ── Header ── */}
-
-                <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight" style={{ fontFamily: 'system-ui, sans-serif' }}>
-                    Puissance <span style={{ color: '#f59e0b' }}>4</span>
-                </h1>
-
-                {/* ── Scores ── */}
-                {players.length === 2 && (
-                    <div className="flex items-center gap-6">
-                        {players.map((p) => {
-                            const c = PLAYER_COLORS[p.colorIndex];
-                            const score = gameState?.scores[p.colorIndex] ?? 0;
-                            const isTurn = gameState?.status === 'playing' && gameState.currentTurn === p.colorIndex;
-                            return (
-                                <div key={p.userId}
-                                    className={`flex flex-col items-center px-5 py-3 rounded-2xl transition-all duration-300 ${isTurn ? 'bg-white/10 scale-105' : 'bg-white/5'}`}
-                                >
-                                    <span className="text-lg">{c.emoji}</span>
-                                    <span className="text-white font-semibold text-sm mt-1 max-w-[100px] truncate">{p.username}</span>
-                                    <span className={`text-3xl font-black ${c.text}`}>{score}</span>
-                                    {p.userId === me?.userId && <span className="text-[10px] text-white/30 mt-0.5">vous</span>}
-                                </div>
-                            );
-                        })}
+                <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
+                    {/* Left: title */}
+                    <div className="w-48 shrink-0 font-bold text-base">
+                        🔴 Puissance 4
                     </div>
-                )}
 
-                {/* ── Indicateur de tour ── */}
-                {gameState?.status === 'playing' && (
-                    <div className="flex flex-col items-center gap-2 text-white/70 text-sm">
-                        {isMyTurn
-                            ? <span className="text-white font-bold animate-pulse">🎯 C'est votre tour !</span>
-                            : <span>⏳ Tour de <strong className="text-white">{players.find(p => p.colorIndex === gameState.currentTurn)?.username}</strong>…</span>
-                        }
-                        <TurnTimer
-                            turnStartedAt={gameState.turnStartedAt}
-                            turnDuration={gameState.turnDuration}
-                            active={gameState.status === 'playing'}
-                        />
-                    </div>
-                )}
-
-                {/* ── Grille ── */}
-                <div
-                    className="relative select-none"
-                    onMouseLeave={() => setHoverCol(null)}
-                >
-                    {/* Indicateur de colonne survolée */}
-                    {isMyTurn && hoverCol !== null && gameState?.grid[0][hoverCol] === null && (
-                        <div
-                            className="absolute -top-8 transition-all duration-100"
-                            style={{ left: `calc(${hoverCol} * (56px + 8px) + 4px)`, width: 56 }}
-                        >
-                            <div className={`w-12 h-6 rounded-full mx-auto ${PLAYER_COLORS[myColorIndex!].bg} opacity-80`}
-                                style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }} />
-                        </div>
-                    )}
-
-                    {/* Plateau */}
-                    <div
-                        className="rounded-2xl p-3 gap-2 grid"
-                        style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            backdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            gridTemplateColumns: `repeat(${COLS}, 56px)`,
-                            gridTemplateRows: `repeat(${ROWS}, 56px)`,
-                        }}
-                    >
-                        {Array.from({ length: ROWS }, (_, row) =>
-                            Array.from({ length: COLS }, (_, col) => {
-                                const cellValue = gameState?.grid[row][col] ?? null;
-                                const isWin = winSet.has(`${row}-${col}`);
-                                const colHovered = hoverCol === col;
-                                const colFull = gameState?.grid[0][col] !== null;
-
-                                return (
-                                    <div
-                                        key={`${row}-${col}`}
-                                        className={`relative rounded-full cursor-pointer transition-all duration-150
-                      ${isMyTurn && !colFull ? 'cursor-pointer' : 'cursor-default'}
-                      ${colHovered && isMyTurn && !colFull ? 'col-hover bg-white/5' : 'bg-black/30'}
-                    `}
-                                        onClick={() => handleDrop(col)}
-                                        onMouseEnter={() => isMyTurn && setHoverCol(col)}
-                                    >
-                                        <CellPiece value={cellValue} isWin={isWin} />
-                                    </div>
-                                );
-                            })
+                    {/* Center: player vs player with turn indicator */}
+                    <div className="flex-1 flex justify-center items-center gap-2 text-sm">
+                        {players.length === 2 && player0 && player1 ? (
+                            <>
+                                <span className={`flex items-center gap-1 transition-all ${gameState?.status === 'playing' && activeTurn === 0 ? 'font-bold' : 'font-normal opacity-60'}`}>
+                                    {PLAYER_COLORS[0].emoji} {player0.username}
+                                </span>
+                                <span className="text-gray-400 dark:text-gray-600">vs</span>
+                                <span className={`flex items-center gap-1 transition-all ${gameState?.status === 'playing' && activeTurn === 1 ? 'font-bold' : 'font-normal opacity-60'}`}>
+                                    {player1.username} {PLAYER_COLORS[1].emoji}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">En attente de joueurs…</span>
                         )}
                     </div>
 
-                    {/* Numéros de colonnes */}
-                    <div className="flex mt-1" style={{ gap: 8 }}>
-                        {Array.from({ length: COLS }, (_, col) => (
-                            <div key={col}
-                                onClick={() => handleDrop(col)}
-                                onMouseEnter={() => isMyTurn && setHoverCol(col)}
-                                className={`w-14 text-center text-xs font-semibold rounded transition-colors duration-150
-                  ${isMyTurn ? 'cursor-pointer text-white/30 hover:text-white/70' : 'text-white/10 cursor-default'}`}
-                            >
-                                {col + 1}
-                            </div>
-                        ))}
+                    {/* Right: scores */}
+                    <div className="w-48 shrink-0 flex justify-end items-center gap-2 text-sm font-medium">
+                        {players.length === 2 && gameState ? (
+                            <span>
+                                {PLAYER_COLORS[0].emoji} {gameState.scores[0]} — {PLAYER_COLORS[1].emoji} {gameState.scores[1]}
+                            </span>
+                        ) : null}
                     </div>
-                </div>
+                </header>
+
+                {/* ── Main ── */}
+                <main className="flex-1 flex flex-col items-center justify-center p-4 gap-6">
+
+                    {/* ── Indicateur de tour ── */}
+                    {gameState?.status === 'playing' && (
+                        <div className="flex flex-col items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            {isMyTurn
+                                ? <span className="font-bold text-gray-900 dark:text-white animate-pulse">🎯 C'est votre tour !</span>
+                                : <span>⏳ Tour de <strong className="text-gray-900 dark:text-white">{players.find(p => p.colorIndex === gameState.currentTurn)?.username}</strong>…</span>
+                            }
+                            <TurnTimer
+                                turnStartedAt={gameState.turnStartedAt}
+                                turnDuration={gameState.turnDuration}
+                                active={gameState.status === 'playing'}
+                            />
+                        </div>
+                    )}
+
+                    {/* ── Grille ── */}
+                    <div
+                        className="relative select-none"
+                        onMouseLeave={() => setHoverCol(null)}
+                    >
+                        {/* Indicateur de colonne survolée */}
+                        {isMyTurn && hoverCol !== null && gameState?.grid[0][hoverCol] === null && (
+                            <div
+                                className="absolute -top-8 transition-all duration-100"
+                                style={{ left: `calc(${hoverCol} * (56px + 8px) + 4px)`, width: 56 }}
+                            >
+                                <div className={`w-12 h-6 rounded-full mx-auto ${PLAYER_COLORS[myColorIndex!].bg} opacity-80`}
+                                    style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }} />
+                            </div>
+                        )}
+
+                        {/* Plateau */}
+                        <div
+                            className="rounded-2xl p-3 gap-2 grid"
+                            style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                backdropFilter: 'blur(12px)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                gridTemplateColumns: `repeat(${COLS}, 56px)`,
+                                gridTemplateRows: `repeat(${ROWS}, 56px)`,
+                            }}
+                        >
+                            {Array.from({ length: ROWS }, (_, row) =>
+                                Array.from({ length: COLS }, (_, col) => {
+                                    const cellValue = gameState?.grid[row][col] ?? null;
+                                    const isWin = winSet.has(`${row}-${col}`);
+                                    const colHovered = hoverCol === col;
+                                    const colFull = gameState?.grid[0][col] !== null;
+
+                                    return (
+                                        <div
+                                            key={`${row}-${col}`}
+                                            className={`relative rounded-full cursor-pointer transition-all duration-150
+                      ${isMyTurn && !colFull ? 'cursor-pointer' : 'cursor-default'}
+                      ${colHovered && isMyTurn && !colFull ? 'col-hover bg-white/5' : 'bg-black/30'}
+                    `}
+                                            onClick={() => handleDrop(col)}
+                                            onMouseEnter={() => isMyTurn && setHoverCol(col)}
+                                        >
+                                            <CellPiece value={cellValue} isWin={isWin} />
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        {/* Numéros de colonnes */}
+                        <div className="flex mt-1" style={{ gap: 8 }}>
+                            {Array.from({ length: COLS }, (_, col) => (
+                                <div key={col}
+                                    onClick={() => handleDrop(col)}
+                                    onMouseEnter={() => isMyTurn && setHoverCol(col)}
+                                    className={`w-14 text-center text-xs font-semibold rounded transition-colors duration-150
+                  ${isMyTurn
+                                            ? 'cursor-pointer text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                            : 'text-gray-300 dark:text-gray-700 cursor-default'}`}
+                                >
+                                    {col + 1}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ── En attente d'un joueur ── */}
+                    {gameState?.status === 'waiting' && !playerLeft && (
+                        <div className="flex flex-col items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-8 py-6 shadow-sm">
+                            <LoadingSpinner fullScreen={false} message="En attente d'un adversaire…" />
+                            <p className="text-xs text-gray-400 dark:text-gray-600 font-mono">{lobbyId}</p>
+                        </div>
+                    )}
+
+                    {/* ── Joueur parti ── */}
+                    {playerLeft && (
+                        <div className="flex flex-col items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-8 py-6 shadow-sm">
+                            <p className="text-gray-600 dark:text-gray-400">⚠️ Votre adversaire a quitté la partie.</p>
+                            <button
+                                onClick={() => router.push(`/lobby/create/${lobbyId}`)}
+                                className="px-5 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all text-sm"
+                            >
+                                Retour au lobby
+                            </button>
+                            <button
+                                onClick={() => router.push('/')}
+                                className="px-5 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all text-sm"
+                            >
+                                Quitter
+                            </button>
+                        </div>
+                    )}
+
+                </main>
 
                 {/* ── Overlay fin de partie ── */}
                 {gameState?.status === 'finished' && (
@@ -323,32 +368,6 @@ export default function Puissance4Page() {
                     />
                 )}
 
-                {/* ── En attente d'un joueur ── */}
-                {gameState?.status === 'waiting' && !playerLeft && (
-                    <div className="flex flex-col items-center gap-2">
-                        <LoadingSpinner fullScreen={false} message="En attente d'un adversaire…" />
-                        <p className="text-xs text-white/30 font-mono">{lobbyId}</p>
-                    </div>
-                )}
-
-                {/* ── Joueur parti ── */}
-                {playerLeft && (
-                    <div className="flex flex-col items-center gap-3">
-                        <p className="text-white/70">⚠️ Votre adversaire a quitté la partie.</p>
-                        <button
-                            onClick={() => router.push(`/lobby/create/${lobbyId}`)}
-                            className="px-5 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all text-sm"
-                        >
-                            Retour au lobby
-                        </button>
-                        <button
-                            onClick={() => router.push('/')}
-                            className="px-5 py-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all text-sm"
-                        >
-                            Quitter
-                        </button>
-                    </div>
-                )}
             </div>
         </>
     );

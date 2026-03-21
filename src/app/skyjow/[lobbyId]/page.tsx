@@ -85,8 +85,8 @@ function Card({ card, onClick, highlight, selectable, size = 'md' }: CardProps) 
                 sizeClass,
                 'border-2 flex items-center justify-center font-bold transition-all duration-200 select-none',
                 cardColor(card.value, card.revealed, card.removed),
-                selectable && !card.revealed ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900 scale-105' : '',
-                highlight ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-900' : '',
+                selectable && !card.revealed ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-white dark:ring-offset-slate-900 scale-105' : '',
+                highlight ? 'ring-2 ring-gray-400 dark:ring-white ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : '',
                 selectable && !card.removed ? 'cursor-pointer hover:scale-110 active:scale-95' : '',
             ].join(' ')}
         >
@@ -389,12 +389,12 @@ export default function skyjowGamePage() {
                 <div className="space-y-2">
                     {sortedScores.map((s, i) => (
                         <div key={s.userId}
-                            className={`flex justify-between items-center px-4 py-3 rounded-lg ${i === 0 ? 'bg-yellow-500/20 border border-yellow-500/40' : 'bg-slate-700'}`}>
-                            <span className="text-slate-200 font-medium">
+                            className={`flex justify-between items-center px-4 py-3 rounded-lg ${i === 0 ? 'bg-yellow-500/20 border border-yellow-500/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium">
                                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {s.username}
-                                {s.userId === userId && <span className="text-xs text-slate-400 ml-1">(moi)</span>}
+                                {s.userId === userId && <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(moi)</span>}
                             </span>
-                            <span className={`font-bold text-lg ${i === 0 ? 'text-yellow-400' : 'text-slate-300'}`}>{s.totalScore} pts</span>
+                            <span className={`font-bold text-lg ${i === 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-300'}`}>{s.totalScore} pts</span>
                         </div>
                     ))}
                 </div>
@@ -407,11 +407,11 @@ export default function skyjowGamePage() {
     if (phase === 'round_end' && roundEndData) {
         const sortedScores = [...roundEndData.scores].sort((a, b) => a.totalScore - b.totalScore);
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-                <div className="bg-slate-800 rounded-2xl p-8 max-w-lg w-full border border-slate-700">
+            <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 max-w-lg w-full">
                     <div className="text-center mb-6">
                         <div className="text-5xl mb-3">📊</div>
-                        <h1 className="text-2xl font-bold text-white">Fin de la manche {round}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Fin de la manche {round}</h1>
                         {scores.some(s => s.totalScore >= 100) && (
                             <p className="text-red-400 text-sm mt-1">⚠️ Un joueur a atteint 100 points — fin de partie !</p>
                         )}
@@ -420,15 +420,15 @@ export default function skyjowGamePage() {
                     <div className="space-y-2 mb-6">
                         {sortedScores.map((s, i) => (
                             <div key={s.userId}
-                                className={`flex justify-between items-center px-4 py-3 rounded-lg ${s.userId === userId ? 'bg-sky-900/40 border border-sky-500/40' : 'bg-slate-700'}`}>
-                                <span className="text-slate-200 font-medium">
+                                className={`flex justify-between items-center px-4 py-3 rounded-lg ${s.userId === userId ? 'bg-sky-900/40 border border-sky-500/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                                <span className="text-gray-800 dark:text-gray-200 font-medium">
                                     {i === 0 ? '🥇' : `${i + 1}.`} {s.username}
                                 </span>
                                 <div className="text-right">
                                     <span className={`text-sm font-semibold ${s.roundScore > 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
                                         {s.roundScore > 0 ? '+' : ''}{s.roundScore}
                                     </span>
-                                    <span className="text-slate-400 text-xs ml-2">= {s.totalScore} pts</span>
+                                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-2">= {s.totalScore} pts</span>
                                 </div>
                             </div>
                         ))}
@@ -448,7 +448,7 @@ export default function skyjowGamePage() {
 
     if (phase === 'waiting' || players.length === 0) {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+            <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
                 <div className="text-center">
                     <div className="text-5xl mb-4 animate-bounce">🃏</div>
                     <LoadingSpinner message="Chargement de la partie…" />
@@ -460,39 +460,39 @@ export default function skyjowGamePage() {
     // ── Interface principale ───────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white flex flex-col" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+        <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
 
             {/* ── Notification ── */}
             {notification && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-700 border border-slate-500 text-white px-5 py-3 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white px-5 py-3 rounded-xl shadow-xl text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-200">
                     {notification}
                 </div>
             )}
 
             {/* ── Header ── */}
-            <header className="flex items-center justify-between px-4 py-3 bg-slate-800/80 border-b border-slate-700 backdrop-blur">
-                <div className="flex items-center gap-3">
-                    <span className="text-2xl">🃏</span>
-                    <div>
-                        <h1 className="font-bold text-white leading-tight">skyjow</h1>
-                        <p className="text-xs text-slate-400">Manche {round} · {players.length} joueurs</p>
+            <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
+                {/* Left */}
+                <div className="w-48 shrink-0 flex items-center gap-2">
+                    <span className="font-bold text-gray-900 dark:text-white">🃏 Skyjow</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Manche {round}</span>
+                </div>
+
+                {/* Center */}
+                <div className="flex-1 flex justify-center">
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold border ${phase === 'flip2' ? 'bg-amber-100 dark:bg-amber-900/50 border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300' : phase === 'last_round' ? 'bg-red-100 dark:bg-red-900/50 border-red-400 dark:border-red-600 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-emerald-900/50 border-green-400 dark:border-emerald-600 text-green-700 dark:text-emerald-300'}`}>
+                        {phase === 'flip2' ? `↩ Retourne 2 cartes (${flip2Count}/2)` : phase === 'last_round' ? '⚡ Dernier tour !' : isCurrent ? '⭐ Ton tour' : `Tour: ${players[currentPlayerIndex]?.username ?? '…'}`}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Scores compacts */}
+                {/* Right */}
+                <div className="w-48 shrink-0 flex justify-end">
                     <div className="hidden sm:flex gap-2">
                         {[...scores].sort((a, b) => a.totalScore - b.totalScore).map(s => (
                             <div key={s.userId}
-                                className={`px-2 py-1 rounded-lg text-xs font-semibold ${s.userId === userId ? 'bg-sky-700 text-sky-100' : 'bg-slate-700 text-slate-300'}`}>
+                                className={`px-2 py-1 rounded-lg text-xs font-semibold ${s.userId === userId ? 'bg-sky-100 dark:bg-sky-700 text-sky-700 dark:text-sky-100' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
                                 {s.username.split(' ')[0]}: {s.totalScore}
                             </div>
                         ))}
-                    </div>
-
-                    {/* Phase badge */}
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold border ${phase === 'flip2' ? 'bg-amber-900/50 border-amber-600 text-amber-300' : phase === 'last_round' ? 'bg-red-900/50 border-red-600 text-red-300' : 'bg-emerald-900/50 border-emerald-600 text-emerald-300'}`}>
-                        {phase === 'flip2' ? `↩ Retourne 2 cartes (${flip2Count}/2)` : phase === 'last_round' ? '⚡ Dernier tour !' : isCurrent ? '⭐ Ton tour' : `Tour: ${players[currentPlayerIndex]?.username ?? '…'}`}
                     </div>
                 </div>
             </header>
@@ -501,21 +501,21 @@ export default function skyjowGamePage() {
             <main className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
 
                 {/* ── Zone adversaires ── */}
-                <div className="lg:w-72 bg-slate-800/50 border-b lg:border-b-0 lg:border-r border-slate-700 p-3 overflow-y-auto">
-                    <p className="text-xs text-slate-500 uppercase font-semibold mb-3 tracking-wider">Adversaires</p>
+                <div className="lg:w-72 bg-white dark:bg-gray-900 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 p-3 overflow-y-auto">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-3 tracking-wider">Adversaires</p>
                     <div className="space-y-4">
                         {otherPlayers.map((p) => {
                             const isTurn = p.userId === currentPlayerId;
                             const pScore = p.liveScore ?? scores.find(s => s.userId === p.userId)?.totalScore ?? 0;
                             return (
                                 <div key={p.userId}
-                                    className={`rounded-xl p-3 border transition-all ${isTurn ? 'bg-slate-700 border-emerald-600 shadow-lg shadow-emerald-900/20' : 'bg-slate-800 border-slate-700'}`}>
+                                    className={`rounded-xl p-3 border transition-all ${isTurn ? 'bg-gray-50 dark:bg-gray-800 border-green-500 dark:border-green-600 shadow-lg shadow-green-900/10' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
                                             {isTurn && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
-                                            <span className="font-semibold text-sm text-slate-200">{p.username}</span>
+                                            <span className="font-semibold text-sm text-gray-800 dark:text-gray-200">{p.username}</span>
                                         </div>
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pScore >= 80 ? 'bg-red-900/50 text-red-400' : pScore >= 50 ? 'bg-orange-900/50 text-orange-400' : 'bg-slate-700 text-slate-400'}`}>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pScore >= 80 ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400' : pScore >= 50 ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                                             {pScore} pts
                                         </span>
                                     </div>
@@ -539,15 +539,15 @@ export default function skyjowGamePage() {
                         <div className="flex items-center gap-8">
                             {/* Pioche */}
                             <div className="flex flex-col items-center gap-2">
-                                <p className="text-xs text-slate-500 uppercase tracking-wider">Pioche</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pioche</p>
                                 <button
                                     onClick={drawDeck}
                                     disabled={!isCurrent || drawnCard !== null}
                                     className={[
                                         'w-14 h-20 rounded-lg border-2 flex items-center justify-center font-bold text-xl transition-all',
                                         isCurrent && drawnCard === null
-                                            ? 'bg-slate-700 border-sky-500 hover:border-sky-300 hover:bg-slate-600 cursor-pointer shadow-lg shadow-sky-900/30 hover:scale-105 active:scale-95'
-                                            : 'bg-slate-800 border-slate-600 cursor-not-allowed opacity-50',
+                                            ? 'bg-gray-100 dark:bg-gray-800 border-sky-500 hover:border-sky-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer shadow-lg shadow-sky-900/20 hover:scale-105 active:scale-95'
+                                            : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-not-allowed opacity-50',
                                     ].join(' ')}
                                 >
                                     🂠
@@ -561,29 +561,29 @@ export default function skyjowGamePage() {
                                     <div className={[
                                         'w-14 h-20 rounded-lg border-2 flex items-center justify-center font-bold text-xl',
                                         cardColor(drawnCard.value, true, false),
-                                        'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-900',
+                                        'ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900',
                                     ].join(' ')}>
                                         {drawnCard.value}
                                     </div>
                                     <div className="flex gap-2 text-xs">
-                                        <span className="text-slate-400">← Échange ou retourne →</span>
+                                        <span className="text-gray-500 dark:text-gray-400">← Échange ou retourne →</span>
                                     </div>
                                 </div>
                             )}
 
                             {!drawnCard && (
-                                <div className="text-slate-600 text-2xl">⇄</div>
+                                <div className="text-gray-400 dark:text-gray-600 text-2xl">⇄</div>
                             )}
 
                             {/* Défausse */}
                             <div className="flex flex-col items-center gap-2">
-                                <p className="text-xs text-slate-500 uppercase tracking-wider">Défausse</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Défausse</p>
                                 <button
                                     onClick={takeDiscard}
                                     disabled={!isCurrent || drawnCard !== null || discardTop === null}
                                     className={[
                                         'w-14 h-20 rounded-lg border-2 flex items-center justify-center font-bold text-xl transition-all',
-                                        discardTop !== null ? cardColor(discardTop, true, false) : 'bg-slate-800 border-slate-700',
+                                        discardTop !== null ? cardColor(discardTop, true, false) : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700',
                                         isCurrent && drawnCard === null && discardTop !== null
                                             ? 'hover:scale-105 active:scale-95 cursor-pointer ring-1 ring-white/20 hover:ring-white/60'
                                             : 'cursor-not-allowed opacity-60',
@@ -600,7 +600,7 @@ export default function skyjowGamePage() {
                                     <div className={[
                                         'w-14 h-20 rounded-lg border-2 flex items-center justify-center font-bold text-xl',
                                         cardColor(drawnCard.value, true, false),
-                                        'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-900',
+                                        'ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900',
                                     ].join(' ')}>
                                         {drawnCard.value}
                                     </div>
@@ -612,64 +612,64 @@ export default function skyjowGamePage() {
                     {/* ── Instructions contextuelles ── */}
                     <div className="text-center max-w-sm">
                         {phase === 'flip2' && (
-                            <div className="bg-amber-900/30 border border-amber-700/50 rounded-xl px-5 py-3">
-                                <p className="text-amber-300 font-semibold">Retourne 2 cartes de ton plateau</p>
-                                <p className="text-amber-500 text-sm mt-1">{flip2Count}/2 cartes retournées</p>
+                            <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 rounded-xl px-5 py-3">
+                                <p className="text-amber-700 dark:text-amber-300 font-semibold">Retourne 2 cartes de ton plateau</p>
+                                <p className="text-amber-600 dark:text-amber-500 text-sm mt-1">{flip2Count}/2 cartes retournées</p>
                             </div>
                         )}
                         {isPlayingPhase(phase) && isCurrent && drawnCard === null && (
-                            <div className="bg-emerald-900/30 border border-emerald-700/50 rounded-xl px-5 py-3">
-                                <p className="text-emerald-300 font-semibold">C'est ton tour !</p>
-                                <p className="text-emerald-500 text-sm mt-1">Pioche dans la pioche ou prends la carte de la défausse</p>
+                            <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700/50 rounded-xl px-5 py-3">
+                                <p className="text-emerald-700 dark:text-emerald-300 font-semibold">C'est ton tour !</p>
+                                <p className="text-emerald-600 dark:text-emerald-500 text-sm mt-1">Pioche dans la pioche ou prends la carte de la défausse</p>
                             </div>
                         )}
                         {isPlayingPhase(phase) && isCurrent && drawnCard !== null && drawnCard.from === 'deck' && (
-                            <div className="bg-sky-900/30 border border-sky-700/50 rounded-xl px-5 py-3">
-                                <p className="text-sky-300 font-semibold mb-3">Carte piochée : <span className="text-white font-bold">{drawnCard.value}</span></p>
+                            <div className="bg-sky-50 dark:bg-sky-900/30 border border-sky-300 dark:border-sky-700/50 rounded-xl px-5 py-3">
+                                <p className="text-sky-700 dark:text-sky-300 font-semibold mb-3">Carte piochée : <span className="text-gray-900 dark:text-white font-bold">{drawnCard.value}</span></p>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setDrawnAction('swap')}
-                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${drawnAction === 'swap' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-300 hover:border-emerald-500'}`}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${drawnAction === 'swap' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-emerald-500'}`}
                                     >
                                         ↔ Échanger
                                     </button>
                                     <button
                                         onClick={() => setDrawnAction('discard_flip')}
-                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${drawnAction === 'discard_flip' ? 'bg-amber-600 border-amber-400 text-white' : 'bg-slate-700 border-slate-500 text-slate-300 hover:border-amber-500'}`}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${drawnAction === 'discard_flip' ? 'bg-amber-600 border-amber-400 text-white' : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-500'}`}
                                     >
                                         🗑 Jeter & retourner
                                     </button>
                                 </div>
-                                {drawnAction === 'swap' && <p className="text-emerald-400 text-xs mt-2">Clique sur n'importe quelle carte pour l'échanger</p>}
-                                {drawnAction === 'discard_flip' && <p className="text-amber-400 text-xs mt-2">Clique sur une carte cachée pour la retourner</p>}
-                                {drawnAction === null && <p className="text-slate-400 text-xs mt-2">Choisis une action ci-dessus</p>}
+                                {drawnAction === 'swap' && <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2">Clique sur n'importe quelle carte pour l'échanger</p>}
+                                {drawnAction === 'discard_flip' && <p className="text-amber-600 dark:text-amber-400 text-xs mt-2">Clique sur une carte cachée pour la retourner</p>}
+                                {drawnAction === null && <p className="text-gray-500 dark:text-gray-400 text-xs mt-2">Choisis une action ci-dessus</p>}
                             </div>
                         )}
                         {isPlayingPhase(phase) && isCurrent && drawnCard !== null && drawnCard.from === 'discard' && (
-                            <div className="bg-purple-900/30 border border-purple-700/50 rounded-xl px-5 py-3">
-                                <p className="text-purple-300 font-semibold">Carte de la défausse : <span className="text-white">{drawnCard.value}</span></p>
-                                <p className="text-purple-500 text-sm mt-1">Tu dois l'échanger avec une de tes cartes</p>
+                            <div className="bg-purple-50 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700/50 rounded-xl px-5 py-3">
+                                <p className="text-purple-700 dark:text-purple-300 font-semibold">Carte de la défausse : <span className="text-gray-900 dark:text-white">{drawnCard.value}</span></p>
+                                <p className="text-purple-600 dark:text-purple-500 text-sm mt-1">Tu dois l'échanger avec une de tes cartes</p>
                             </div>
                         )}
                         {isPlayingPhase(phase) && !isCurrent && (
-                            <p className="text-slate-500 text-sm">Tour de <span className="text-slate-300 font-semibold">{players[currentPlayerIndex]?.username}</span>…</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">Tour de <span className="text-gray-700 dark:text-gray-300 font-semibold">{players[currentPlayerIndex]?.username}</span>…</p>
                         )}
                         {phase === 'last_round' && isCurrent && (
-                            <div className="bg-red-900/30 border border-red-700/50 rounded-xl px-5 py-3 mt-2">
-                                <p className="text-red-300 font-bold">⚡ Dernier tour !</p>
-                                <p className="text-red-400 text-sm mt-1">C'est encore ton tour — joue normalement</p>
+                            <div className="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/50 rounded-xl px-5 py-3 mt-2">
+                                <p className="text-red-700 dark:text-red-300 font-bold">⚡ Dernier tour !</p>
+                                <p className="text-red-600 dark:text-red-400 text-sm mt-1">C'est encore ton tour — joue normalement</p>
                             </div>
                         )}
                     </div>
 
                     {/* ── Mon plateau ── */}
-                    <div className={`rounded-2xl p-5 border-2 transition-all ${isCurrent ? 'border-emerald-500 bg-slate-800 shadow-xl shadow-emerald-900/20' : 'border-slate-700 bg-slate-800/60'}`}>
+                    <div className={`rounded-2xl p-5 border-2 transition-all ${isCurrent ? 'border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 shadow-xl shadow-green-900/10' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'}`}>
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                                 {isCurrent && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
-                                <span className="font-bold text-slate-200">{username} <span className="text-slate-400 font-normal text-sm">(moi)</span></span>
+                                <span className="font-bold text-gray-800 dark:text-gray-200">{username} <span className="text-gray-500 dark:text-gray-400 font-normal text-sm">(moi)</span></span>
                             </div>
-                            <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${myScore >= 80 ? 'bg-red-900/50 text-red-400' : myScore >= 50 ? 'bg-orange-900/50 text-orange-400' : 'bg-slate-700 text-emerald-400'}`}>
+                            <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${myScore >= 80 ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400' : myScore >= 50 ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400' : 'bg-gray-100 dark:bg-gray-800 text-emerald-600 dark:text-emerald-500'}`}>
                                 {myScore} pts
                             </span>
                         </div>
@@ -688,7 +688,7 @@ export default function skyjowGamePage() {
                             {[[-2, 'bg-blue-900'], [-1, 'bg-blue-600'], [0, 'bg-cyan-400'], ['1-3', 'bg-emerald-400'], ['4-6', 'bg-yellow-300'], ['7-9', 'bg-orange-400'], ['10-12', 'bg-red-500']].map(([v, cls]) => (
                                 <div key={String(v)} className="flex items-center gap-1">
                                     <div className={`w-3 h-3 rounded ${cls}`} />
-                                    <span className="text-xs text-slate-500">{v}</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">{v}</span>
                                 </div>
                             ))}
                         </div>
