@@ -47,7 +47,7 @@ export const GAME_CONFIG = {
         scoreLabel: 'Victoires',
         description: "Aligne 4 pions avant ton adversaire pour gagner ! Chaque victoire rapporte 1 point. Le classement est basé sur le total de victoires accumulées.",
     },
-    'just-one': {
+    just_one: {
         gameType: 'JUST_ONE' as const,
         label: 'Just One',
         icon: '🔤',
@@ -104,7 +104,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     skyjow: [2, 3, 4, 5, 6, 7, 8],
     yahtzee: [2, 3, 4, 5, 6, 7, 8],
     puissance4: [2],
-    'just-one': [3, 4, 5, 6, 7],
+    just_one: [3, 4, 5, 6, 7],
     battleship: [2],
     diamant: [2, 3, 4, 5, 6, 7, 8],
     impostor: [4, 5, 6, 7, 8],
@@ -113,7 +113,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
     puissance4: 2,
     taboo: 4,
-    'just-one': 3,
+    just_one: 3,
     battleship: 2,
     diamant: 2,
     impostor: 4,
@@ -125,9 +125,9 @@ export const EXACT_PLAYERS: Partial<Record<GameType, number>> = {
 };
 
 export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
-    yahtzee: '🎲 Yahtzee — aucune option.',
-    puissance4: '🔘 Puissance 4 — exactement 2 joueurs.',
-    'just-one': `${GAME_CONFIG['just-one'].icon} Just One — 3 à 7 joueurs.`,
+    yahtzee: `${GAME_CONFIG.yahtzee.icon} Yahtzee — 2 à 8 joueurs`,
+    puissance4: `${GAME_CONFIG.puissance4.icon} Puissance 4 — exactement 2 joueurs.`,
+    just_one: `${GAME_CONFIG.just_one.icon} Just One — 3 à 7 joueurs.`,
     diamant: `${GAME_CONFIG.diamant.icon} Diamant — 2 à 8 joueurs.`,
 };
 
@@ -137,7 +137,7 @@ export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string) => string>>
     skyjow: (id) => `/skyjow/${id}`,
     yahtzee: (id) => `/yahtzee/${id}`,
     puissance4: (id) => `/puissance4/${id}`,
-    'just-one': (id) => `/just-one/${id}`,
+    just_one: (id) => `/just-one/${id}`,
     battleship: (id) => `/battleship/${id}`,
     diamant: (id) => `/diamant/${id}`,
     impostor: (id) => `/impostor/${id}`,
