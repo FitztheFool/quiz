@@ -11,6 +11,7 @@ import { useChat } from '@/context/ChatContext';
 import {
     GAME_CONFIG,
     GAME_OPTIONS,
+    GAME_COLOR,
     MAX_PLAYERS_BY_GAME,
     MIN_PLAYERS,
     EXACT_PLAYERS,
@@ -449,389 +450,379 @@ export default function LobbyCodePage() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-4">
-            <div className="relative w-full max-w-lg py-8">
+        <main className="min-h-screen bg-gray-50 dark:bg-slate-950 p-4 md:p-6 lg:p-8">
+            <div className="max-w-6xl mx-auto">
 
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 mb-4 text-3xl">🎮</div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{meta?.title || 'Lobby'}</h1>
-                    <div className="flex items-center justify-center gap-2 mt-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isHost ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-200 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400'}`}>
-                            {isHost ? '👑 Host' : '👤 Participant'}
-                        </span>
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25 text-2xl flex-shrink-0">
+                        {selectedGame?.icon ?? '🎮'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight truncate">
+                            {meta?.title || 'Lobby'}
+                        </h1>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isHost ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-200 dark:bg-slate-700/60 text-gray-500 dark:text-slate-400'}`}>
+                                {isHost ? '👑 Hôte' : '👤 Participant'}
+                            </span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isPublic ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : 'bg-gray-200 dark:bg-slate-700/60 text-gray-500 dark:text-slate-400'}`}>
+                                {isPublic ? '🌍 Public' : '🔒 Privé'}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-2xl p-6 space-y-6">
+                {/* Two-column layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 lg:gap-6 items-start">
 
-                    {/* Titre */}
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Titre du lobby</label>
-                        {isHost ? (
-                            <input type="text" value={meta?.title ?? ''} maxLength={60}
-                                onChange={e => { setMeta(prev => ({ ...prev, title: e.target.value })); emitTitle(e.target.value.trim()); }}
-                                className="w-full bg-gray-100 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-600/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/60 transition-all" />
-                        ) : (
-                            <div className="w-full bg-gray-100 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-3 text-gray-700 dark:text-slate-300 text-sm">{meta?.title || '—'}</div>
-                        )}
-                    </div>
+                    {/* ── Left column : settings ── */}
+                    <div className="space-y-4">
 
-                    {/* Description */}
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                            Description <span className="text-gray-400 dark:text-slate-600 font-normal normal-case">(optionnel)</span>
-                        </label>
-                        {isHost ? (
-                            <textarea value={meta?.description ?? ''} maxLength={200} rows={2}
-                                onChange={e => { setMeta(prev => ({ ...prev, description: e.target.value })); emitDescription(e.target.value.trim()); }}
-                                placeholder="Décrivez votre partie…"
-                                className="w-full bg-gray-100 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-600/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/60 transition-all resize-none" />
-                        ) : (
-                            meta?.description
-                                ? <div className="w-full bg-gray-100 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-3 text-gray-700 dark:text-slate-300 text-sm">{meta.description}</div>
-                                : <div className="text-gray-400 dark:text-slate-600 text-xs italic">Aucune description</div>
-                        )}
-                    </div>
-
-                    <div className="border-t border-gray-200 dark:border-slate-700/50" />
-
-                    {/* Lien d'invitation */}
-                    <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-3">
-                        <span className="text-xs text-gray-500 dark:text-slate-400 flex-1 truncate font-mono">
-                            {typeof window !== 'undefined' ? `${window.location.origin}/lobby/create/${lobbyId}` : `/lobby/create/${lobbyId}`}
-                        </span>
-                        <button
-                            onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/lobby/create/${lobbyId}`);
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 2000);
-                            }}
-                            className="flex-shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors px-2 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20">
-                            {copied ? '✅ Lien d\'invitation copié !' : '⧉ Copier'}
-                        </button>
-                    </div>
-
-                    <div className="border-t border-gray-200 dark:border-slate-700/50" />
-
-                    {/* Jeu — dérivé de GAME_OPTIONS */}
-                    <div className="space-y-2">
-                        <label className="block text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Jeu</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {GAME_OPTIONS.map(g => {
-                                const exact = EXACT_PLAYERS[g.value];
-                                const gMin = MIN_PLAYERS[g.value] ?? 2;
-                                const gMaxList = MAX_PLAYERS_BY_GAME[g.value];
-                                const gMax = gMaxList ? Math.max(...gMaxList) : Infinity;
-                                const incompatible = exact ? players.length !== exact : players.length < gMin || players.length > gMax;
-                                const disabled = isHost && gameType !== g.value && incompatible;
-                                return (
-                                    <button key={g.value}
-                                        onClick={() => isHost && !disabled && handleGameTypeChange(g.value)}
-                                        title={disabled ? `Requiert exactement ${exact} joueurs` : undefined}
-                                        className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 font-semibold text-xs transition-all
-                                            ${gameType === g.value
-                                                ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300'
-                                                : disabled
-                                                    ? 'border-gray-200 dark:border-slate-700/50 bg-gray-100 dark:bg-slate-800/40 text-gray-400 dark:text-slate-600 opacity-40 cursor-not-allowed'
-                                                    : 'border-gray-200 dark:border-slate-700/50 bg-gray-100 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400'}
-                                            ${isHost && gameType !== g.value && !disabled ? 'hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-300 cursor-pointer' : ''}`}>
-                                        <span className="text-xl">{g.icon}</span>
-                                        <span>{g.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Options UNO */}
-                    {gameType === 'uno' && (
-                        <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options UNO</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {([{ v: 'none', label: '👤 Solo', desc: '2–8' }, { v: '2v2', label: '👥 2v2', desc: '4 joueurs' }] as const).map(opt => (
-                                    <button key={opt.v} onClick={() => isHost && handleUnoTeamMode(opt.v)}
-                                        className={`py-2 px-3 rounded-lg border-2 text-xs font-semibold transition-all flex flex-col items-center
-                                            ${unoTeamMode === opt.v
-                                                ? 'border-blue-500 bg-blue-500/15 text-blue-600 dark:text-blue-300'
-                                                : 'border-gray-200 dark:border-slate-600/50 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-500'}`}>
-                                        <span>{opt.label}</span><span className="opacity-60 font-normal">{opt.desc}</span>
-                                    </button>
-                                ))}
-                            </div>
-                            {unoTeamMode === '2v2' && (
-                                <OptionRow label="Condition de victoire">
-                                    <OptionSelect value={unoTeamWinMode} onChange={v => { setUnoTeamWinMode(v as 'one' | 'both'); socket?.emit('lobby:setUnoOptions', { teamWinMode: v }); }}
-                                        options={[{ v: 'one', label: 'Un vide sa main' }, { v: 'both', label: 'Les 2 vident' }]} disabled={!isHost} />
-                                </OptionRow>
-                            )}
-                            <Toggle checked={unoStackable} onChange={v => { setUnoStackable(v); socket?.emit('lobby:setUnoOptions', { stackable: v }); }} label="Cartes empilables (+2/+4)" disabled={!isHost} />
-                            {unoTeamMode !== '2v2' && <Toggle checked={unoJumpIn} onChange={v => { setUnoJumpIn(v); socket?.emit('lobby:setUnoOptions', { jumpIn: v }); }} label="Jump-in" disabled={!isHost} />}
-                        </div>
-                    )}
-
-                    {/* Options Bataille Navale */}
-                    {gameType === 'battleship' && (
-                        <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Bataille Navale</p>
-                            <OptionRow label="Taille de la grille">
-                                <OptionSelect
-                                    value={gridSize}
-                                    onChange={v => { const g = Number(v); setGridSize(g); socket?.emit('lobby:setBattleshipOptions', { gridSize: g, turnTime }); }}
-                                    options={[8, 10, 12].map(n => ({ v: n, label: `${n}×${n}` }))}
-                                    disabled={!isHost}
-                                />
-                            </OptionRow>
-                            <OptionRow label="Temps par tour">
-                                <OptionSelect
-                                    value={turnTime}
-                                    onChange={v => { const t = Number(v); setTurnTime(t); socket?.emit('lobby:setBattleshipOptions', { gridSize, turnTime: t }); }}
-                                    options={[10, 20, 30, 60, 90, 120].map(t => ({ v: t, label: `${t}s` }))}
-                                    disabled={!isHost}
-                                />
-                            </OptionRow>
-                        </div>
-                    )}
-
-                    {/* Options Taboo */}
-                    {gameType === 'taboo' && (
-                        <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Taboo</p>
-                            <OptionRow label="Durée d'un tour"><OptionSelect value={tabooTurnDuration} onChange={v => { setTabooTurnDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { turnDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180, 240, 300].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
-                            <OptionRow label="Rounds"><OptionSelect value={tabooTotalRounds} onChange={v => { setTabooTotalRounds(Number(v)); socket?.emit('lobby:setTabooOptions', { totalRounds: Number(v) }); }} options={[1, 2, 3, 4, 5, 7, 10].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} /></OptionRow>
-                            <OptionRow label="Mots piégés"><OptionSelect value={tabooTrapWordCount} onChange={v => { setTabooTrapWordCount(Number(v)); socket?.emit('lobby:setTabooOptions', { trapWordCount: Number(v) }); }} options={[2, 3, 4, 5, 6, 7, 8, 10].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
-                            <OptionRow label="Temps mots piégés"><OptionSelect value={tabooTrapDuration} onChange={v => { setTabooTrapDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { trapDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
-                            <OptionRow label="Tentatives max"><OptionSelect value={tabooMaxAttempts} onChange={v => { setTabooMaxAttempts(Number(v)); socket?.emit('lobby:setTabooOptions', { maxAttempts: Number(v) }); }} options={[3, 5, 7, 10, 15, 20, 30].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
-                        </div>
-                    )}
-
-                    {/* Options Quiz */}
-                    {gameType === 'quiz' && (
-                        <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Quiz</p>
-                            <div className="space-y-1">
-                                <p className="text-xs text-gray-500 dark:text-slate-400">Quiz</p>
-                                <QuizSearch isHost={isHost} selectedId={selectedQuizId} selectedTitle={selectedQuizTitle}
-                                    categories={categories}
-                                    categoryId={selectedQuizCategoryId}
-                                    onCategoryChange={catId => setSelectedQuizCategoryId(catId)}
-                                    onSelect={(id, title) => {
-                                        setSelectedQuizId(id || undefined);
-                                        setSelectedQuizTitle(title);
-                                        if (id) socket?.emit('lobby:setQuiz', { quizId: id });
-                                    }} />
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-gray-500 dark:text-slate-400">Mode de temps</p>
-                                <select value={quizTimeMode}
-                                    onChange={e => { setQuizTimeMode(e.target.value as typeof quizTimeMode); socket?.emit('lobby:setQuizOptions', { timeMode: e.target.value, timePerQuestion: quizTimePerQuestion }); }}
-                                    className="font-sans w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
-                                    <option value="per_question">Par question</option>
-                                    <option value="total">Temps total</option>
-                                    <option value="none">Sans limite</option>
-                                </select>
-                            </div>
-                            {quizTimeMode !== 'none' && (
-                                <div className="space-y-1">
-                                    <p className="text-xs text-gray-500 dark:text-slate-400">{quizTimeMode === 'total' ? 'Temps total' : 'Temps / question'}</p>
-                                    <select value={quizTimePerQuestion}
-                                        onChange={e => { setQuizTimePerQuestion(Number(e.target.value)); socket?.emit('lobby:setQuizOptions', { timeMode: quizTimeMode, timePerQuestion: Number(e.target.value) }); }}
-                                        className="font-sans w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/50 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60">
-                                        {(quizTimeMode === 'total' ? [60, 120, 180, 300, 600, 900, 1200, 1800, 3600] : [5, 10, 15, 20, 30, 45, 60, 90, 120]).map(t => (
-                                            <option key={t} value={t}>{formatTime(t)}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Options Skyjow */}
-                    {gameType === 'skyjow' && (
-                        <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Skyjow</p>
-                            <Toggle checked={skyjowEliminateRows} onChange={v => { setSkyjowEliminateRows(v); socket?.emit('lobby:setSkyjowOptions', { eliminateRows: v }); }} label="Éliminer les lignes (4 identiques)" disabled={!isHost} />
-                        </div>
-                    )}
-
-                    {/* Options Imposteur */}
-                    {gameType === 'impostor' && (
-                        <div className={`bg-gray-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-slate-700/30 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Options Imposteur</p>
-                            <OptionRow label="Rounds">
-                                <OptionSelect value={impostorRounds} onChange={v => { setImpostorRounds(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: Number(v), timePerRound: impostorTime }); }}
-                                    options={[1, 2, 3, 4, 5].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} />
-                            </OptionRow>
-                            <OptionRow label="Temps par round">
-                                <OptionSelect value={impostorTime} onChange={v => { setImpostorTime(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: impostorRounds, timePerRound: Number(v) }); }}
-                                    options={[30, 45, 60, 90, 120].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} />
-                            </OptionRow>
-                        </div>
-                    )}
-
-                    {/* Pas d'options — dérivé de NO_OPTIONS_GAMES */}
-                    {NO_OPTIONS_GAMES[gameType] && (
-                        <div className="bg-gray-50 dark:bg-slate-800/40 rounded-xl p-3 border border-gray-200 dark:border-slate-700/30 text-center">
-                            <p className="text-xs text-gray-400 dark:text-slate-500 italic">{NO_OPTIONS_GAMES[gameType]}</p>
-                        </div>
-                    )}
-
-                    <div className="border-t border-gray-200 dark:border-slate-700/50" />
-
-                    {/* Joueurs max + Visibilité — dérivé de MAX_PLAYERS_BY_GAME */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="block text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Joueurs max</label>
-                            {isHost ? (
-                                <select value={maxPlayers} onChange={e => { setMaxPlayersState(Number(e.target.value)); socket?.emit('lobby:setMeta', { maxPlayers: Number(e.target.value) }); }} disabled={isMaxLocked}
-                                    className="font-sans w-full bg-gray-100 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-600/50 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/60 transition-all appearance-none cursor-pointer disabled:opacity-50">
-                                    {MAX_PLAYERS_BY_GAME[gameType].map(n => <option key={n} value={n} className="bg-white dark:bg-slate-800">{n} joueurs</option>)}
-                                </select>
-                            ) : (
-                                <div className="bg-gray-100 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-3 text-gray-700 dark:text-slate-300 text-sm">{maxPlayers} joueurs</div>
-                            )}
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="block text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Visibilité</label>
-                            {isHost ? (
-                                <div className="flex rounded-xl border border-gray-300 dark:border-slate-600/50 overflow-hidden h-[46px]">
-                                    <button onClick={() => { setIsPublicState(true); socket?.emit('lobby:setMeta', { isPublic: true }); }}
-                                        className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${isPublic ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800/60 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'}`}>
-                                        🌍 <span>Public</span>
-                                    </button>
-                                    <button onClick={() => { setIsPublicState(false); socket?.emit('lobby:setMeta', { isPublic: false }); }}
-                                        className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold transition-all border-l border-gray-300 dark:border-slate-600/50 ${!isPublic ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-slate-800/60 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'}`}>
-                                        🔒 <span>Privé</span>
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="bg-gray-100 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-3 text-gray-700 dark:text-slate-300 text-sm">{isPublic ? '🌍 Public' : '🔒 Privé'}</div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="border-t border-gray-200 dark:border-slate-700/50" />
-
-                    {/* Équipes — Taboo ou UNO 2v2 */}
-                    {(gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2')) && (
-                        <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <h2 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Équipes</h2>
-                                {isHost && (
-                                    <button onClick={() => socket?.emit('lobby:shuffleTeams')}
-                                        className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors underline">
-                                        🔀 Mélanger
-                                    </button>
+                        {/* Titre + Description */}
+                        <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5 space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Titre du lobby</label>
+                                {isHost ? (
+                                    <input type="text" value={meta?.title ?? ''} maxLength={60}
+                                        onChange={e => { setMeta(prev => ({ ...prev, title: e.target.value })); emitTitle(e.target.value.trim()); }}
+                                        placeholder="Nom de la partie…"
+                                        className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" />
+                                ) : (
+                                    <div className="w-full bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-2.5 text-gray-700 dark:text-slate-300 text-sm">{meta?.title || '—'}</div>
                                 )}
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                {[0, 1].map(team => {
-                                    const teamPlayers = players.filter(p => teams?.[p.userId] === team);
-                                    const myTeamLocal = session?.user?.id ? teams?.[session.user.id] : undefined;
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Description <span className="font-normal normal-case">(optionnel)</span>
+                                </label>
+                                {isHost ? (
+                                    <textarea value={meta?.description ?? ''} maxLength={200} rows={2}
+                                        onChange={e => { setMeta(prev => ({ ...prev, description: e.target.value })); emitDescription(e.target.value.trim()); }}
+                                        placeholder="Décrivez votre partie…"
+                                        className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none" />
+                                ) : (
+                                    meta?.description
+                                        ? <div className="w-full bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-2.5 text-gray-700 dark:text-slate-300 text-sm">{meta.description}</div>
+                                        : <div className="text-gray-400 dark:text-slate-600 text-xs italic">Aucune description</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Sélecteur de jeu */}
+                        <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5">
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Jeu</label>
+                            <div className="grid grid-cols-5 gap-2">
+                                {GAME_OPTIONS.map(g => {
+                                    const exact = EXACT_PLAYERS[g.value];
+                                    const gMin = MIN_PLAYERS[g.value] ?? 2;
+                                    const gMaxList = MAX_PLAYERS_BY_GAME[g.value];
+                                    const gMax = gMaxList ? Math.max(...gMaxList) : Infinity;
+                                    const incompatible = exact ? players.length !== exact : players.length < gMin || players.length > gMax;
+                                    const disabled = gameType !== g.value && (!isHost || incompatible);
                                     return (
-                                        <div key={team} className={`rounded-xl border p-3 space-y-2 ${team === 0 ? 'border-blue-500/30 bg-blue-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
-                                            <div className="flex items-center justify-between">
-                                                <span className={`text-xs font-semibold ${team === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                    {team === 0 ? '🔵 Équipe Bleue' : '🔴 Équipe Rouge'}
-                                                </span>
-                                                <button
-                                                    onClick={() => socket?.emit('lobby:setTeam', { team })}
-                                                    className={`text-xs px-2 py-0.5 rounded-full font-semibold transition-all ${myTeamLocal === team
-                                                        ? (team === 0 ? 'bg-blue-500 text-white' : 'bg-red-500 text-white')
-                                                        : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-300 dark:hover:bg-slate-600'}`}>
-                                                    {myTeamLocal === team ? '✓ Rejoint' : 'Rejoindre'}
-                                                </button>
-                                            </div>
-                                            <div className="space-y-1">
-                                                {teamPlayers.map(p => (
-                                                    <div key={p.userId} className="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300">
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${team === 0 ? 'bg-blue-400' : 'bg-red-400'}`} />
-                                                        {p.username}
-                                                        {p.userId === hostId && <span className="text-yellow-500 dark:text-yellow-400">👑</span>}
-                                                    </div>
-                                                ))}
-                                                {teamPlayers.length === 0 && <p className="text-xs text-gray-400 dark:text-slate-600 italic">Aucun joueur</p>}
-                                            </div>
-                                        </div>
+                                        <button key={g.value}
+                                            onClick={() => isHost && !incompatible && handleGameTypeChange(g.value)}
+                                            title={!isHost && gameType !== g.value ? 'Seul l\'hôte peut changer de jeu' : incompatible ? `Requiert ${exact ? `exactement ${exact}` : `${gMin}–${gMax}`} joueurs` : g.label}
+                                            className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
+                                                ${gameType === g.value
+                                                    ? `${GAME_COLOR[GAME_CONFIG[g.value].gameType]?.selected ?? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300'} shadow-sm`
+                                                    : disabled
+                                                        ? 'border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 text-gray-300 dark:text-slate-700 cursor-not-allowed'
+                                                        : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'}`}>
+                                            <span className="text-2xl">{g.icon}</span>
+                                            <span className="leading-tight text-center">{g.label}</span>
+                                        </button>
                                     );
                                 })}
                             </div>
-                            {gameType === 'taboo' && (() => {
-                                const t0 = players.filter(p => teams?.[p.userId] === 0).length;
-                                const t1 = players.filter(p => teams?.[p.userId] === 1).length;
-                                return t0 >= 2 && t1 >= 2
-                                    ? <p className="text-xs text-green-600 dark:text-green-400 mt-2">✅ Équipes prêtes !</p>
-                                    : <p className="text-xs text-orange-500 dark:text-orange-400 mt-2">⚠️ Minimum 2 joueurs par équipe</p>;
-                            })()}
                         </div>
-                    )}
 
-                    {/* Participants live */}
-                    <div>
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Participants</h2>
-                            <span className="text-xs text-gray-400 dark:text-slate-500">{players.length}{maxPlayers ? `/${maxPlayers}` : ''}</span>
-                        </div>
-                        <div className="space-y-2">
-                            {players.map(p => (
-                                <div key={p.userId} className="flex items-center gap-3 bg-gray-100 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-3 py-2">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                                    <span className="text-sm text-gray-900 dark:text-white font-medium flex-1">{p.username}</span>
-                                    {p.userId === hostId && <span className="text-xs text-yellow-500 dark:text-yellow-400">👑</span>}
-                                    {p.userId === me && <span className="text-xs text-gray-400 dark:text-slate-500">(moi)</span>}
-                                    {isAdmin && !isHost && p.userId === me && (
-                                        <button onClick={() => socket?.emit('lobby:claimHost')}
-                                            title="Prendre le contrôle (admin)"
-                                            className="text-xs px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 transition-colors">
-                                            🛡️
+                        {/* Options du jeu sélectionné */}
+                        {gameType === 'uno' && (
+                            <div className={`bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Options UNO</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {([{ v: 'none', label: '👤 Solo', desc: '2–8 joueurs' }, { v: '2v2', label: '👥 2v2', desc: '4 joueurs' }] as const).map(opt => (
+                                        <button key={opt.v} onClick={() => isHost && handleUnoTeamMode(opt.v)}
+                                            className={`py-2.5 px-3 rounded-xl border-2 text-xs font-semibold transition-all flex flex-col items-center gap-0.5
+                                                ${unoTeamMode === opt.v
+                                                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300'
+                                                    : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-500'}`}>
+                                            <span>{opt.label}</span><span className="opacity-60 font-normal">{opt.desc}</span>
                                         </button>
-                                    )}
-                                    {isHost && p.userId !== me && (
-                                        <div className="flex items-center gap-1 flex-shrink-0">
-                                            <button
-                                                onClick={() => socket?.emit('lobby:transferHost', { targetUserId: p.userId })}
-                                                title="Transférer le statut d'hôte"
-                                                className="text-xs px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/20 transition-colors">
-                                                👑
-                                            </button>
-                                            <button
-                                                onClick={() => socket?.emit('lobby:kick', { targetUserId: p.userId })}
-                                                title="Expulser"
-                                                className="text-xs px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-500 dark:text-red-400 hover:bg-red-500/20 transition-colors">
-                                                ✕
-                                            </button>
-                                        </div>
+                                    ))}
+                                </div>
+                                {unoTeamMode === '2v2' && (
+                                    <OptionRow label="Condition de victoire">
+                                        <OptionSelect value={unoTeamWinMode} onChange={v => { setUnoTeamWinMode(v as 'one' | 'both'); socket?.emit('lobby:setUnoOptions', { teamWinMode: v }); }}
+                                            options={[{ v: 'one', label: 'Un vide sa main' }, { v: 'both', label: 'Les 2 vident' }]} disabled={!isHost} />
+                                    </OptionRow>
+                                )}
+                                <Toggle checked={unoStackable} onChange={v => { setUnoStackable(v); socket?.emit('lobby:setUnoOptions', { stackable: v }); }} label="Cartes empilables (+2/+4)" disabled={!isHost} />
+                                {unoTeamMode !== '2v2' && <Toggle checked={unoJumpIn} onChange={v => { setUnoJumpIn(v); socket?.emit('lobby:setUnoOptions', { jumpIn: v }); }} label="Jump-in" disabled={!isHost} />}
+                            </div>
+                        )}
+
+                        {gameType === 'battleship' && (
+                            <div className={`bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Options Bataille Navale</p>
+                                <OptionRow label="Taille de la grille">
+                                    <OptionSelect value={gridSize} onChange={v => { const g = Number(v); setGridSize(g); socket?.emit('lobby:setBattleshipOptions', { gridSize: g, turnTime }); }}
+                                        options={[8, 10, 12].map(n => ({ v: n, label: `${n}×${n}` }))} disabled={!isHost} />
+                                </OptionRow>
+                                <OptionRow label="Temps par tour">
+                                    <OptionSelect value={turnTime} onChange={v => { const t = Number(v); setTurnTime(t); socket?.emit('lobby:setBattleshipOptions', { gridSize, turnTime: t }); }}
+                                        options={[10, 20, 30, 60, 90, 120].map(t => ({ v: t, label: `${t}s` }))} disabled={!isHost} />
+                                </OptionRow>
+                            </div>
+                        )}
+
+                        {gameType === 'taboo' && (
+                            <div className={`bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Options Taboo</p>
+                                <OptionRow label="Durée d'un tour"><OptionSelect value={tabooTurnDuration} onChange={v => { setTabooTurnDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { turnDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180, 240, 300].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
+                                <OptionRow label="Rounds"><OptionSelect value={tabooTotalRounds} onChange={v => { setTabooTotalRounds(Number(v)); socket?.emit('lobby:setTabooOptions', { totalRounds: Number(v) }); }} options={[1, 2, 3, 4, 5, 7, 10].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} /></OptionRow>
+                                <OptionRow label="Mots piégés"><OptionSelect value={tabooTrapWordCount} onChange={v => { setTabooTrapWordCount(Number(v)); socket?.emit('lobby:setTabooOptions', { trapWordCount: Number(v) }); }} options={[2, 3, 4, 5, 6, 7, 8, 10].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
+                                <OptionRow label="Temps mots piégés"><OptionSelect value={tabooTrapDuration} onChange={v => { setTabooTrapDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { trapDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
+                                <OptionRow label="Tentatives max"><OptionSelect value={tabooMaxAttempts} onChange={v => { setTabooMaxAttempts(Number(v)); socket?.emit('lobby:setTabooOptions', { maxAttempts: Number(v) }); }} options={[3, 5, 7, 10, 15, 20, 30].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
+                            </div>
+                        )}
+
+                        {gameType === 'quiz' && (
+                            <div className={`bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Options Quiz</p>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-500 dark:text-slate-400">Quiz</p>
+                                    <QuizSearch isHost={isHost} selectedId={selectedQuizId} selectedTitle={selectedQuizTitle}
+                                        categories={categories} categoryId={selectedQuizCategoryId}
+                                        onCategoryChange={catId => setSelectedQuizCategoryId(catId)}
+                                        onSelect={(id, title) => { setSelectedQuizId(id || undefined); setSelectedQuizTitle(title); if (id) socket?.emit('lobby:setQuiz', { quizId: id }); }} />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-500 dark:text-slate-400">Mode de temps</p>
+                                    <select value={quizTimeMode}
+                                        onChange={e => { setQuizTimeMode(e.target.value as typeof quizTimeMode); socket?.emit('lobby:setQuizOptions', { timeMode: e.target.value, timePerQuestion: quizTimePerQuestion }); }}
+                                        className="font-sans w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                                        <option value="per_question">Par question</option>
+                                        <option value="total">Temps total</option>
+                                        <option value="none">Sans limite</option>
+                                    </select>
+                                </div>
+                                {quizTimeMode !== 'none' && (
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 dark:text-slate-400">{quizTimeMode === 'total' ? 'Temps total' : 'Temps / question'}</p>
+                                        <select value={quizTimePerQuestion}
+                                            onChange={e => { setQuizTimePerQuestion(Number(e.target.value)); socket?.emit('lobby:setQuizOptions', { timeMode: quizTimeMode, timePerQuestion: Number(e.target.value) }); }}
+                                            className="font-sans w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                                            {(quizTimeMode === 'total' ? [60, 120, 180, 300, 600, 900, 1200, 1800, 3600] : [5, 10, 15, 20, 30, 45, 60, 90, 120]).map(t => (
+                                                <option key={t} value={t}>{formatTime(t)}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {gameType === 'skyjow' && (
+                            <div className={`bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Options Skyjow</p>
+                                <Toggle checked={skyjowEliminateRows} onChange={v => { setSkyjowEliminateRows(v); socket?.emit('lobby:setSkyjowOptions', { eliminateRows: v }); }} label="Éliminer les lignes (4 identiques)" disabled={!isHost} />
+                            </div>
+                        )}
+
+                        {gameType === 'impostor' && (
+                            <div className={`bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Options Imposteur</p>
+                                <OptionRow label="Rounds">
+                                    <OptionSelect value={impostorRounds} onChange={v => { setImpostorRounds(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: Number(v), timePerRound: impostorTime }); }}
+                                        options={[1, 2, 3, 4, 5].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} />
+                                </OptionRow>
+                                <OptionRow label="Temps par round">
+                                    <OptionSelect value={impostorTime} onChange={v => { setImpostorTime(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: impostorRounds, timePerRound: Number(v) }); }}
+                                        options={[30, 45, 60, 90, 120].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} />
+                                </OptionRow>
+                            </div>
+                        )}
+
+                        {NO_OPTIONS_GAMES[gameType] && (
+                            <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-4 text-center">
+                                <p className="text-xs text-gray-400 dark:text-slate-500 italic">{NO_OPTIONS_GAMES[gameType]}</p>
+                            </div>
+                        )}
+
+                        {/* Joueurs max + Visibilité */}
+                        <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Joueurs max</label>
+                                    {isHost ? (
+                                        <select value={maxPlayers} onChange={e => { setMaxPlayersState(Number(e.target.value)); socket?.emit('lobby:setMeta', { maxPlayers: Number(e.target.value) }); }} disabled={isMaxLocked}
+                                            className="font-sans w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer disabled:opacity-50">
+                                            {MAX_PLAYERS_BY_GAME[gameType].map(n => <option key={n} value={n} className="bg-white dark:bg-slate-800">{n} joueurs</option>)}
+                                        </select>
+                                    ) : (
+                                        <div className="bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-2.5 text-gray-700 dark:text-slate-300 text-sm">{maxPlayers} joueurs</div>
                                     )}
                                 </div>
-                            ))}
-                            {players.length === 0 && <div className="text-center py-4 text-gray-400 dark:text-slate-500 text-sm">En attente de joueurs…</div>}
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Visibilité</label>
+                                    {isHost ? (
+                                        <div className="flex rounded-xl border border-gray-200 dark:border-slate-700/50 overflow-hidden h-[42px]">
+                                            <button onClick={() => { setIsPublicState(true); socket?.emit('lobby:setMeta', { isPublic: true }); }}
+                                                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${isPublic ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-slate-800/60 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'}`}>
+                                                🌍 Public
+                                            </button>
+                                            <button onClick={() => { setIsPublicState(false); socket?.emit('lobby:setMeta', { isPublic: false }); }}
+                                                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold transition-all border-l border-gray-200 dark:border-slate-700/50 ${!isPublic ? 'bg-indigo-600 text-white' : 'bg-gray-50 dark:bg-slate-800/60 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'}`}>
+                                                🔒 Privé
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700/30 rounded-xl px-4 py-2.5 text-gray-700 dark:text-slate-300 text-sm">{isPublic ? '🌍 Public' : '🔒 Privé'}</div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        {maxPlayers > 0 && (
-                            <div className="mt-3 w-full bg-gray-200 dark:bg-slate-700/50 rounded-full h-1.5">
-                                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
-                                    style={{ width: `${Math.min((players.length / maxPlayers) * 100, 100)}%` }} />
+
+                        {/* Équipes */}
+                        {(gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2')) && (
+                            <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Équipes</h2>
+                                    {isHost && (
+                                        <button onClick={() => socket?.emit('lobby:shuffleTeams')}
+                                            className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors underline">
+                                            🔀 Mélanger
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[0, 1].map(team => {
+                                        const teamPlayers = players.filter(p => teams?.[p.userId] === team);
+                                        const myTeamLocal = session?.user?.id ? teams?.[session.user.id] : undefined;
+                                        return (
+                                            <div key={team} className={`rounded-xl border p-3 space-y-2 ${team === 0 ? 'border-blue-500/30 bg-blue-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`text-xs font-semibold ${team === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                        {team === 0 ? '🔵 Équipe Bleue' : '🔴 Équipe Rouge'}
+                                                    </span>
+                                                    <button onClick={() => socket?.emit('lobby:setTeam', { team })}
+                                                        className={`text-xs px-2 py-0.5 rounded-full font-semibold transition-all ${myTeamLocal === team
+                                                            ? (team === 0 ? 'bg-blue-500 text-white' : 'bg-red-500 text-white')
+                                                            : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-300 dark:hover:bg-slate-600'}`}>
+                                                        {myTeamLocal === team ? '✓ Rejoint' : 'Rejoindre'}
+                                                    </button>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {teamPlayers.map(p => (
+                                                        <div key={p.userId} className="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300">
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${team === 0 ? 'bg-blue-400' : 'bg-red-400'}`} />
+                                                            {p.username}
+                                                            {p.userId === hostId && <span className="text-yellow-500">👑</span>}
+                                                        </div>
+                                                    ))}
+                                                    {teamPlayers.length === 0 && <p className="text-xs text-gray-400 dark:text-slate-600 italic">Aucun joueur</p>}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {gameType === 'taboo' && (() => {
+                                    const t0 = players.filter(p => teams?.[p.userId] === 0).length;
+                                    const t1 = players.filter(p => teams?.[p.userId] === 1).length;
+                                    return t0 >= 2 && t1 >= 2
+                                        ? <p className="text-xs text-green-600 dark:text-green-400 mt-2">✅ Équipes prêtes !</p>
+                                        : <p className="text-xs text-orange-500 dark:text-orange-400 mt-2">⚠️ Minimum 2 joueurs par équipe</p>;
+                                })()}
                             </div>
                         )}
                     </div>
 
-                    <div className="border-t border-gray-200 dark:border-slate-700/50" />
+                    {/* ── Right column : players + actions ── */}
+                    <div className="space-y-4 lg:sticky lg:top-6">
 
-                    {/* Actions */}
-                    <div className="flex gap-3">
-                        <button onClick={() => { socket?.emit('lobby:leave'); router.push('/'); }}
-                            className="px-5 py-3 rounded-xl border border-gray-300 dark:border-slate-600/50 text-gray-500 dark:text-slate-400 text-sm font-semibold hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-all">
-                            Quitter
-                        </button>
-                        {isHost ? (
-                            <button onClick={() => socket?.emit('lobby:start')} disabled={!canStart}
-                                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-300 dark:disabled:from-slate-700 disabled:to-gray-300 dark:disabled:to-slate-700 disabled:text-gray-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold text-sm transition-all shadow-lg shadow-green-500/20 disabled:shadow-none">
-                                {canStart ? `🚀 Lancer ${selectedGame?.label ?? 'la partie'} !` : '⏳ En attente de joueurs…'}
-                            </button>
-                        ) : (
-                            <div className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 text-gray-400 dark:text-slate-500 text-sm font-semibold text-center">
-                                ⏳ En attente du host…
+                        {/* Lien d'invitation */}
+                        <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5">
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Lien d'invitation</label>
+                            <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl px-3 py-2">
+                                <span className="text-xs text-gray-500 dark:text-slate-400 flex-1 truncate font-mono">
+                                    {typeof window !== 'undefined' ? `${window.location.origin}/lobby/create/${lobbyId}` : `/lobby/create/${lobbyId}`}
+                                </span>
+                                <button
+                                    onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/lobby/create/${lobbyId}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                                    className="flex-shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors px-2 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 whitespace-nowrap">
+                                    {copied ? '✅ Copié !' : '⧉ Copier'}
+                                </button>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Participants */}
+                        <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-3">
+                                <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Participants</h2>
+                                <span className="text-xs font-semibold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800 rounded-full px-2 py-0.5">
+                                    {players.length}{maxPlayers ? `/${maxPlayers}` : ''}
+                                </span>
+                            </div>
+
+                            {maxPlayers > 0 && (
+                                <div className="mb-3 w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5">
+                                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
+                                        style={{ width: `${Math.min((players.length / maxPlayers) * 100, 100)}%` }} />
+                                </div>
+                            )}
+
+                            <div className="space-y-1.5">
+                                {players.map(p => (
+                                    <div key={p.userId} className="flex items-center gap-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/40 rounded-xl px-3 py-2">
+                                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                                        <span className="text-sm text-gray-900 dark:text-white font-medium flex-1 truncate">{p.username}</span>
+                                        {p.userId === hostId && <span className="text-sm">👑</span>}
+                                        {p.userId === me && <span className="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">(moi)</span>}
+                                        {isAdmin && !isHost && p.userId === me && (
+                                            <button onClick={() => socket?.emit('lobby:claimHost')} title="Prendre le contrôle (admin)"
+                                                className="text-xs px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 transition-colors flex-shrink-0">
+                                                🛡️
+                                            </button>
+                                        )}
+                                        {isHost && p.userId !== me && (
+                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                <button onClick={() => socket?.emit('lobby:transferHost', { targetUserId: p.userId })} title="Transférer le statut d'hôte"
+                                                    className="text-xs px-1.5 py-0.5 rounded-md bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/20 transition-colors">
+                                                    👑
+                                                </button>
+                                                <button onClick={() => socket?.emit('lobby:kick', { targetUserId: p.userId })} title="Expulser"
+                                                    className="text-xs px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-500 dark:text-red-400 hover:bg-red-500/20 transition-colors">
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {players.length === 0 && (
+                                    <div className="text-center py-6 text-gray-400 dark:text-slate-500 text-sm">En attente de joueurs…</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-3">
+                            <button onClick={() => { socket?.emit('lobby:leave'); router.push('/'); }}
+                                className="px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700/50 text-gray-500 dark:text-slate-400 text-sm font-semibold hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-300 transition-all bg-white dark:bg-slate-900/80">
+                                Quitter
+                            </button>
+                            {isHost ? (
+                                <button onClick={() => socket?.emit('lobby:start')} disabled={!canStart}
+                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-200 dark:disabled:from-slate-800 disabled:to-gray-200 dark:disabled:to-slate-800 disabled:text-gray-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed text-white font-bold text-sm transition-all shadow-lg shadow-green-500/20 disabled:shadow-none">
+                                    {canStart ? `🚀 Lancer ${selectedGame?.label ?? 'la partie'} !` : '⏳ En attente de joueurs…'}
+                                </button>
+                            ) : (
+                                <div className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 text-gray-400 dark:text-slate-500 text-sm font-semibold text-center">
+                                    ⏳ En attente du host…
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

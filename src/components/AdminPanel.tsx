@@ -5,11 +5,12 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
-import { GAME_EMOJI_MAP } from '@/lib/gameConfig';
+import { GAME_EMOJI_MAP, GAME_LABEL_MAP, GAME_COLOR } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal'
 import GameFilterPills, { type GameFilter } from '@/components/GameFilterPills';
 import GameStatCards from '@/components/GameStatCards';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { plural } from '@/lib/utils';
 
 
 interface AdminUser {
@@ -18,6 +19,7 @@ interface AdminUser {
     email: string;
     role: string;
     createdAt: string;
+    lastSeen: string | null;
     deactivatedAt: string | null;
     image: string | null;
 }
@@ -40,7 +42,7 @@ interface AdminCategory {
     _count: { quizzes: number };
 }
 
-type GameType = 'QUIZ' | 'UNO' | 'TABOO' | 'SKYJOW' | 'YAHTZEE' | 'PUISSANCE4' | 'JUST_ONE' | 'BATTLESHIP' | 'DIAMANT';
+type GameType = 'QUIZ' | 'UNO' | 'TABOO' | 'SKYJOW' | 'YAHTZEE' | 'PUISSANCE4' | 'JUST_ONE' | 'BATTLESHIP' | 'DIAMANT' | 'IMPOSTOR';
 
 interface RecentActivity {
     createdAt: string;
@@ -94,17 +96,6 @@ const SECTION_ID: Record<AdminTab, string> = {
 
 const PLACEMENT_EMOJI: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
-const GAME_BADGE: Record<GameType, string> = {
-    QUIZ: 'bg-blue-100   dark:bg-blue-900/40   text-blue-700   dark:text-blue-400',
-    UNO: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400',
-    TABOO: 'bg-red-100    dark:bg-red-900/40    text-red-700    dark:text-red-400',
-    SKYJOW: 'bg-sky-100    dark:bg-sky-900/40    text-sky-700    dark:text-sky-400',
-    YAHTZEE: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
-    PUISSANCE4: 'bg-rose-100  dark:bg-rose-900/40  text-rose-700   dark:text-rose-400',
-    JUST_ONE:   'bg-teal-100  dark:bg-teal-900/40  text-teal-700   dark:text-teal-400',
-    BATTLESHIP: 'bg-cyan-100  dark:bg-cyan-900/40  text-cyan-700   dark:text-cyan-400',
-    DIAMANT:    'bg-amber-100 dark:bg-amber-900/40 text-amber-700  dark:text-amber-400',
-};
 
 function CollapseSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
     const [open, setOpen] = useState(defaultOpen);
@@ -112,12 +103,10 @@ function CollapseSection({ title, defaultOpen = true, children }: { title: strin
         <div>
             <button
                 onClick={() => setOpen(o => !o)}
-                className="flex items-center gap-2 w-full text-left mb-4 group"
+                className="flex items-center justify-between w-full text-left mb-3 group"
             >
-                <span className="text-lg font-bold text-gray-900 dark:text-white">{title}</span>
-                <span className={`ml-1 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>
-                    ▾
-                </span>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{title}</h2>
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 transition-transform duration-200 text-[10px] group-hover:bg-gray-300 dark:group-hover:bg-gray-600 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
             </button>
             {open && children}
         </div>
@@ -143,7 +132,6 @@ export default function AdminPanel() {
     const [userPage, setUserPage] = useState(1);
     const [userTotalPages, setUserTotalPages] = useState(1);
     const [userQuery, setUserQuery] = useState('');
-    const [hideAnonymous, setHideAnonymous] = useState(true);
     const [userSort, setUserSort] = useState<UserSort>('createdAt_desc');
 
     const [gameFilter, setGameFilter] = useState<GameFilter>('ALL');
@@ -216,15 +204,15 @@ export default function AdminPanel() {
     }, [buildStatsUrl]);
 
     const fetchUsers = useCallback(async (page = 1) => {
-        const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE), q: userQuery.trim(), hideAnonymous: String(hideAnonymous), sort: userSort });
-        if (!userQuery.trim()) params.delete('q');
+        const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE), sort: userSort });
+        if (userQuery.trim()) params.set('q', userQuery.trim());
         const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
         setUsers(data.users);
         setUserTotalPages(data.totalPages);
         setUserPage(page);
-    }, [userQuery, hideAnonymous, userSort]);
+    }, [userQuery, userSort]);
 
     const fetchTab = useCallback(async (tab: AdminTab) => {
         setLoading(true);
@@ -280,7 +268,7 @@ export default function AdminPanel() {
         if (activeTab !== 'users') return;
         fetchUsers(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userQuery, hideAnonymous, userSort]);
+    }, [userQuery, userSort]);
 
     useEffect(() => {
         const onHashChange = () => setActiveTab(hashToTab(window.location.hash));
@@ -365,314 +353,352 @@ export default function AdminPanel() {
 
             {activeTab === 'stats' ? (
                 loadingStats && !stats ? (
-                    <div className="text-center py-12">
+                    <div className="flex items-center justify-center py-16">
                         <LoadingSpinner fullScreen={false} />
                     </div>
                 ) : (
-                    <div id="admin-stats" className="scroll-mt-24">
+                    <div id="admin-stats" className="scroll-mt-24 space-y-4">
                         {stats && (
-                            <div className="space-y-8">
-
-                                {/* Totaux globaux */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <>
+                                {/* Chips overview */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {[
-                                        { label: "Utilisateurs", value: stats.totals.users, classes: "bg-blue-50/70 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:shadow-blue-500/20" },
-                                        { label: "Quiz", value: stats.totals.quizzes, classes: "bg-emerald-50/70 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:shadow-emerald-500/20" },
-                                        { label: "Parties jouées", value: Object.values(stats.totals.gameStats).reduce((a, b) => a + b.count, 0), classes: "bg-amber-50/70 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:shadow-amber-500/20" },
-                                        { label: "Points marqués", value: stats.totals.pointsScored, classes: "bg-violet-50/70 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:shadow-violet-500/20" },
+                                        { label: 'utilisateurs', value: stats.totals.users },
+                                        { label: 'quiz créés', value: stats.totals.quizzes },
+                                        { label: 'parties jouées', value: Object.values(stats.totals.gameStats).reduce((a, b) => a + b.count, 0) },
+                                        { label: 'points marqués', value: stats.totals.pointsScored },
                                     ].map((stat) => (
-                                        <div key={stat.label} className={`border rounded-2xl p-5 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${stat.classes}`}>
-                                            <div className="text-4xl font-extrabold tracking-tight tabular-nums">{stat.value.toLocaleString()}</div>
-                                            <div className="text-xs uppercase tracking-widest opacity-70 mt-2 font-semibold">{stat.label}</div>
+                                        <div key={stat.label} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
+                                            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value.toLocaleString()}</div>
+                                            <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{stat.label}</div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Parties par jeu */}
-                                <GameStatCards gameStats={stats.totals.gameStats} columns={6} />
-
-                                {/* Top quizzes — repliable */}
-                                <CollapseSection title="🏆 Quiz les plus joués" defaultOpen={false}>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-left">
-                                                    <th className="px-4 py-3 rounded-l-lg">Quiz</th>
-                                                    <th className="px-4 py-3 text-center">Questions</th>
-                                                    <th className="px-4 py-3 text-center">Parties</th>
-                                                    <th className="px-4 py-3 text-center">Score moyen</th>
-                                                    <th className="px-4 py-3 text-center">Score max joueur</th>
-                                                    <th className="px-4 py-3 text-center rounded-r-lg">Score max quiz</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {stats.topQuizzes.map((quiz, i) => (
-                                                    <tr key={quiz.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                                        <td className="px-4 py-3 font-medium">
-                                                            <Link href={`/quiz/${quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
-                                                                {i + 1}. {quiz.title}
-                                                            </Link>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{quiz.questionCount}</td>
-                                                        <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{quiz.playCount}</td>
-                                                        <td className="px-4 py-3 text-center text-orange-600 dark:text-orange-400 font-semibold">{quiz.avgScore} pts</td>
-                                                        <td className="px-4 py-3 text-center text-green-600 dark:text-green-400 font-semibold">{quiz.maxScore} pts</td>
-                                                        <td className="px-4 py-3 text-center text-purple-600 dark:text-purple-400 font-semibold">{quiz.maxPossibleScore} pts</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                {/* Statistiques par jeu */}
+                                {Object.values(stats.totals.gameStats).some(v => v.count > 0) && (
+                                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+                                        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Statistiques par jeu</h2>
+                                        <GameStatCards gameStats={stats.totals.gameStats} />
                                     </div>
-                                </CollapseSection>
+                                )}
 
-                                {/* Activité récente — repliable */}
-                                <CollapseSection title="🕐 Activité récente">
-                                    <div className="flex flex-wrap gap-3 items-center mb-3">
-                                        <select
-                                            value={activityPeriod}
-                                            onChange={(e) => setActivityPeriod(Number(e.target.value))}
-                                            className="text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300"
-                                        >
-                                            <option value={-1}>Aujourd'hui</option>
-                                            <option value={1}>Dernières 24h</option>
-                                            <option value={7}>7 derniers jours</option>
-                                            <option value={30}>30 derniers jours</option>
-                                            <option value={0}>Tout</option>
-                                        </select>
+                                {/* Top quizzes */}
+                                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+                                    <CollapseSection title="🏆 Quiz les plus joués" defaultOpen={false}>
+                                        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-white dark:bg-gray-900">
+                                                    <tr className="text-left">
+                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Quiz</th>
+                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Questions</th>
+                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Parties</th>
+                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Score moy.</th>
+                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Score max</th>
+                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Max possible</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                                    {stats.topQuizzes.map((quiz, i) => (
+                                                        <tr key={quiz.id} className="hover:bg-white dark:hover:bg-gray-900 transition-colors">
+                                                            <td className="px-4 py-2 font-medium">
+                                                                <Link href={`/quiz/${quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs">
+                                                                    {i + 1}. {quiz.title}
+                                                                </Link>
+                                                            </td>
+                                                            <td className="px-4 py-2 text-center text-xs text-gray-500 dark:text-gray-400">{quiz.questionCount}</td>
+                                                            <td className="px-4 py-2 text-center text-xs text-gray-700 dark:text-gray-300 font-semibold">{quiz.playCount}</td>
+                                                            <td className="px-4 py-2 text-center text-xs text-orange-600 dark:text-orange-400 font-semibold">{quiz.avgScore} pts</td>
+                                                            <td className="px-4 py-2 text-center text-xs text-green-600 dark:text-green-400 font-semibold">{quiz.maxScore} pts</td>
+                                                            <td className="px-4 py-2 text-center text-xs text-purple-600 dark:text-purple-400 font-semibold">{quiz.maxPossibleScore} pts</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </CollapseSection>
+                                </div>
 
-                                        <div className="relative">
-                                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none text-sm">🔍</span>
-                                            <input
-                                                type="text"
-                                                value={activityUserQuery}
-                                                onChange={(e) => setActivityUserQuery(e.target.value)}
-                                                placeholder="Filtrer par joueur…"
-                                                className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300 w-52 focus:outline-none focus:ring-2 focus:ring-red-400"
-                                            />
-                                            {activityUserQuery && (
-                                                <button onClick={() => setActivityUserQuery('')} className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-base">×</button>
+                                {/* Activité récente */}
+                                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+                                    <CollapseSection title="🕐 Activité récente">
+                                        <div className="flex flex-wrap gap-2 items-center mb-3">
+                                            <select
+                                                value={activityPeriod}
+                                                onChange={(e) => setActivityPeriod(Number(e.target.value))}
+                                                className="text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300"
+                                            >
+                                                <option value={-1}>Aujourd'hui</option>
+                                                <option value={1}>Dernières 24h</option>
+                                                <option value={7}>7 derniers jours</option>
+                                                <option value={30}>30 derniers jours</option>
+                                                <option value={0}>Tout</option>
+                                            </select>
+
+                                            <div className="relative">
+                                                <span className="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none text-sm">🔍</span>
+                                                <input
+                                                    type="text"
+                                                    value={activityUserQuery}
+                                                    onChange={(e) => setActivityUserQuery(e.target.value)}
+                                                    placeholder="Filtrer par joueur…"
+                                                    className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg text-gray-700 dark:text-gray-300 w-48 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                                />
+                                                {activityUserQuery && (
+                                                    <button onClick={() => setActivityUserQuery('')} className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-base">×</button>
+                                                )}
+                                            </div>
+
+                                            {loadingActivity && <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent" />}
+
+                                            {stats.activityMeta && (
+                                                <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
+                                                    {stats.activityMeta.totalGames} partie{stats.activityMeta.totalGames > 1 ? 's' : ''}
+                                                </span>
                                             )}
                                         </div>
 
-                                        {loadingActivity && <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent" />}
+                                        <div className="mb-3">
+                                            <GameFilterPills
+                                                value={gameFilter}
+                                                onChange={setGameFilter}
+                                                activeClassName="bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
+                                                inactiveClassName="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            />
+                                        </div>
 
-                                        {stats.activityMeta && (
-                                            <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
-                                                Page {stats.activityMeta.page} / {stats.activityMeta.totalPages} · {stats.activityMeta.totalGames} parties
-                                            </span>
+                                        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                                            <table className="w-full table-fixed text-sm">
+                                                <thead className="bg-white dark:bg-gray-900">
+                                                    <tr>
+                                                        <th style={{ width: '22%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Jeu</th>
+                                                        <th style={{ width: '38%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Quiz</th>
+                                                        <th style={{ width: '16%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Joueurs</th>
+                                                        <th style={{ width: '24%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                                    {stats.recentActivity.length === 0 ? (
+                                                        <tr><td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">Aucune activité pour cette période.</td></tr>
+                                                    ) : (
+                                                        stats.recentActivity.map((activity) => (
+                                                            <tr key={activity.gameId} className="hover:bg-white dark:hover:bg-gray-900 transition-colors">
+                                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${GAME_COLOR[activity.gameType]?.badge ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                                                                        {GAME_EMOJI_MAP[activity.gameType]} {GAME_LABEL_MAP[activity.gameType] ?? activity.gameType}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap max-w-[140px]">
+                                                                    {activity.quiz
+                                                                        ? <Link href={`/quiz/${activity.quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block">{activity.quiz.title}</Link>
+                                                                        : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                                                                </td>
+                                                                <td className="px-3 py-2">
+                                                                    <button onClick={() => setPlayerModal({ gameId: activity.gameId, players: activity.players })} className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                                                        👥 {activity.playerCount}
+                                                                    </button>
+                                                                </td>
+                                                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-400 dark:text-gray-500">
+                                                                    {new Date(activity.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                                                                    {' '}
+                                                                    {new Date(activity.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {stats.activityMeta && stats.activityMeta.totalPages > 1 && (
+                                            <Pagination currentPage={activityPage} totalPages={stats.activityMeta.totalPages} onPageChange={handleActivityPageChange} />
                                         )}
-                                    </div>
-
-                                    <div className="mt-3 mb-4">
-                                        <GameFilterPills value={gameFilter} onChange={setGameFilter} />
-                                    </div>
-
-                                    <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
-                                        <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-sm">
-                                            <thead className="bg-gray-50 dark:bg-gray-800">
-                                                <tr>
-                                                    {['Jeu', 'Partie', 'Quiz', 'Joueurs', 'Date'].map(h => (
-                                                        <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                                                {stats.recentActivity.length === 0 ? (
-                                                    <tr><td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">Aucune activité récente pour cette période.</td></tr>
-                                                ) : (
-                                                    stats.recentActivity.map((activity) => (
-                                                        <tr key={activity.gameId} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                                            <td className="px-3 py-2 whitespace-nowrap">
-                                                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${GAME_BADGE[activity.gameType]}`}>
-                                                                    {GAME_EMOJI_MAP[activity.gameType]} {activity.gameType}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-gray-400 dark:text-gray-500">{activity.gameId}</td>
-                                                            <td className="px-3 py-2 whitespace-nowrap">
-                                                                {activity.quiz
-                                                                    ? <Link href={`/quiz/${activity.quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs">{activity.quiz.title}</Link>
-                                                                    : <span className="text-gray-400">—</span>}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-center">
-                                                                <button onClick={() => setPlayerModal({ gameId: activity.gameId, players: activity.players })} className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline tabular-nums">
-                                                                    {activity.playerCount}
-                                                                </button>
-                                                            </td>
-                                                            <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-400 dark:text-gray-500">
-                                                                {new Date(activity.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                                                                {' '}
-                                                                {new Date(activity.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {stats.activityMeta && stats.activityMeta.totalPages > 1 && (
-                                        <Pagination currentPage={activityPage} totalPages={stats.activityMeta.totalPages} onPageChange={handleActivityPageChange} />
-                                    )}
-                                </CollapseSection>
-
-                            </div>
+                                    </CollapseSection>
+                                </div>
+                            </>
                         )}
                     </div>
                 )
             ) : loading ? (
-                <div className="text-center py-12">
+                <div className="flex items-center justify-center py-16">
                     <LoadingSpinner fullScreen={false} />
                 </div>
             ) : (
                 <>
                     {activeTab === 'users' && (
-                        <div id="admin-users" className="scroll-mt-24">
-                            <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
-                                <div className="flex flex-col md:flex-row gap-3 md:items-center w-full">
-                                    <input type="text" value={userQuery} onChange={(e) => setUserQuery(e.target.value)} placeholder="Rechercher (username ou email)..." className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm w-full md:w-96" />
-                                    <select value={userSort} onChange={(e) => setUserSort(e.target.value as UserSort)} className="text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-3 py-2 text-gray-600 dark:text-gray-300 w-full md:w-56">
-                                        <option value="createdAt_desc">Plus récents</option>
-                                        <option value="createdAt_asc">Plus anciens</option>
-                                        <option value="username_asc">Username A → Z</option>
-                                        <option value="username_desc">Username Z → A</option>
-                                    </select>
-                                </div>
-                                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 select-none">
-                                    <input type="checkbox" checked={hideAnonymous} onChange={(e) => setHideAnonymous(e.target.checked)} className="h-4 w-4" />
-                                    Masquer ANONYMOUS
-                                </label>
+                        <div id="admin-users" className="scroll-mt-24 space-y-4">
+                            {/* Filtres */}
+                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex flex-wrap gap-2 items-center">
+                                <input
+                                    type="text"
+                                    value={userQuery}
+                                    onChange={(e) => setUserQuery(e.target.value)}
+                                    placeholder="Rechercher (username ou email)…"
+                                    className="flex-1 min-w-0 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                />
+                                <select
+                                    value={userSort}
+                                    onChange={(e) => setUserSort(e.target.value as UserSort)}
+                                    className="text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300"
+                                >
+                                    <option value="createdAt_desc">Plus récents</option>
+                                    <option value="createdAt_asc">Plus anciens</option>
+                                    <option value="username_asc">Username A → Z</option>
+                                    <option value="username_desc">Username Z → A</option>
+                                </select>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-left">
-                                            <th className="px-4 py-3 rounded-l-lg">Image</th>
-                                            <th className="px-4 py-3">Utilisateur</th>
-                                            <th className="px-4 py-3">Email</th>
-                                            <th className="px-4 py-3 text-center">Inscrit le</th>
-                                            <th className="px-4 py-3 text-center">Désactivé</th>
-                                            <th className="px-4 py-3 text-center">Rôle</th>
-                                            <th className="px-4 py-3 text-center rounded-r-lg">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.length === 0 ? (
-                                            <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Aucun utilisateur trouvé</td></tr>
-                                        ) : users.map((user) => (
-                                            <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                                <td className="px-4 py-3">
-                                                    {user.image
-                                                        ? <img src={user.image} className="w-9 h-9 rounded-full object-cover border" />
-                                                        : <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">{user.username[0]?.toUpperCase()}</div>}
-                                                </td>
-                                                <td className="px-4 py-3 font-semibold">
-                                                    <Link href={session?.user?.username === user.username ? '/dashboard' : `/profil/${user.username}`} className="text-blue-600 dark:text-blue-400 hover:underline">{user.username}</Link>
-                                                </td>
-                                                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{user.email}</td>
-                                                <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 text-sm">{new Date(user.createdAt).toLocaleDateString('fr-FR')}</td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {user.deactivatedAt
-                                                        ? <span className="text-red-600 dark:text-red-400 font-semibold text-xs">{new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}</span>
-                                                        : <span className="text-green-600 dark:text-green-400 text-xs font-semibold">Actif</span>}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {user.role === 'ADMIN' || user.role === 'ANONYMOUS' ? (
-                                                        <span className={`text-xs font-bold px-3 py-1 rounded-full border inline-flex items-center gap-2 ${user.role === 'ADMIN' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-gray-300 text-gray-800 border-gray-400'}`} title="Rôle verrouillé">
-                                                            {user.role} <span className="opacity-60">🔒</span>
-                                                        </span>
-                                                    ) : (
-                                                        <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value)} className={`text-xs font-bold px-2 py-1 rounded-full border ${user.role === 'RANDOM' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
-                                                            <option value="USER">USER</option>
-                                                            <option value="RANDOM">RANDOM</option>
-                                                            <option value="ANONYMOUS">ANONYMOUS</option>
-                                                            <option value="ADMIN">ADMIN</option>
-                                                        </select>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {user.role !== 'ADMIN' && (
-                                                        <button onClick={() => handleDeleteUser(user.id, user.username)} className="text-red-500 hover:text-red-700 font-semibold text-xs px-3 py-1 border border-red-300 rounded-lg hover:bg-red-50 transition-colors">Supprimer</button>
-                                                    )}
-                                                </td>
+
+                            {/* Table */}
+                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+                                <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-white dark:bg-gray-900">
+                                            <tr className="text-left">
+                                                {['', 'Utilisateur', 'Email', 'Inscrit le', 'Vu le', 'Statut', 'Rôle', 'Actions'].map(h => (
+                                                    <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
+                                                ))}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                            {users.length === 0 ? (
+                                                <tr><td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">Aucun utilisateur trouvé</td></tr>
+                                            ) : users.map((user) => (
+                                                <tr key={user.id} className="hover:bg-white dark:hover:bg-gray-900 transition-colors">
+                                                    <td className="px-3 py-2">
+                                                        {user.image
+                                                            ? <img src={user.image} className="w-8 h-8 rounded-lg object-cover border border-gray-100 dark:border-gray-800" />
+                                                            : <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{user.username[0]?.toUpperCase()}</div>}
+                                                    </td>
+                                                    <td className="px-3 py-2 font-semibold text-xs">
+                                                        <Link href={session?.user?.username === user.username ? '/dashboard' : `/profil/${user.username}`} className="text-blue-600 dark:text-blue-400 hover:underline">{user.username}</Link>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{user.email}</td>
+                                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(user.createdAt).toLocaleDateString('fr-FR')}</td>
+                                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                                        {user.lastSeen ? new Date(user.lastSeen).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        {user.deactivatedAt
+                                                            ? <span className="text-xs font-semibold text-red-600 dark:text-red-400">{new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}</span>
+                                                            : <span className="text-xs font-semibold text-green-600 dark:text-green-400">Actif</span>}
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        {user.role === 'ADMIN' ? (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800" title="Rôle verrouillé">
+                                                                ADMIN <span className="opacity-60">🔒</span>
+                                                            </span>
+                                                        ) : (
+                                                            <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value)} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${user.role === 'RANDOM' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'}`}>
+                                                                <option value="USER">USER</option>
+                                                                <option value="RANDOM">RANDOM</option>
+                                                                <option value="ADMIN">ADMIN</option>
+                                                            </select>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        {user.role !== 'ADMIN' && (
+                                                            <button onClick={() => handleDeleteUser(user.id, user.username)} className="text-[10px] font-semibold text-red-500 hover:text-red-700 px-2 py-0.5 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Supprimer</button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <Pagination currentPage={userPage} totalPages={userTotalPages} onPageChange={handleUserPageChange} />
                             </div>
-                            <Pagination currentPage={userPage} totalPages={userTotalPages} onPageChange={handleUserPageChange} />
                         </div>
                     )}
 
                     {activeTab === 'quizzes' && (
                         <div id="admin-quizzes" className="scroll-mt-24">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-left">
-                                            <th className="px-4 py-3 rounded-l-lg">Titre</th>
-                                            <th className="px-4 py-3">Créateur</th>
-                                            <th className="px-4 py-3">Catégorie</th>
-                                            <th className="px-4 py-3 text-center">Questions</th>
-                                            <th className="px-4 py-3 text-center">Parties</th>
-                                            <th className="px-4 py-3 text-center">Visibilité</th>
-                                            <th className="px-4 py-3 text-center rounded-r-lg">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {quizzes.map((quiz) => (
-                                            <tr key={quiz.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                                <td className="px-4 py-3 font-medium"><Link href={`/quiz/${quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">{quiz.title}</Link></td>
-                                                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                                    <Link href={session?.user?.username === quiz.creator.username ? '/dashboard' : `/profil/${quiz.creator.username}`} className="text-blue-600 dark:text-blue-400 hover:underline transition-colors">{quiz.creator.username}</Link>
-                                                </td>
-                                                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{quiz.category?.name ?? '—'}</td>
-                                                <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{quiz._count.questions}</td>
-                                                <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{quiz._count.attempts}</td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${quiz.isPublic ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}>
-                                                        {quiz.isPublic ? 'Public' : 'Privé'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center flex gap-2 justify-center">
-                                                    <Link href={`/quiz/${quiz.id}/edit`} className="text-blue-500 hover:text-blue-700 font-semibold text-xs px-3 py-1 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors">Modifier</Link>
-                                                    <button onClick={() => handleDeleteQuiz(quiz.id, quiz.title)} className="text-red-500 hover:text-red-700 font-semibold text-xs px-3 py-1 border border-red-300 rounded-lg hover:bg-red-50 transition-colors">Supprimer</button>
-                                                </td>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+                                <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-white dark:bg-gray-900">
+                                            <tr className="text-left">
+                                                {['Titre', 'Créateur', 'Catégorie', 'Questions', 'Parties', 'Visibilité', 'Actions'].map(h => (
+                                                    <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
+                                                ))}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                            {quizzes.map((quiz) => (
+                                                <tr key={quiz.id} className="hover:bg-white dark:hover:bg-gray-900 transition-colors">
+                                                    <td className="px-3 py-2 font-medium max-w-[180px]">
+                                                        <Link href={`/quiz/${quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block">{quiz.title}</Link>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-xs">
+                                                        <Link href={session?.user?.username === quiz.creator.username ? '/dashboard' : `/profil/${quiz.creator.username}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quiz.creator.username}</Link>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{quiz.category?.name ?? '—'}</td>
+                                                    <td className="px-3 py-2 text-xs text-center text-gray-700 dark:text-gray-300 font-semibold">{quiz._count.questions}</td>
+                                                    <td className="px-3 py-2 text-xs text-center text-gray-700 dark:text-gray-300 font-semibold">{quiz._count.attempts}</td>
+                                                    <td className="px-3 py-2 text-center">
+                                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${quiz.isPublic ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
+                                                            {quiz.isPublic ? 'Public' : 'Privé'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <div className="flex gap-1.5">
+                                                            <Link href={`/quiz/${quiz.id}/edit`} className="text-[10px] font-semibold text-blue-500 hover:text-blue-700 px-2 py-0.5 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">Modifier</Link>
+                                                            <button onClick={() => handleDeleteQuiz(quiz.id, quiz.title)} className="text-[10px] font-semibold text-red-500 hover:text-red-700 px-2 py-0.5 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Supprimer</button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <Pagination currentPage={quizPage} totalPages={quizTotalPages} onPageChange={handleQuizPageChange} />
                             </div>
-                            <Pagination currentPage={quizPage} totalPages={quizTotalPages} onPageChange={handleQuizPageChange} />
                         </div>
                     )}
 
                     {activeTab === 'categories' && (
-                        <div id="admin-categories" className="scroll-mt-24 space-y-6">
-                            <div className="flex gap-3">
-                                <input type="text" placeholder="Nouvelle catégorie..." value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()} className="input-field flex-1" />
-                                <button onClick={handleCreateCategory} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">+ Ajouter</button>
+                        <div id="admin-categories" className="scroll-mt-24 space-y-4">
+                            {/* Ajout */}
+                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Nouvelle catégorie…"
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
+                                    className="flex-1 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg px-3 py-1.5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                />
+                                <button onClick={handleCreateCategory} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">+ Ajouter</button>
                             </div>
-                            <div className="space-y-2">
+
+                            {/* Liste */}
+                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-2">
                                 {categories.map((cat) => (
-                                    <div key={cat.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-4 py-3 border border-gray-200 dark:border-gray-700">
+                                    <div key={cat.id} className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-2.5">
                                         {editingCategory?.id === cat.id ? (
-                                            <input type="text" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && handleRenameCategory()} className="input-field flex-1 mr-4" autoFocus />
+                                            <input
+                                                type="text"
+                                                value={editingCategory.name}
+                                                onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleRenameCategory()}
+                                                className="flex-1 mr-4 text-xs border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-1.5 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                autoFocus
+                                            />
                                         ) : (
-                                            <div>
-                                                <span className="font-semibold text-gray-800 dark:text-gray-200">{cat.name}</span>
-                                                <span className="text-xs text-gray-400 ml-3">{cat._count.quizzes} quiz</span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{cat.name}</span>
+                                                <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">{cat._count.quizzes} {plural(cat._count.quizzes, 'Quiz', 'Quizzes')}</span>
                                             </div>
                                         )}
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-1.5 shrink-0">
                                             {editingCategory?.id === cat.id ? (
                                                 <>
-                                                    <button onClick={handleRenameCategory} className="text-xs px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Sauvegarder</button>
-                                                    <button onClick={() => setEditingCategory(null)} className="text-xs px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400">Annuler</button>
+                                                    <button onClick={handleRenameCategory} className="text-[10px] px-2 py-0.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors">Sauvegarder</button>
+                                                    <button onClick={() => setEditingCategory(null)} className="text-[10px] px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Annuler</button>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <button onClick={() => setEditingCategory({ id: cat.id, name: cat.name })} className="text-blue-500 hover:text-blue-700 font-semibold text-xs px-3 py-1 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors">Renommer</button>
-                                                    <button onClick={() => handleDeleteCategory(cat.id, cat.name)} className="text-red-500 hover:text-red-700 font-semibold text-xs px-3 py-1 border border-red-300 rounded-lg hover:bg-red-50 transition-colors">Supprimer</button>
+                                                    <button onClick={() => setEditingCategory({ id: cat.id, name: cat.name })} className="text-[10px] font-semibold text-blue-500 hover:text-blue-700 px-2 py-0.5 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">Renommer</button>
+                                                    <button onClick={() => handleDeleteCategory(cat.id, cat.name)} className="text-[10px] font-semibold text-red-500 hover:text-red-700 px-2 py-0.5 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Supprimer</button>
                                                 </>
                                             )}
                                         </div>

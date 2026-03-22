@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
-import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
+import { GAME_EMOJI_MAP, GAME_LABEL_MAP, GAME_COLOR } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal';
 import GameFilterPills, { GameFilter } from '@/components/GameFilterPills';
 import GameStatCards from '@/components/GameStatCards';
@@ -35,54 +35,13 @@ interface Stats {
 
 const PLACEMENT_EMOJI: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
-const GAME_BADGE: Record<string, string> = {
-    QUIZ: 'bg-blue-100   dark:bg-blue-900/40   text-blue-700   dark:text-blue-400',
-    UNO: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400',
-    TABOO: 'bg-red-100    dark:bg-red-900/40    text-red-700    dark:text-red-400',
-    SKYJOW: 'bg-sky-100    dark:bg-sky-900/40    text-sky-700    dark:text-sky-400',
-    YAHTZEE: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
-    PUISSANCE4: 'bg-rose-100   dark:bg-rose-900/40   text-rose-700   dark:text-rose-400',
-    JUST_ONE: 'bg-teal-100   dark:bg-teal-900/40   text-teal-700   dark:text-teal-400',
-    BATTLESHIP: 'bg-cyan-100   dark:bg-cyan-900/40   text-cyan-700   dark:text-cyan-400',
-    DIAMANT:    'bg-amber-100  dark:bg-amber-900/40  text-amber-700  dark:text-amber-400',
-};
-
-const GAME_BADGE_ACTIVE: Record<string, string> = {
-    QUIZ: 'bg-blue-600   text-white border-blue-600',
-    UNO: 'bg-orange-500 text-white border-orange-500',
-    TABOO: 'bg-red-600    text-white border-red-600',
-    SKYJOW: 'bg-sky-500    text-white border-sky-500',
-    YAHTZEE: 'bg-purple-600 text-white border-purple-600',
-    PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
-    JUST_ONE: 'bg-teal-600   text-white border-teal-600',
-    BATTLESHIP: 'bg-cyan-600   text-white border-cyan-600',
-    DIAMANT:    'bg-amber-500  text-white border-amber-500',
-};
-
-function CollapseSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
-    const [open, setOpen] = useState(defaultOpen);
-    return (
-        <div>
-            <button
-                onClick={() => setOpen(o => !o)}
-                className="flex items-center gap-2 w-full text-left mb-3 group"
-            >
-                <span className="text-lg font-bold text-gray-800 dark:text-white">{title}</span>
-                <span className={`ml-1 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>
-                    ▾
-                </span>
-            </button>
-            {open && children}
-        </div>
-    );
-}
 
 interface Props {
     username: string;
     currentUsername?: string;
 }
 
-export default function UserStats({ username, currentUsername }: Props) {
+export default function UserStats({ username }: Props) {
     const [stats, setStats] = useState<Stats | null>(null);
     const [initialLoading, setInitialLoading] = useState(true);
     const [refetching, setRefetching] = useState(false);
@@ -106,48 +65,91 @@ export default function UserStats({ username, currentUsername }: Props) {
 
     useEffect(() => { fetchStats(1, 'ALL', true); }, [fetchStats]);
 
-    const handlePageChange = (p: number) => {
-        setPage(p);
-        fetchStats(p, gameFilter);
-    };
-
-    const handleFilterChange = (f: GameFilter) => {
-        setGameFilter(f);
-        setPage(1);
-        fetchStats(1, f);
-    };
-
-    const activeClassName = gameFilter !== 'ALL' && GAME_BADGE_ACTIVE[gameFilter]
-        ? GAME_BADGE_ACTIVE[gameFilter]
-        : 'bg-gray-800 text-white border-gray-800 dark:bg-white dark:text-gray-900 dark:border-white';
+    const handlePageChange = (p: number) => { setPage(p); fetchStats(p, gameFilter); };
+    const handleFilterChange = (f: GameFilter) => { setGameFilter(f); setPage(1); fetchStats(1, f); };
 
     if (initialLoading) return (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-16">
             <LoadingSpinner fullScreen={false} />
         </div>
     );
 
-    if (!stats) return <p className="text-gray-500 text-sm">Impossible de charger les statistiques.</p>;
+    if (!stats) return <p className="text-gray-400 dark:text-gray-500 text-sm">Impossible de charger les statistiques.</p>;
+
+    // Synthèse — tri par taux de victoire
+    const gamesWithRate = Object.entries(stats.gameStats)
+        .filter(([, v]) => v.count > 0)
+        .sort((a, b) => {
+            const ra = a[1].wins ? a[1].wins / a[1].count : 0;
+            const rb = b[1].wins ? b[1].wins / b[1].count : 0;
+            return rb - ra;
+        });
+    const bestGame = gamesWithRate[0] ?? null;
+    const worstGame = gamesWithRate.length > 1 ? gamesWithRate[gamesWithRate.length - 1] : null;
+    const lastActivity = stats.recentActivity[0] ?? null;
+    const activeGameStats = Object.fromEntries(Object.entries(stats.gameStats).filter(([, v]) => v.count > 0));
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-4">
 
-            {/* Statistiques — repliable */}
-            <CollapseSection title="🎮 Statistiques">
-                <GameStatCards gameStats={Object.fromEntries(Object.entries(stats.gameStats).filter(([, v]) => v.count > 0))} />
-            </CollapseSection>
+            {/* ── Chips d'aperçu ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalGames}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">parties jouées</div>
+                </div>
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{Object.keys(activeGameStats).length}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">jeux différents</div>
+                </div>
+                {bestGame && (
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
+                        <div className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                            {GAME_EMOJI_MAP[bestGame[0]]} {GAME_LABEL_MAP[bestGame[0]] ?? bestGame[0]}
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">meilleur jeu</div>
+                    </div>
+                )}
+                {lastActivity ? (
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
+                        <div className="text-sm font-bold text-gray-900 dark:text-white">
+                            {new Date(lastActivity.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            {new Date(lastActivity.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                    </div>
+                ) : worstGame && worstGame[0] !== bestGame?.[0] ? (
+                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
+                        <div className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                            {GAME_EMOJI_MAP[worstGame[0]]} {GAME_LABEL_MAP[worstGame[0]] ?? worstGame[0]}
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">à améliorer</div>
+                    </div>
+                ) : null}
+            </div>
 
-            {/* Activité récente — repliable */}
-            <CollapseSection title="🕐 Activité récente">
-                <div className="mt-3 mb-4">
+            {/* ── Statistiques par jeu ── */}
+            {Object.keys(activeGameStats).length > 0 && (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Statistiques par jeu</h2>
+                    <GameStatCards gameStats={activeGameStats} />
+                </div>
+            )}
+
+            {/* ── Activité récente ── */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Activité récente</h2>
                     <GameFilterPills
                         value={gameFilter}
                         onChange={handleFilterChange}
-                        activeClassName={activeClassName}
+                        activeClassName="bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
+                        inactiveClassName="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     />
                 </div>
 
-                <div className={`relative transition-opacity duration-150 ${refetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                <div className={`relative transition-opacity duration-150 ${refetching ? 'opacity-50 pointer-events-none' : ''}`}>
                     {refetching && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center">
                             <LoadingSpinner fullScreen={false} />
@@ -155,56 +157,55 @@ export default function UserStats({ username, currentUsername }: Props) {
                     )}
 
                     {stats.recentActivity.length === 0 ? (
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune partie jouée pour l'instant.</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-sm py-4 text-center">Aucune partie jouée pour l'instant.</p>
                     ) : (
                         <>
-                            <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
-                                <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-sm">
-                                    <thead className="bg-gray-50 dark:bg-gray-800">
+                            <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-gray-50 dark:bg-gray-800/60">
                                         <tr>
-                                            {['Jeu', 'Quiz', 'Score', 'Placement', 'Joueurs', 'Date'].map(h => (
-                                                <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{h}</th>
+                                            {['Jeu', 'Quiz', 'Score', 'Place', 'Joueurs', 'Date'].map(h => (
+                                                <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                                         {stats.recentActivity.map((a) => (
-                                            <tr key={a.gameId} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                            <tr key={a.gameId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                                 <td className="px-3 py-2 whitespace-nowrap">
-                                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${GAME_BADGE[a.gameType] ?? 'bg-gray-100 text-gray-600'}`}>
+                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${GAME_COLOR[a.gameType]?.badge ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                                                         {GAME_EMOJI_MAP[a.gameType] ?? '🎮'} {GAME_LABEL_MAP[a.gameType] ?? a.gameType}
                                                     </span>
                                                 </td>
-                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                <td className="px-3 py-2 whitespace-nowrap max-w-[140px]">
                                                     {a.quiz ? (
-                                                        <Link href={`/quiz/${a.quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs">{a.quiz.title}</Link>
+                                                        <Link href={`/quiz/${a.quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block">{a.quiz.title}</Link>
                                                     ) : (
-                                                        <span className="text-gray-400">—</span>
+                                                        <span className="text-gray-300 dark:text-gray-600">—</span>
                                                     )}
                                                 </td>
                                                 <td className="px-3 py-2 whitespace-nowrap">
-                                                    <span className="font-bold text-gray-900 dark:text-white">{a.score}</span>
-                                                    <span className="text-xs text-gray-400 ml-1">pts</span>
+                                                    <span className="font-semibold text-gray-900 dark:text-white text-xs">{a.score}</span>
+                                                    <span className="text-[10px] text-gray-400 ml-0.5">pts</span>
                                                 </td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-center">
+                                                <td className="px-3 py-2 whitespace-nowrap text-center text-sm">
                                                     {a.placement != null
-                                                        ? <span className="text-base">{PLACEMENT_EMOJI[a.placement] ?? `#${a.placement}`}</span>
-                                                        : <span className="text-gray-400">—</span>}
+                                                        ? <span>{PLACEMENT_EMOJI[a.placement] ?? `#${a.placement}`}</span>
+                                                        : <span className="text-gray-300 dark:text-gray-600">—</span>}
                                                 </td>
                                                 <td className="px-3 py-2 whitespace-nowrap">
                                                     {a.players.length > 0 ? (
                                                         <button
                                                             onClick={() => setModalGame(a)}
-                                                            className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                            className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                                         >
-                                                            <span>👥</span>
-                                                            <span>{a.players.length}</span>
+                                                            👥 {a.players.length}
                                                         </button>
                                                     ) : (
-                                                        <span className="text-gray-400">—</span>
+                                                        <span className="text-gray-300 dark:text-gray-600">—</span>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-400">
+                                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-400 dark:text-gray-500">
                                                     {new Date(a.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                                                     {' '}
                                                     {new Date(a.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
@@ -220,14 +221,10 @@ export default function UserStats({ username, currentUsername }: Props) {
                         </>
                     )}
                 </div>
-            </CollapseSection>
+            </div>
 
             {modalGame && (
-                <PlayerModal
-                    gameId={modalGame.gameId}
-                    players={modalGame.players}
-                    onClose={() => setModalGame(null)}
-                />
+                <PlayerModal gameId={modalGame.gameId} players={modalGame.players} onClose={() => setModalGame(null)} />
             )}
         </div>
     );

@@ -123,12 +123,13 @@ export const authOptions: NextAuthOptions = {
             });
         },
         signIn: async ({ user, account }) => {
-            if (account?.provider !== 'credentials' && user.image) {
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { image: user.image },
-                });
-            }
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    lastSeen: new Date(),
+                    ...(account?.provider !== 'credentials' && user.image ? { image: user.image } : {}),
+                },
+            });
         },
     },
     logger: {

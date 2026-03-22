@@ -137,6 +137,9 @@ export async function GET(req: NextRequest) {
                     case 'battleship':
                         detail = `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
+                    case 'impostor':
+                        detail = `${totalScore} pt${totalScore > 1 ? 's' : ''} · ${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
+                        break;
                     default:
                         detail = `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                 }

@@ -1,6 +1,6 @@
 // src/components/GameStatCards.tsx
 'use client';
-import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
+import { GAME_EMOJI_MAP, GAME_LABEL_MAP, GAME_COLOR } from '@/lib/gameConfig';
 
 interface GameStat {
     count: number;
@@ -14,74 +14,67 @@ interface Props {
     columns?: 4 | 6;
 }
 
-const GAME_BADGE: Record<string, string> = {
-    QUIZ: 'bg-blue-100   dark:bg-blue-900/40   text-blue-700   dark:text-blue-400',
-    UNO: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400',
-    TABOO: 'bg-red-100    dark:bg-red-900/40    text-red-700    dark:text-red-400',
-    SKYJOW: 'bg-sky-100    dark:bg-sky-900/40    text-sky-700    dark:text-sky-400',
-    YAHTZEE: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
-    PUISSANCE4: 'bg-rose-100   dark:bg-rose-900/40   text-rose-700   dark:text-rose-400',
-    JUST_ONE: 'bg-teal-100   dark:bg-teal-900/40   text-teal-700   dark:text-teal-400',
-    BATTLESHIP: 'bg-cyan-100   dark:bg-cyan-900/40   text-cyan-700   dark:text-cyan-400',
-    DIAMANT:    'bg-amber-100  dark:bg-amber-900/40  text-amber-700  dark:text-amber-400',
-};
 
-export default function GameStatCards({ gameStats, columns = 4 }: Props) {
+export default function GameStatCards({ gameStats }: Props) {
     if (Object.keys(gameStats).length === 0) {
-        return <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune statistique disponible.</p>;
+        return <p className="text-gray-400 dark:text-gray-500 text-sm">Aucune statistique disponible.</p>;
     }
 
-    const pct = columns === 6 ? '16.666%' : '25%';
-
     return (
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {Object.entries(gameStats)
                 .sort((a, b) => b[1].count - a[1].count)
-                .map(([type, { count, points, wins, rounds }]) => (
-                    <div
-                        key={type}
-                        className={`${GAME_BADGE[type] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'} border rounded-xl p-3.5 flex items-center gap-3.5`}
-                        style={{ width: `calc(${pct} - 10px)`, minWidth: 180 }}
-                    >
-                        <div className="text-2xl flex-shrink-0">{GAME_EMOJI_MAP[type] ?? '🎮'}</div>
-                        <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-bold uppercase tracking-widest opacity-70 mb-1.5">{GAME_LABEL_MAP[type] ?? type}</div>
-                            <div className="flex items-center gap-3">
+                .map(([type, { count, points, wins, rounds }]) => {
+                    const c = GAME_COLOR[type]?.card ?? {
+                        border: 'border-gray-200 dark:border-gray-700',
+                        bg: 'bg-gray-50 dark:bg-gray-800/50',
+                        label: 'text-gray-600 dark:text-gray-400',
+                    };
+                    const pct = wins !== undefined && count > 0 ? Math.round((wins / count) * 100) : null;
+                    const barColor = pct !== null
+                        ? pct >= 60 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500'
+                        : '';
 
-                                {/* Colonne gauche : parties + manches pour Taboo */}
-                                <div>
-                                    <div className="text-lg font-bold tabular-nums leading-none">{count.toLocaleString()}</div>
-                                    <div className="text-[11px] opacity-60 mt-0.5">parties</div>
-                                    {type === 'TABOO' && rounds !== undefined && rounds > 0 && (
-                                        <>
-                                            <div className="text-lg font-bold tabular-nums leading-none mt-1">{rounds.toLocaleString()}</div>
-                                            <div className="text-[11px] opacity-60 mt-0.5">manches</div>
-                                        </>
-                                    )}
+                    return (
+                        <div key={type} className={`rounded-xl border ${c.border} ${c.bg} p-3`}>
+                            {/* Header: emoji + label + % */}
+                            <div className="flex items-center justify-between gap-1 mb-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-base leading-none">{GAME_EMOJI_MAP[type] ?? '🎮'}</span>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider truncate ${c.label}`}>
+                                        {GAME_LABEL_MAP[type] ?? type}
+                                    </span>
                                 </div>
-
-                                <div className="w-px self-stretch opacity-20 bg-current" />
-
-                                {/* Colonne droite : points + % victoires */}
-                                <div>
-                                    <div className="text-lg font-bold tabular-nums leading-none">{points.toLocaleString()}</div>
-                                    <div className="text-[11px] opacity-60 mt-0.5">points</div>
-                                    {wins !== undefined && count > 0 && type !== 'JUST_ONE' && (
-                                        <div className={`text-xs font-bold mt-1 ${wins / count >= 0.6
-                                            ? 'text-green-400'
-                                            : wins / count >= 0.4
-                                                ? 'text-yellow-400'
-                                                : 'text-red-400'
-                                            }`}>
-                                            {Math.round((wins / count) * 100)}% victoires
-                                        </div>
-                                    )}
-                                </div>
-
+                                {pct !== null && type !== 'JUST_ONE' && (
+                                    <span className={`text-xs font-bold shrink-0 ${c.label}`}>{pct}%</span>
+                                )}
                             </div>
+
+                            {/* Stats: count | points */}
+                            <div className="flex items-end gap-3">
+                                <div>
+                                    <div className="text-xl font-bold text-gray-900 dark:text-white leading-none">{count}</div>
+                                    <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                                        partie{count > 1 ? 's' : ''}
+                                        {type === 'TABOO' && rounds !== undefined && rounds > 0 ? ` · ${rounds}m` : ''}
+                                    </div>
+                                </div>
+                                <div className="w-px self-stretch bg-gray-200 dark:bg-gray-700" />
+                                <div>
+                                    <div className="text-xl font-bold text-gray-900 dark:text-white leading-none">{points >= 1000 ? `${(points / 1000).toFixed(1)}k` : points}</div>
+                                    <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">pts</div>
+                                </div>
+                            </div>
+
+                            {/* Win % bar */}
+                            {pct !== null && type !== 'JUST_ONE' && (
+                                <div className="mt-2.5 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                    <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
         </div>
     );
 }

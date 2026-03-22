@@ -38,10 +38,10 @@ type GameState = {
 
 function cardColor(value: number | null, revealed: boolean, removed: boolean): string {
     if (removed) return 'bg-transparent border-transparent';
-    if (!revealed) return 'bg-slate-700 border-slate-600 hover:bg-slate-600 cursor-pointer';
-    if (value === null) return 'bg-slate-700 border-slate-600';
-    if (value === -2) return 'bg-blue-900 border-blue-800 text-white';
-    if (value === -1) return 'bg-blue-600 border-blue-500 text-white';
+    if (!revealed) return 'bg-slate-400 dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:bg-slate-500 dark:hover:bg-slate-600 cursor-pointer text-slate-200 dark:text-slate-400';
+    if (value === null) return 'bg-slate-400 dark:bg-slate-700 border-slate-300 dark:border-slate-600';
+    if (value === -2) return 'bg-blue-400 dark:bg-blue-900 border-blue-300 dark:border-blue-800 text-white';
+    if (value === -1) return 'bg-blue-500 dark:bg-blue-600 border-blue-400 dark:border-blue-500 text-white';
     if (value === 0) return 'bg-cyan-400 border-cyan-300 text-slate-900';
     if (value <= 3) return 'bg-emerald-400 border-emerald-300 text-slate-900';
     if (value <= 6) return 'bg-yellow-300 border-yellow-200 text-slate-900';
@@ -116,7 +116,7 @@ function PlayerGrid({ player, myCards, isMe, isCurrent, selectableIndices, onCar
     const size = compact ? 'sm' : isMe ? 'lg' : 'md';
 
     return (
-        <div className={`grid grid-cols-4 gap-1 ${compact ? 'gap-0.5' : 'gap-1.5'}`}>
+        <div className={`grid grid-cols-4 ${compact ? 'gap-1' : isMe ? 'gap-3' : 'gap-2'}`}>
             {cards.map((card, idx) => (
                 <Card
                     key={idx}
@@ -158,6 +158,10 @@ export default function skyjowGamePage() {
     const [drawnAction, setDrawnAction] = useState<'swap' | 'discard_flip' | null>(null);
     const [readyCount, setReadyCount] = useState(0);
     const [flip2Count, setFlip2Count] = useState(0);
+
+    const [inactivitySeconds, setInactivitySeconds] = useState<number | null>(null);
+    const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
+    const inactivityIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const userId = session?.user?.id ?? '';
     const username = session?.user?.username ?? session?.user?.email ?? 'User';
@@ -222,6 +226,12 @@ export default function skyjowGamePage() {
         });
 
         sock.on('skyjow:turn', ({ currentUserId }: { currentPlayerIndex: number; currentUserId: string }) => {
+            setInactivitySeconds(null);
+            setInactivityUserId(null);
+            if (inactivityIntervalRef.current) {
+                clearInterval(inactivityIntervalRef.current);
+                inactivityIntervalRef.current = null;
+            }
             if (currentUserId === userId) notify('🎯 C\'est ton tour !');
         });
 
@@ -249,6 +259,30 @@ export default function skyjowGamePage() {
             setGameEndData(data);
             setScores(data.scores);
             setPhase('game_end');
+        });
+
+        sock.on('skyjow:inactivityWarning', ({ userId: uid, secondsLeft }: { userId: string; secondsLeft: number }) => {
+            if (inactivityIntervalRef.current) clearInterval(inactivityIntervalRef.current);
+            setInactivityUserId(uid);
+            setInactivitySeconds(secondsLeft);
+            let remaining = secondsLeft;
+            inactivityIntervalRef.current = setInterval(() => {
+                remaining -= 1;
+                setInactivitySeconds(remaining <= 0 ? 0 : remaining);
+                if (remaining <= 0) {
+                    clearInterval(inactivityIntervalRef.current!);
+                    inactivityIntervalRef.current = null;
+                }
+            }, 1000);
+        });
+
+        sock.on('skyjow:playerKicked', () => {
+            setInactivitySeconds(null);
+            setInactivityUserId(null);
+            if (inactivityIntervalRef.current) {
+                clearInterval(inactivityIntervalRef.current);
+                inactivityIntervalRef.current = null;
+            }
         });
 
         sock.on('skyjow:waiting_next_round', ({ scores: s }: { scores: ScoreEntry[] }) => {
@@ -289,9 +323,12 @@ export default function skyjowGamePage() {
             sock.off('skyjow:columns_removed');
             sock.off('skyjow:round_end');
             sock.off('skyjow:game_end');
+            sock.off('skyjow:inactivityWarning');
+            sock.off('skyjow:playerKicked');
             sock.off('skyjow:waiting_next_round');
             sock.off('skyjow:ready_count');
             sock.off('skyjow:new_round');
+            if (inactivityIntervalRef.current) clearInterval(inactivityIntervalRef.current);
         };
     }, [lobbyId, status, userId, username, notify]);
 
@@ -370,6 +407,7 @@ export default function skyjowGamePage() {
 
     const otherPlayers = players.filter(p => p.userId !== userId);
     const currentPlayerId = players[currentPlayerIndex]?.userId;
+    const isMeInactive = inactivityUserId === userId;
 
     // ── Render guards ──────────────────────────────────────────────────────────
 
@@ -472,17 +510,12 @@ export default function skyjowGamePage() {
             {/* ── Header ── */}
             <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
                 {/* Left */}
-                <div className="w-48 shrink-0 flex items-center gap-2">
+                <div className="w-48 lg:w-72 shrink-0 flex items-center gap-2">
                     <span className="font-bold text-gray-900 dark:text-white">🃏 Skyjow</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">Manche {round}</span>
                 </div>
 
-                {/* Center */}
-                <div className="flex-1 flex justify-center">
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold border ${phase === 'flip2' ? 'bg-amber-100 dark:bg-amber-900/50 border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300' : phase === 'last_round' ? 'bg-red-100 dark:bg-red-900/50 border-red-400 dark:border-red-600 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-emerald-900/50 border-green-400 dark:border-emerald-600 text-green-700 dark:text-emerald-300'}`}>
-                        {phase === 'flip2' ? `↩ Retourne 2 cartes (${flip2Count}/2)` : phase === 'last_round' ? '⚡ Dernier tour !' : isCurrent ? '⭐ Ton tour' : `Tour: ${players[currentPlayerIndex]?.username ?? '…'}`}
-                    </div>
-                </div>
+                <div className="flex-1" />
 
                 {/* Right */}
                 <div className="w-48 shrink-0 flex justify-end">
@@ -533,6 +566,31 @@ export default function skyjowGamePage() {
 
                 {/* ── Zone centrale ── */}
                 <div className="flex-1 flex flex-col items-center justify-center p-4 gap-6">
+
+                    {/* ── Badge tour ── */}
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                        phase === 'flip2'
+                            ? 'bg-amber-100 dark:bg-amber-900/50 border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300'
+                            : inactivitySeconds !== null && inactivitySeconds <= 10
+                                ? 'bg-red-500 border-red-600 text-white animate-pulse'
+                                : inactivitySeconds !== null
+                                    ? 'bg-orange-400 border-orange-500 text-white'
+                                    : phase === 'last_round'
+                                        ? 'bg-red-100 dark:bg-red-900/50 border-red-400 dark:border-red-600 text-red-700 dark:text-red-300'
+                                        : 'bg-green-100 dark:bg-emerald-900/50 border-green-400 dark:border-emerald-600 text-green-700 dark:text-emerald-300'
+                    }`}>
+                        {phase === 'flip2'
+                            ? `↩ Retourne 2 cartes (${flip2Count}/2)`
+                            : phase === 'last_round'
+                                ? '⚡ Dernier tour !'
+                                : isCurrent
+                                    ? isMeInactive
+                                        ? `⚠️ Joue vite ! exclusion dans ${inactivitySeconds}s`
+                                        : '⭐ Ton tour'
+                                    : inactivityUserId === currentPlayerId && inactivitySeconds !== null
+                                        ? `⏰ ${players[currentPlayerIndex]?.username ?? '…'} — ${inactivitySeconds}s`
+                                        : `Tour: ${players[currentPlayerIndex]?.username ?? '…'}`}
+                    </div>
 
                     {/* ── Zone de jeu centrale ── */}
                     {isPlayingPhase(phase) && (

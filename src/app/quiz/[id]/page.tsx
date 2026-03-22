@@ -451,25 +451,20 @@ export default function QuizPage() {
                 </div>
 
                 {/* Center: progress bar + question count */}
-                <div className="flex-1 flex justify-center items-center gap-3">
-                    <div className="w-40 sm:w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="flex-1 flex justify-center items-center gap-2.5">
+                    <div className="w-40 sm:w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-2 shrink-0">
                         <div
                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        Question {currentQuestionIndex + 1} / {quiz.questions.length}
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap shrink-0">
+                        {currentQuestionIndex + 1} / {quiz.questions.length}
                     </span>
                 </div>
 
-                {/* Right: timer + points badge */}
-                <div className="w-48 shrink-0 flex justify-end items-center gap-2">
-                    {timeMode && timeMode !== 'none' && timeLeft !== null && timePerQuestion > 0 && (
-                        <span className={`text-sm font-semibold tabular-nums ${timeLeft <= 10 ? 'text-red-500 dark:text-red-400' : 'text-orange-500 dark:text-orange-400'}`}>
-                            ⏱ {timeLeft >= 60 ? `${Math.floor(timeLeft / 60)}m${timeLeft % 60}s` : `${timeLeft}s`}
-                        </span>
-                    )}
+                {/* Right: points badge */}
+                <div className="w-48 shrink-0 flex justify-end items-center">
                     <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full whitespace-nowrap">
                         {currentQuestion.points} pt{currentQuestion.points > 1 ? 's' : ''}
                     </span>
@@ -478,18 +473,8 @@ export default function QuizPage() {
             </header>
 
             {/* Main scrollable area */}
-            <main className="flex-1 overflow-auto p-4">
-                <div className="max-w-3xl mx-auto w-full flex flex-col gap-4">
-
-                    {/* Timer bar (below header, full width) */}
-                    {timeMode && timeMode !== 'none' && timeLeft !== null && timePerQuestion > 0 && (
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                            <div
-                                className={`h-1.5 rounded-full transition-all duration-1000 ${timeLeft <= 10 ? 'bg-red-500' : 'bg-orange-400'}`}
-                                style={{ width: `${(timeLeft / timePerQuestion) * 100}%` }}
-                            />
-                        </div>
-                    )}
+            <main className="flex-1 overflow-auto flex flex-col items-center justify-center p-4 py-8">
+                <div className="max-w-2xl w-full flex flex-col gap-4">
 
                     {/* Unauthenticated warning */}
                     {status === 'unauthenticated' && (
@@ -501,6 +486,21 @@ export default function QuizPage() {
                                     Se connecter
                                 </Link>
                             </p>
+                        </div>
+                    )}
+
+                    {/* Timer bar */}
+                    {timeMode && timeMode !== 'none' && timeLeft !== null && timePerQuestion > 0 && (
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                                <div
+                                    className={`h-1.5 rounded-full transition-all duration-1000 ${timeLeft <= 10 ? 'bg-red-500' : 'bg-orange-400'}`}
+                                    style={{ width: `${(timeLeft / timePerQuestion) * 100}%` }}
+                                />
+                            </div>
+                            <span className={`text-sm font-semibold tabular-nums shrink-0 ${timeLeft <= 10 ? 'text-red-500 dark:text-red-400' : 'text-orange-500 dark:text-orange-400'}`}>
+                                {timeLeft >= 60 ? `${Math.floor(timeLeft / 60)}m${timeLeft % 60}s` : `${timeLeft}s`}
+                            </span>
                         </div>
                     )}
 
@@ -652,7 +652,7 @@ export default function QuizPage() {
                     )}
 
                     {/* Action buttons */}
-                    <div className="flex justify-end gap-4">
+                    <div className="flex justify-center gap-4">
                         {!showFeedback ? (
                             <button
                                 onClick={handleValidateAnswer}

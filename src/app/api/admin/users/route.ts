@@ -3,11 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
 import prisma from '@/lib/prisma';
 
-function parseBool(v: string | null, defaultValue: boolean) {
-    if (v === null) return defaultValue;
-    return v === 'true' || v === '1' || v === 'yes';
-}
-
 type SortKey = 'createdAt_desc' | 'createdAt_asc' | 'username_asc' | 'username_desc';
 
 function getOrderBy(sort: SortKey) {
@@ -34,14 +29,9 @@ export async function GET(req: NextRequest) {
     const pageSize = Math.min(50, Math.max(1, Number.parseInt(searchParams.get('pageSize') || '10', 10)));
 
     const q = (searchParams.get('q') || '').trim();
-    const hideAnonymous = parseBool(searchParams.get('hideAnonymous'), false);
     const sort = (searchParams.get('sort') || 'createdAt_desc') as SortKey;
 
     const where: any = {};
-
-    if (hideAnonymous) {
-        where.role = { not: 'ANONYMOUS' };
-    }
 
     if (q) {
         where.OR = [
@@ -60,6 +50,8 @@ export async function GET(req: NextRequest) {
                 role: true,
                 image: true,
                 createdAt: true,
+                lastSeen: true,
+                deactivatedAt: true,
                 _count: { select: { createdQuizzes: true } },
                 attempts: { select: { gameType: true } },
             },
@@ -95,7 +87,7 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
     }
 
-    const allowedRoles = new Set(['USER', 'RANDOM', 'ADMIN', 'ANONYMOUS']);
+    const allowedRoles = new Set(['USER', 'RANDOM', 'ADMIN']);
     if (!allowedRoles.has(role)) {
         return NextResponse.json({ error: 'Rôle invalide' }, { status: 400 });
     }
@@ -109,7 +101,7 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
 
-    if (target.role === 'ADMIN' || target.role === 'ANONYMOUS') {
+    if (target.role === 'ADMIN') {
         return NextResponse.json({ error: 'Rôle verrouillé' }, { status: 403 });
     }
 

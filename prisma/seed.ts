@@ -59,12 +59,12 @@ async function main() {
         create: { email: 'random@quiz.app', username: 'Aléatoire', role: 'RANDOM', passwordHash: defaultPasswordHash },
     });
 
-    const anonUser = await prisma.user.upsert({
+    const user = await prisma.user.upsert({
         where: { email: 'user@quiz.app' },
         update: {},
         create: { email: 'user@quiz.app', username: 'User', role: 'USER', passwordHash: defaultPasswordHash },
     });
-    const [anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10] = await Promise.all(
+    const [user1, user2, user3, user4, user5, user6, user7, user8, user9, user10] = await Promise.all(
         Array.from({ length: 10 }, (_, i) => prisma.user.upsert({
             where: { email: `user${i + 1}@quiz.app` },
             update: {},
@@ -79,16 +79,16 @@ async function main() {
 
     console.log(`✅ Utilisateur créé: ${adminUser.username}`);
     console.log(`✅ Utilisateur créé: ${randomUser.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser1.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser2.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser3.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser4.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser5.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser6.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser7.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser8.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser9.username}`);
-    console.log(`✅ Utilisateur créé: ${anonUser10.username}`);
+    console.log(`✅ Utilisateur créé: ${user1.username}`);
+    console.log(`✅ Utilisateur créé: ${user2.username}`);
+    console.log(`✅ Utilisateur créé: ${user3.username}`);
+    console.log(`✅ Utilisateur créé: ${user4.username}`);
+    console.log(`✅ Utilisateur créé: ${user5.username}`);
+    console.log(`✅ Utilisateur créé: ${user6.username}`);
+    console.log(`✅ Utilisateur créé: ${user7.username}`);
+    console.log(`✅ Utilisateur créé: ${user8.username}`);
+    console.log(`✅ Utilisateur créé: ${user9.username}`);
+    console.log(`✅ Utilisateur créé: ${user10.username}`);
     console.log(`✅ Utilisateur créé: ${farosUser.username}`);
 
     // ─── 3. MOTS ────────────────────────────────────────────────────────
@@ -551,48 +551,25 @@ async function main() {
 
     const shuffle = (arr: typeof allQuizzes) => arr.sort(() => Math.random() - 0.5);
     const farosQuizzes = shuffle([...allQuizzes]).slice(0, 20);
-    const anonUser1Quizzes = shuffle([...allQuizzes]).slice(0, 20);
-    const anonUser2Quizzes = shuffle([...allQuizzes]).slice(0, 20);
-    const anonUser3Quizzes = shuffle([...allQuizzes]).slice(0, 20);
-    const anonUser4Quizzes = shuffle([...allQuizzes]).slice(0, 20);
-    const anonUser5Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+    const user1Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+    const user2Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+    const user3Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+    const user4Quizzes = shuffle([...allQuizzes]).slice(0, 20);
+    const user5Quizzes = shuffle([...allQuizzes]).slice(0, 20);
 
-    for (let i = 0; i < farosQuizzes.length; i++) {
-        const quiz = farosQuizzes[i];
-        await prisma.attempt.create({
-            data: { userId: farosUser.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
-        });
-    }
-    for (let i = 0; i < anonUser1Quizzes.length; i++) {
-        const quiz = anonUser1Quizzes[i];
-        await prisma.attempt.create({
-            data: { userId: anonUser1.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
-        });
-    }
-
-    for (let i = 0; i < anonUser2Quizzes.length; i++) {
-        const quiz = anonUser2Quizzes[i];
-        await prisma.attempt.create({
-            data: { userId: anonUser2.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
-        });
-    }
-    for (let i = 0; i < anonUser3Quizzes.length; i++) {
-        const quiz = anonUser3Quizzes[i];
-        await prisma.attempt.create({
-            data: { userId: anonUser3.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
-        });
-    }
-    for (let i = 0; i < anonUser4Quizzes.length; i++) {
-        const quiz = anonUser4Quizzes[i];
-        await prisma.attempt.create({
-            data: { userId: anonUser3.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
-        });
-    }
-    for (let i = 0; i < anonUser4Quizzes.length; i++) {
-        const quiz = anonUser4Quizzes[i];
-        await prisma.attempt.create({
-            data: { userId: anonUser3.id, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
-        });
+    for (const [quizzes, userId] of [
+        [farosQuizzes, farosUser.id],
+        [user1Quizzes, user1.id],
+        [user2Quizzes, user2.id],
+        [user3Quizzes, user3.id],
+        [user4Quizzes, user4.id],
+        [user5Quizzes, user5.id],
+    ] as [typeof farosQuizzes, string][]) {
+        for (const quiz of quizzes) {
+            await prisma.attempt.create({
+                data: { userId, quizId: quiz.id, score: getRandScore(getMaxScore(quiz)), gameType: 'QUIZ', gameId: crypto.randomUUID(), createdAt: getDaysAgo(Math.floor(Math.random() * 30)) },
+            });
+        }
     }
 
     console.log('✅ 20 attempts Quiz créés pour Faros, User1, User2, User3, User4 et User5');
@@ -600,7 +577,7 @@ async function main() {
     // ─── 6. Parties UNO ───────────────────────────────────────────────────────
     console.log('\n🎴 Création des parties UNO...');
 
-    const unoPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
+    const unoPlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8];
     const totalUnoGames = 80;
     const unoGameDates: Date[] = [];
 
@@ -639,7 +616,7 @@ async function main() {
     // ─── 7. Parties SKYJOW ────────────────────────────────────────────────────
     console.log('\n🂠 Création des parties Skyjow...');
 
-    const skyjowPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
+    const skyjowPlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8];
     const totalSkyjowGames = 60;
     const skyjowGameDates: Date[] = [];
 
@@ -687,8 +664,8 @@ async function main() {
     // ─── 8. Parties TABOO ────────────────────────────────────────────────────
     console.log('\n🗣️ Création des parties Taboo...');
 
-    const tabooPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10];
-    const totalTabooGames = 40;
+    const tabooPlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8, user9, user10];
+    const totalTabooGames = 20;
     const tabooGameDates: Date[] = [];
 
     for (let g = 0; g < totalTabooGames; g++) {
@@ -707,19 +684,21 @@ async function main() {
         const teamA = participants.slice(0, Math.ceil(participants.length / 2));
         const teamB = participants.slice(Math.ceil(participants.length / 2));
 
-        const totalRounds = Math.floor(Math.random() * 5) + 2;
+        const totalRounds = Math.floor(Math.random() * 3) + 2; // 2-4 rounds
         let scoreA = 0, scoreB = 0, trapA = 0, trapB = 0;
 
         for (let r = 0; r < totalRounds; r++) {
-            // Manche équipe A
-            const outcomeA = Math.random();
-            if (outcomeA < 0.45) { scoreA += 1; }
-            else if (outcomeA < 0.75) { scoreB += 1; trapB += 1; }
+            // Chaque manche : l'équipe A donne des indices (3-12 mots, avec 0-2 piégés)
+            const wordsA = Math.floor(Math.random() * 10) + 3;
+            const trapsA = Math.random() < 0.4 ? Math.floor(Math.random() * 3) : 0;
+            scoreA += Math.max(0, wordsA - trapsA);
+            trapA += trapsA;
 
-            // Manche équipe B
-            const outcomeB = Math.random();
-            if (outcomeB < 0.45) { scoreB += 1; }
-            else if (outcomeB < 0.75) { scoreA += 1; trapA += 1; }
+            // Équipe B
+            const wordsB = Math.floor(Math.random() * 10) + 3;
+            const trapsB = Math.random() < 0.4 ? Math.floor(Math.random() * 3) : 0;
+            scoreB += Math.max(0, wordsB - trapsB);
+            trapB += trapsB;
         }
 
         // Placement final — un seul attempt par joueur à la fin de la partie
@@ -756,7 +735,7 @@ async function main() {
     // ─── 9. Parties YAHTZEE ───────────────────────────────────────────────────
     console.log('\n🎲 Création des parties Yahtzee...');
 
-    const yahtzeePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
+    const yahtzeePlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8];
     const totalYahtzeeGames = 50;
     const yahtzeeGameDates: Date[] = [];
 
@@ -802,7 +781,7 @@ async function main() {
     // ─── 10. Parties PUISSANCE4 ───────────────────────────────────────────────
     console.log('\n🔴 Création des parties Puissance 4...');
 
-    const p4Players = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
+    const p4Players = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8];
     const totalP4Games = 30;
 
     for (let g = 0; g < totalP4Games; g++) {
@@ -841,7 +820,7 @@ async function main() {
     // ─── 11. Parties JUST ONE ─────────────────────────────────────────────────
     console.log('\n🔤 Création des parties Just One...');
 
-    const justOnePlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8];
+    const justOnePlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8];
     const totalJustOneGames = 35;
 
     for (let g = 0; g < totalJustOneGames; g++) {
@@ -877,7 +856,7 @@ async function main() {
     // ─── 12. Parties BATTLESHIP ───────────────────────────────────────────────
     console.log('\n🚢 Création des parties Bataille Navale...');
 
-    const battleshipPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10];
+    const battleshipPlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8, user9, user10];
     const totalBattleshipGames = 30;
 
     for (let g = 0; g < totalBattleshipGames; g++) {
@@ -914,7 +893,7 @@ async function main() {
     // ─── 13. Parties DIAMANT ──────────────────────────────────────────────────
     console.log('\n💎 Création des parties Diamant...');
 
-    const diamantPlayers = [farosUser, anonUser, anonUser1, anonUser2, anonUser3, anonUser4, anonUser5, anonUser6, anonUser7, anonUser8, anonUser9, anonUser10];
+    const diamantPlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8, user9, user10];
     const totalDiamantGames = 40;
 
     for (let g = 0; g < totalDiamantGames; g++) {
@@ -955,6 +934,67 @@ async function main() {
         console.log(`  ✅ Partie Diamant ${g + 1}/${totalDiamantGames} — ${playerCount} joueurs — scores: ${ranked.map(r => r.score).join(', ')}`);
     }
     console.log(`✅ ${totalDiamantGames} parties Diamant créées`);
+
+    // ─── 14. Parties IMPOSTEUR ────────────────────────────────────────────────
+    console.log('\n🎭 Création des parties Imposteur...');
+
+    const impostorPlayers = [farosUser, user, user1, user2, user3, user4, user5, user6, user7, user8, user9, user10];
+    const totalImpostorGames = 40;
+
+    for (let g = 0; g < totalImpostorGames; g++) {
+        const gameId = crypto.randomUUID();
+        const baseDaysAgo = Math.floor((g / totalImpostorGames) * 60);
+        const jitterHours = Math.floor(Math.random() * 24);
+        const gameDate = new Date(Date.now() - baseDaysAgo * 24 * 60 * 60 * 1000 - jitterHours * 60 * 60 * 1000);
+
+        const playerCount = Math.floor(Math.random() * 4) + 4; // 4 à 7 joueurs
+        const participants = shufflePlayers(impostorPlayers).slice(0, Math.min(playerCount, impostorPlayers.length));
+
+        // Choisir l'imposteur aléatoirement
+        const impostorIndex = Math.floor(Math.random() * participants.length);
+        // L'imposteur est-il éliminé ?
+        const impostorCaught = Math.random() < 0.6;
+        // L'imposteur devine-t-il le mot s'il perd ?
+        const impostorGuesses = !impostorCaught && Math.random() < 0.4;
+
+        const scores = participants.map((_, i) => {
+            if (i === impostorIndex) {
+                // Imposteur : +3 si vote échoue, +2 si devine le mot
+                let score = 0;
+                if (!impostorCaught) score += 3;
+                if (impostorGuesses) score += 2;
+                return score;
+            } else {
+                // Joueur normal : +2 si imposteur éliminé, +1 si a bien voté
+                let score = 0;
+                if (impostorCaught) score += 2;
+                if (impostorCaught && Math.random() < 0.75) score += 1; // a bien voté
+                return score;
+            }
+        });
+
+        // Classement : plus haut score = meilleure place
+        const ranked = participants
+            .map((player, i) => ({ player, score: scores[i] }))
+            .sort((a, b) => b.score - a.score);
+
+        for (let p = 0; p < ranked.length; p++) {
+            await prisma.attempt.create({
+                data: {
+                    userId: ranked[p].player.id,
+                    score: ranked[p].score,
+                    gameType: 'IMPOSTOR',
+                    placement: p + 1,
+                    gameId,
+                    quizId: null,
+                    trapScore: 0,
+                    createdAt: new Date(gameDate.getTime() + p * 1000),
+                },
+            });
+        }
+        console.log(`  ✅ Partie Imposteur ${g + 1}/${totalImpostorGames} — ${playerCount} joueurs — imposteur ${impostorCaught ? 'éliminé' : 'non éliminé'}`);
+    }
+    console.log(`✅ ${totalImpostorGames} parties Imposteur créées`);
 
     console.log(`\n✨ Seed terminé ! ${createdCount} quiz créés avec succès.`);
 }

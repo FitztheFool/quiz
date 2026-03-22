@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { GAME_CONFIG, GameType as Game } from '@/lib/gameConfig';
+import { GAME_CONFIG, GAME_COLOR, GameType as Game } from '@/lib/gameConfig';
 import Pagination from '@/components/Pagination';
 import GameFilterPills, { GameFilter } from '@/components/GameFilterPills';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -38,17 +38,6 @@ interface PaginationData {
 const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const LIMIT = 20;
 
-const GAME_BADGE_ACTIVE: Record<string, string> = {
-    QUIZ: 'bg-blue-600   text-white border-blue-600',
-    UNO: 'bg-orange-500 text-white border-orange-500',
-    TABOO: 'bg-red-600    text-white border-red-600',
-    SKYJOW: 'bg-sky-500    text-white border-sky-500',
-    YAHTZEE: 'bg-purple-600 text-white border-purple-600',
-    PUISSANCE4: 'bg-rose-600   text-white border-rose-600',
-    JUST_ONE: 'bg-teal-600   text-white border-teal-600',
-    BATTLESHIP: 'bg-cyan-600   text-white border-cyan-600',
-    DIAMANT:    'bg-amber-500  text-white border-amber-500',
-};
 
 interface Props {
     game: Game;
@@ -106,7 +95,7 @@ export default function LeaderboardView({ game }: Props) {
     };
 
     const gameType = GAME_CONFIG[game].gameType;
-    const activeClassName = GAME_BADGE_ACTIVE[gameType] ?? 'bg-gray-800 text-white border-gray-800';
+    const activeClassName = GAME_COLOR[gameType]?.badgeActive ?? 'bg-gray-800 text-white border-gray-800';
     const myEntry = leaderboard.find(e => e.userId === session?.user?.id);
     const scoreLabel = config?.scoreLabel ?? GAME_CONFIG[game].scoreLabel;
     const label = config?.label ?? GAME_CONFIG[game].label;
@@ -192,10 +181,16 @@ export default function LeaderboardView({ game }: Props) {
                         )}
 
                         <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
-                            <table className="min-w-full divide-y divide-gray-100">
+                            <table className="w-full table-fixed divide-y divide-gray-100">
+                                <colgroup>
+                                    <col style={{ width: '72px' }} />
+                                    <col style={{ width: '22%' }} />
+                                    <col style={{ width: '16%' }} />
+                                    <col />
+                                </colgroup>
                                 <thead className="bg-gray-50 dark:bg-gray-800">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Rang</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rang</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Joueur</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{scoreLabel}</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Détail</th>
@@ -214,19 +209,19 @@ export default function LeaderboardView({ game }: Props) {
                                                         : <span className="text-sm text-gray-500 dark:text-gray-400 font-semibold">#{entry.rank}</span>
                                                     }
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                <td className="px-4 py-3 whitespace-nowrap overflow-hidden">
                                                     <Link href={isMe ? '/dashboard' : `/profil/${entry.username}`}
-                                                        className="text-sm font-medium hover:underline text-blue-600 dark:text-blue-400">
+                                                        className="text-sm font-medium hover:underline text-blue-600 dark:text-blue-400 truncate block">
                                                         {entry.username}
                                                     </Link>
-                                                    {isMe && <span className="ml-1 text-xs opacity-60">(moi)</span>}
+                                                    {isMe && <span className="text-xs opacity-60">(moi)</span>}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap">
                                                     <span className="text-sm font-bold text-gray-900 dark:text-white">
                                                         {entry.score}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
+                                                <td className="px-4 py-3 hidden sm:table-cell">
                                                     <span className="text-xs text-gray-700 dark:text-gray-300">{entry.detail}</span>
                                                 </td>
                                             </tr>

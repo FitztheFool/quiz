@@ -104,7 +104,7 @@ function Die({ value, held, onClick, rolling, disabled }: {
       onClick={onClick}
       disabled={disabled}
       className={`relative w-16 h-16 rounded-xl transition-all duration-200 select-none
-        ${held ? 'ring-4 ring-amber-400 bg-amber-50 shadow-amber-200 shadow-lg scale-105' : 'bg-white shadow-md hover:shadow-lg hover:scale-105'}
+        ${held ? 'ring-4 ring-amber-400 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-500 shadow-amber-200 shadow-lg scale-105 text-amber-600' : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-500 shadow-md hover:shadow-lg hover:scale-105 text-gray-800 dark:text-gray-100'}
         ${disabled ? 'cursor-default opacity-70' : 'cursor-pointer'}
         ${rolling && !held ? 'animate-bounce' : ''}
       `}
@@ -112,7 +112,7 @@ function Die({ value, held, onClick, rolling, disabled }: {
     >
       <svg viewBox="0 0 100 100" className="w-full h-full p-1">
         {dots.map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r={9} fill={held ? '#d97706' : '#1e293b'} />
+          <circle key={i} cx={cx} cy={cy} r={9} fill="currentColor" />
         ))}
         {value === 0 && <text x="50" y="60" textAnchor="middle" fontSize="30" fill="#cbd5e1">?</text>}
       </svg>
@@ -184,7 +184,7 @@ export default function YahtzeePage() {
   const isMyTurn = game?.currentUserId === myId;
   const myPlayer = game?.players.find(p => p.userId === myId);
   const currentPlayer = game ? game.players[game.currentIndex] : null;
-  const canRoll = isMyTurn && game?.phase === 'rolling' && (myPlayer?.rollsLeft ?? 0) > 0;
+  const canRoll = isMyTurn && game?.phase === 'rolling' && (myPlayer?.rollsLeft ?? 0) > 0 && !rolling;
   const canScore = isMyTurn && (myPlayer?.rollsLeft ?? 3) < 3;
 
   const roll = () => { if (!canRoll) return; setRolling(true); socket?.emit('yahtzee:roll', { lobbyId, userId: myId }); };
