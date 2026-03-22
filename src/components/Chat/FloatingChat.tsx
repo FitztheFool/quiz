@@ -14,9 +14,9 @@ export default function FloatingChat() {
     return (
         <Chat
             messages={messages}
-            teamMessages={hasTeamChat ? teamMessages : undefined}
+            teamMessages={hasTeamChat && myTeam !== undefined ? teamMessages : undefined}
             onSend={sendChat}
-            teamColor={hasTeamChat ? myTeam : undefined}
+            teamColor={hasTeamChat && myTeam !== undefined ? myTeam : undefined}
             currentUserId={session?.user?.id}
         />
     );

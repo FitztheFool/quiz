@@ -146,6 +146,7 @@ export default function skyjowGamePage() {
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [myCards, setMyCards] = useState<CardState[]>([]);
     const [phase, setPhase] = useState<Phase>('waiting');
+    const [modalDismissed, setModalDismissed] = useState(false);
     const [round, setRound] = useState(1);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
     const [discardTop, setDiscardTop] = useState<number | null>(null);
@@ -413,32 +414,6 @@ export default function skyjowGamePage() {
 
     if (status === 'loading') return <LoadingSpinner />;
 
-    // ── Écran fin de partie ────────────────────────────────────────────────────
-
-    if (phase === 'game_end' && gameEndData) {
-        const sortedScores = [...gameEndData.scores].sort((a, b) => a.totalScore - b.totalScore);
-        return (
-            <GameOverModal
-                title="Fin de partie !"
-                subtitle={`${gameEndData.winnerUsername} remporte la victoire !`}
-                onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
-                onLeave={() => router.push('/')}
-            >
-                <div className="space-y-2">
-                    {sortedScores.map((s, i) => (
-                        <div key={s.userId}
-                            className={`flex justify-between items-center px-4 py-3 rounded-lg ${i === 0 ? 'bg-yellow-500/20 border border-yellow-500/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                            <span className="text-gray-800 dark:text-gray-200 font-medium">
-                                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {s.username}
-                                {s.userId === userId && <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(moi)</span>}
-                            </span>
-                            <span className={`font-bold text-lg ${i === 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-300'}`}>{s.totalScore} pts</span>
-                        </div>
-                    ))}
-                </div>
-            </GameOverModal>
-        );
-    }
 
     // ── Écran fin de manche ────────────────────────────────────────────────────
 
@@ -753,6 +728,33 @@ export default function skyjowGamePage() {
                     </div>
                 </div>
             </main>
+
+            {phase === 'game_end' && gameEndData && !modalDismissed && (() => {
+                const sortedScores = [...gameEndData.scores].sort((a, b) => a.totalScore - b.totalScore);
+                return (
+                    <GameOverModal
+                        title="Fin de partie !"
+                        subtitle={`${gameEndData.winnerUsername} remporte la victoire !`}
+                        onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
+                        onLeave={() => router.push('/')}
+                        onClose={() => setModalDismissed(true)}
+                        asModal
+                    >
+                        <div className="space-y-2">
+                            {sortedScores.map((s, i) => (
+                                <div key={s.userId}
+                                    className={`flex justify-between items-center px-4 py-3 rounded-lg ${i === 0 ? 'bg-yellow-500/20 border border-yellow-500/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                                    <span className="text-gray-800 dark:text-gray-200 font-medium">
+                                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {s.username}
+                                        {s.userId === userId && <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(moi)</span>}
+                                    </span>
+                                    <span className={`font-bold text-lg ${i === 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-300'}`}>{s.totalScore} pts</span>
+                                </div>
+                            ))}
+                        </div>
+                    </GameOverModal>
+                );
+            })()}
         </div>
     );
 }

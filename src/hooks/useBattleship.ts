@@ -2,7 +2,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { getBattleshipSocket } from '@/lib/socket';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -72,8 +73,6 @@ export interface BattleshipState {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-const BATTLESHIP_SERVER_URL =
-    process.env.NEXT_PUBLIC_BATTLESHIP_SERVER_URL ?? 'http://localhost:10008';
 
 export function useBattleship({
     lobbyId,
@@ -114,10 +113,8 @@ export function useBattleship({
         if (joinedRef.current) return;
         joinedRef.current = true;
 
-        const socket = io(BATTLESHIP_SERVER_URL, {
-            transports: ['websocket'],
-            withCredentials: true,
-        });
+        const socket = getBattleshipSocket();
+        if (!socket) return;
         socketRef.current = socket;
 
         socket.on('connect', () => {

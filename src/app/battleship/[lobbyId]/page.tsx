@@ -81,6 +81,7 @@ export default function BattleshipPage() {
     });
 
     const [lastShot, setLastShot] = useState<string | null>(null);
+    const [modalDismissed, setModalDismissed] = useState(false);
 
     // Track last shot for highlight
     useEffect(() => {
@@ -226,7 +227,7 @@ export default function BattleshipPage() {
             </main>
 
             {/* Game over modal */}
-            {state.phase === 'finished' && (() => {
+            {state.phase === 'finished' && !modalDismissed && (() => {
                 const won = state.winnerUserId === myUserId;
                 const reasonLabel: Record<string, string> = {
                     all_sunk: won ? 'Vous avez coulé toute la flotte ennemie !' : 'Votre flotte a été détruite.',
@@ -240,6 +241,7 @@ export default function BattleshipPage() {
                         subtitle={reasonLabel[state.gameOverReason ?? ''] ?? ''}
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                         onLeave={() => router.push('/')}
+                        onClose={() => setModalDismissed(true)}
                         asModal
                     />
                 );

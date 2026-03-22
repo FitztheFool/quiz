@@ -116,7 +116,7 @@ export const GAME_OPTIONS = Object.entries(GAME_CONFIG).map(([key, g]) => ({
 }));
 
 export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
-    quiz: Array.from({ length: 19 }, (_, i) => i + 2),
+    quiz: Array.from({ length: 29 }, (_, i) => i + 2),
     uno: [2, 3, 4, 5, 6, 7, 8],
     taboo: [4, 5, 6, 7, 8, 10, 12],
     skyjow: [2, 3, 4, 5, 6, 7, 8],

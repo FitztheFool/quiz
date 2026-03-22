@@ -241,7 +241,7 @@ export default function LobbyCodePage() {
     const [copied, setCopied] = useState(false);
     const [canStart, setCanStart] = useState(false);
 
-    const [gameType, setGameTypeState] = useState<GameType>('quiz');
+    const [gameType, setGameTypeState] = useState<GameType>('uno');
     const [maxPlayers, setMaxPlayersState] = useState(8);
     const [isPublic, setIsPublicState] = useState(false);
     const [selectedQuizId, setSelectedQuizId] = useState<string | undefined>();
@@ -526,7 +526,7 @@ export default function LobbyCodePage() {
                                             title={!isHost && gameType !== g.value ? 'Seul l\'hôte peut changer de jeu' : incompatible ? `Requiert ${exact ? `exactement ${exact}` : `${gMin}–${gMax}`} joueurs` : g.label}
                                             className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
                                                 ${gameType === g.value
-                                                    ? `${GAME_COLOR[GAME_CONFIG[g.value].gameType]?.selected ?? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300'} shadow-sm`
+                                                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300 shadow-sm'
                                                     : disabled
                                                         ? 'border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 text-gray-300 dark:text-slate-700 cursor-not-allowed'
                                                         : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'}`}>

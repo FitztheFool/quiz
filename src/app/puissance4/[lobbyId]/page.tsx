@@ -111,6 +111,7 @@ export default function Puissance4Page() {
     const [hoverCol, setHoverCol] = useState<number | null>(null);
     const [playerLeft, setPlayerLeft] = useState(false);
     const [dropping, setDropping] = useState(false);
+    const [modalDismissed, setModalDismissed] = useState(false);
 
     // Trouver mon index de couleur
     const me = session?.user
@@ -347,7 +348,7 @@ export default function Puissance4Page() {
                 </main>
 
                 {/* ── Overlay fin de partie ── */}
-                {gameState?.status === 'finished' && (
+                {gameState?.status === 'finished' && !modalDismissed && (
                     <GameOverModal
                         emoji={gameState.winner === 'draw' ? '🤝' : winnerPlayer?.userId === me?.userId ? '🏆' : '😔'}
                         title={
@@ -364,6 +365,7 @@ export default function Puissance4Page() {
                         }
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                         onLeave={() => router.push('/')}
+                        onClose={() => setModalDismissed(true)}
                         asModal
                     />
                 )}

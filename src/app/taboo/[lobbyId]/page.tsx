@@ -10,6 +10,7 @@ import { getTabooSocket } from '@/lib/socket';
 import { TrapPhase } from '@/components/TrapPhase';
 import type { TrapSlotData } from '@/components/TrapPhase';
 import { useChat } from '@/context/ChatContext';
+import { plural } from '@/lib/utils';
 
 type Attempt = { word: string; userId: string; username: string };
 
@@ -80,9 +81,8 @@ function ScoreBar({ scores, myTeam, currentTeam }: {
     );
 }
 
-function AttemptsList({ attempts, currentTraps, refEl }: {
+function AttemptsList({ attempts, refEl }: {
     attempts: Attempt[];
-    currentTraps: string[];
     refEl?: React.RefObject<HTMLDivElement>;
 }) {
     if (attempts.length === 0) return (
@@ -91,15 +91,10 @@ function AttemptsList({ attempts, currentTraps, refEl }: {
     return (
         <div className="space-y-1 max-h-40 overflow-y-auto w-full">
             {attempts.map((a, i) => {
-                const trapped = currentTraps.includes(a.word);
                 return (
-                    <div key={i} className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-sm
-                        ${trapped
-                            ? 'bg-red-50 dark:bg-red-500/20 text-red-600 dark:text-red-300'
-                            : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60'}`}>
+                    <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60">
                         <span className="font-mono font-bold">{a.word}</span>
                         <span className="text-xs opacity-50">{a.username}</span>
-                        {trapped && <span>🚫</span>}
                     </div>
                 );
             })}
@@ -151,15 +146,22 @@ export default function TabooGamePage() {
 
     const [game, setGame] = useState<TabooState | null>(null);
     const [attemptInput, setAttemptInput] = useState('');
+    const [modalDismissed, setModalDismissed] = useState(false);
 
     const myId = session?.user?.id ?? '';
+    const isHost = !!game && game.hostId === myId;
 
-    const { setLobbyId } = useChat();
+    const { setLobbyId, overrideMyTeam } = useChat();
 
     useEffect(() => {
         setLobbyId(lobbyId);
         return () => setLobbyId(null);
     }, [lobbyId]);
+
+    useEffect(() => {
+        const t = game?.teams?.[myId];
+        overrideMyTeam(t === 0 || t === 1 ? t : undefined);
+    }, [game?.teams, myId]);
 
 
     useEffect(() => {
@@ -277,29 +279,6 @@ export default function TabooGamePage() {
 
     const FONTS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');`;
 
-    // ── Fin de partie ─────────────────────────────────────────────────────────
-    if (game.phase === 'finished') {
-        const scores = Object.entries(game.scores).sort((a, b) => b[1] - a[1]);
-        const winner = scores[0];
-        return (
-            <GameOverModal
-                title="Fin de partie !"
-                subtitle={`Victoire de l'équipe ${winner[0] === '0' ? '🔵 Bleue' : '🔴 Rouge'} !`}
-                onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
-                onLeave={() => router.push('/')}
-            >
-                <div className="flex gap-4 justify-center">
-                    {scores.map(([team, pts], i) => (
-                        <div key={team} className={`flex-1 text-center px-6 py-5 rounded-2xl border ${i === 0 ? 'bg-yellow-500/10 border-yellow-500/40' : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
-                            <div className="text-3xl mb-1">{team === '0' ? '🔵' : '🔴'}</div>
-                            <div className={`text-4xl font-black ${i === 0 ? 'text-yellow-400' : 'text-gray-500 dark:text-white/50'}`}>{pts}</div>
-                            <div className="text-xs text-gray-400 dark:text-white/30 mt-1">point{pts > 1 ? 's' : ''}</div>
-                        </div>
-                    ))}
-                </div>
-            </GameOverModal>
-        );
-    }
 
     // ── Phase trap ────────────────────────────────────────────────────────────
     if (game.phase === 'trap') {
@@ -386,14 +365,18 @@ export default function TabooGamePage() {
                         {game.attempts.length > 0 && (
                             <div className="rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 p-3 text-left">
                                 <p className="text-xs text-gray-400 dark:text-white/30 mb-2 uppercase tracking-widest">Tentatives du tour</p>
-                                <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} />
+                                <AttemptsList attempts={game.attempts} />
                             </div>
                         )}
 
-                        <button onClick={() => socketRef.current?.emit('taboo:nextTurn', { lobbyId })}
-                            className="mt-2 w-full px-8 py-4 rounded-2xl bg-green-600 hover:bg-green-500 font-bold text-lg text-white transition-all shadow-lg shadow-green-500/20">
-                            ➡ Tour suivant
-                        </button>
+                        {isHost ? (
+                            <button onClick={() => socketRef.current?.emit('taboo:nextTurn', { lobbyId })}
+                                className="mt-2 w-full px-8 py-4 rounded-2xl bg-green-600 hover:bg-green-500 font-bold text-lg text-white transition-all shadow-lg shadow-green-500/20">
+                                ➡ Tour suivant
+                            </button>
+                        ) : (
+                            <p className="mt-2 text-center text-sm text-gray-400 dark:text-white/40 italic">En attente de l'hôte…</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -407,6 +390,9 @@ export default function TabooGamePage() {
             : '?';
         const teamLabel = game.currentTeam === 0 ? '🔵 Équipe Bleue' : '🔴 Équipe Rouge';
         const teamColor = game.currentTeam === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400';
+        const playingTeamPlayers = game.players.filter(p => p.team === game.currentTeam);
+        const guessers = playingTeamPlayers.filter(p => p.userId !== currentOratorId);
+        const myTeamPlayers = game.players.filter(p => p.team === myTeam);
 
         return (
             <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden"
@@ -417,25 +403,32 @@ export default function TabooGamePage() {
                     rightSlot={<span>Round {game.round}/{game.totalRounds}</span>}
                 />
                 <div className="flex-1 overflow-auto flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 max-w-sm w-full space-y-3">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 max-w-sm w-full space-y-4">
                         <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest text-center">Prochain tour</p>
                         <p style={{ fontFamily: "'Bebas Neue'" }} className={`text-3xl tracking-widest text-center ${teamColor}`}>{teamLabel}</p>
-                        <p className="text-gray-500 dark:text-white/60 text-sm text-center">Orateur : <span className="text-gray-900 dark:text-white font-bold">🎤 {currentOratorName}</span></p>
 
-                        <div className="flex flex-wrap gap-1 justify-center">
-                            <p className="text-gray-500 dark:text-white/60 text-sm">Mon équipe :
-                                {game.players
-                                    .filter(p => p.team === myTeam)
-                                    .map((p, i) => (
-                                        <span key={p.userId} className="font-bold text-gray-900 dark:text-white">
-                                            {i > 0 ? ', ' : ' '}{p.username}
-                                        </span>
-                                    ))
-                                }
+                        <div className="space-y-1 text-sm text-center">
+                            <p className="text-gray-500 dark:text-white/60">
+                                Orateur : <span className="font-bold text-gray-900 dark:text-white">🎤 {currentOratorName}</span>
                             </p>
+                            {guessers.length > 0 && (
+                                <p className="text-gray-500 dark:text-white/60">
+                                    {plural(guessers.length, 'Devineur', 'Devineurs')} :{' '}
+                                    <span className="font-bold text-gray-900 dark:text-white">
+                                        {guessers.map(p => p.username).join(', ')}
+                                    </span>
+                                </p>
+                            )}
                         </div>
 
-                        <p className="text-gray-400 dark:text-white/30 text-xs text-center">Round {game.round}/{game.totalRounds}</p>
+                        {myTeam !== null && (
+                            <p className="text-gray-500 dark:text-white/60 text-sm text-center">
+                                Mon équipe :{' '}
+                                <span className="font-bold text-gray-900 dark:text-white">
+                                    {myTeamPlayers.map(p => p.username).join(', ')}
+                                </span>
+                            </p>
+                        )}
 
                         {isCurrentTeam && (
                             <div className="p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
@@ -476,16 +469,26 @@ export default function TabooGamePage() {
                                         .filter(p => p.team === game.currentTeam)
                                         .map(p => {
                                             const isSelected = currentOratorId === p.userId;
-                                            return (
+                                            const isMe = p.userId === myId;
+                                            return isMe ? (
                                                 <button
                                                     key={p.userId}
                                                     onClick={() => socketRef.current?.emit('taboo:changeOrator', { lobbyId, userId: p.userId })}
-                                                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all
+                                                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all shadow-sm
                                                         ${isSelected
                                                             ? 'bg-green-100 dark:bg-green-500/20 border-green-400 dark:border-green-500/50 text-green-700 dark:text-green-300'
-                                                            : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-gray-400 dark:hover:border-white/30 hover:text-gray-700 dark:hover:text-white/80'}`}>
+                                                            : 'bg-white dark:bg-white/10 border-blue-300 dark:border-blue-500/50 text-blue-600 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/20 hover:border-blue-400 dark:hover:border-blue-400'}`}>
                                                     {isSelected ? '🎤 ' : ''}{p.username}
                                                 </button>
+                                            ) : (
+                                                <span
+                                                    key={p.userId}
+                                                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold border
+                                                        ${isSelected
+                                                            ? 'bg-green-100 dark:bg-green-500/20 border-green-400 dark:border-green-500/50 text-green-700 dark:text-green-300'
+                                                            : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 dark:text-white/30'}`}>
+                                                    {isSelected ? '🎤 ' : ''}{p.username}
+                                                </span>
                                             );
                                         })}
                                 </div>
@@ -561,7 +564,7 @@ export default function TabooGamePage() {
                             <p className="text-xs text-gray-400 dark:text-white/30 mb-2 uppercase tracking-widest">
                                 Tentatives {game.attempts.length}/{game.maxAttempts}
                             </p>
-                            <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} refEl={attemptsEndRef} />
+                            <AttemptsList attempts={game.attempts} refEl={attemptsEndRef} />
                         </div>
                         <div className="flex gap-3 justify-center">
                             <button onClick={() => socketRef.current?.emit('taboo:pause', { lobbyId })}
@@ -574,11 +577,9 @@ export default function TabooGamePage() {
 
                 {isGuesser && (
                     <div className="w-full max-w-sm space-y-3">
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-                            <div className="rounded-3xl border-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/3 p-6 text-center">
-                                <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest mb-2">Mot à trouver</p>
-                                <p style={{ fontFamily: "'Bebas Neue'" }} className="text-5xl tracking-widest text-gray-400 dark:text-white/20">???</p>
-                            </div>
+                        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 p-6 text-center">
+                            <p className="text-xs text-gray-400 dark:text-white/50 uppercase tracking-widest mb-2">Mot à trouver</p>
+                            <p style={{ fontFamily: "'Bebas Neue'" }} className="text-5xl tracking-widest text-gray-400 dark:text-white/40">???</p>
                         </div>
                         {!game.paused && (
                             <div className="flex gap-2">
@@ -597,7 +598,7 @@ export default function TabooGamePage() {
                             <p className="text-xs text-gray-400 dark:text-white/30 mb-2 uppercase tracking-widest">
                                 Tentatives {game.attempts.length}/{game.maxAttempts}
                             </p>
-                            <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} refEl={attemptsEndRef} />
+                            <AttemptsList attempts={game.attempts} refEl={attemptsEndRef} />
                         </div>
                         <button onClick={() => socketRef.current?.emit('taboo:pause', { lobbyId })}
                             className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-white/20 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 font-semibold text-sm transition-colors text-gray-700 dark:text-white">
@@ -606,7 +607,7 @@ export default function TabooGamePage() {
                     </div>
                 )}
 
-                {isAdversary && (
+                {isAdversary && !isOrator && (
                     <div className="w-full max-w-sm space-y-3">
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
                             <div className="rounded-3xl border-2 border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/5 p-6 text-center">
@@ -634,7 +635,7 @@ export default function TabooGamePage() {
                             <p className="text-xs text-gray-400 dark:text-white/30 mb-2 uppercase tracking-widest">
                                 Tentatives {game.attempts.length}/{game.maxAttempts}
                             </p>
-                            <AttemptsList attempts={game.attempts} currentTraps={game.currentTraps} refEl={attemptsEndRef} />
+                            <AttemptsList attempts={game.attempts} refEl={attemptsEndRef} />
                         </div>
                         <div className="flex gap-3 justify-center">
                             <button onClick={() => socketRef.current?.emit('taboo:pause', { lobbyId })}
@@ -653,6 +654,32 @@ export default function TabooGamePage() {
                     <p className="text-gray-400 dark:text-white/30 text-sm">Vous observez la partie…</p>
                 )}
             </div>
+
+            {game.phase === 'finished' && !modalDismissed && (() => {
+                const scores = Object.entries(game.scores).sort((a, b) => b[1] - a[1]);
+                const isDraw = scores.length >= 2 && scores[0][1] === scores[1][1];
+                const winner = scores[0];
+                return (
+                    <GameOverModal
+                        title="Fin de partie !"
+                        subtitle={isDraw ? 'Égalité !' : `Victoire de l'équipe ${winner[0] === '0' ? '🔵 Bleue' : '🔴 Rouge'} !`}
+                        onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
+                        onLeave={() => router.push('/')}
+                        onClose={() => setModalDismissed(true)}
+                        asModal
+                    >
+                        <div className="flex gap-4 justify-center">
+                            {scores.map(([team, pts], i) => (
+                                <div key={team} className={`flex-1 text-center px-6 py-5 rounded-2xl border ${i === 0 ? 'bg-yellow-500/10 border-yellow-500/40' : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
+                                    <div className="text-3xl mb-1">{team === '0' ? '🔵' : '🔴'}</div>
+                                    <div className={`text-4xl font-black ${i === 0 ? 'text-yellow-400' : 'text-gray-500 dark:text-white/50'}`}>{pts}</div>
+                                    <div className="text-xs text-gray-400 dark:text-white/30 mt-1">point{pts > 1 ? 's' : ''}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </GameOverModal>
+                );
+            })()}
         </div>
     );
 }

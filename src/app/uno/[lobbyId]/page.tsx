@@ -129,6 +129,7 @@ export default function UnoPage() {
 
     const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
     const [gameState, setGameState] = useState<GameState | null>(null);
+    const [modalDismissed, setModalDismissed] = useState(false);
     const [selectedCard, setSelectedCard] = useState<Card | null>(null);
     const [showColorPicker, setShowColorPicker] = useState(false);
 
@@ -255,75 +256,6 @@ export default function UnoPage() {
 
     const is2v2 = gameState?.options?.teamMode === '2v2';
 
-    // ── Fin de partie ──────────────────────────────────────────────────────────
-    if (gameState?.status === 'FINISHED') {
-        const scores = gameState.finalScores ?? [];
-        const winnerTeam = gameState.teams && gameState.winner
-            ? gameState.teams[gameState.winner.userId]
-            : null;
-
-        const title = is2v2 && winnerTeam !== null && winnerTeam !== undefined
-            ? `${TEAM_NAMES[winnerTeam]} a gagné !`
-            : `${gameState.winner?.username ?? '?'} a gagné !`;
-        const subtitle = is2v2 && winnerTeam !== null && winnerTeam !== undefined
-            ? 'Mode 2v2 · Classement final'
-            : gameState.spectator ? 'Vous avez observé cette partie' : 'Classement final';
-
-        const ScoreRow = ({ s, inTeam = false }: { s: FinalScore; inTeam?: boolean }) => (
-            <div className={`flex items-center justify-between rounded-lg px-4 py-3
-                ${!inTeam && s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : inTeam ? '' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}
-                ${s.kicked ? 'opacity-60' : ''}`}>
-                <div className="flex items-center gap-3">
-                    <span className="text-xl w-7 text-center">{RANK_MEDAL[s.rank] ?? `#${s.rank}`}</span>
-                    <div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-gray-900 dark:text-white">{s.username}</span>
-                            {s.userId === me.userId && !gameState.spectator && <span className="text-gray-400 dark:text-gray-500 text-xs">(moi)</span>}
-                            {s.kicked && <span className="text-xs bg-red-500/30 text-red-500 dark:text-red-400 px-1.5 py-0.5 rounded">AFK</span>}
-                        </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {s.cardsLeft === 0 ? '0 carte restante' : `${s.cardsLeft} carte${s.cardsLeft > 1 ? 's' : ''} — ${s.pointsInHand} pts en main`}
-                        </span>
-                    </div>
-                </div>
-                <div className="text-right">
-                    <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'}`}>{s.score > 0 ? `+${s.score}` : '0'}</span>
-                    <div className="text-xs text-gray-400 dark:text-gray-500">pts</div>
-                </div>
-            </div>
-        );
-
-        return (
-            <GameOverModal
-                title={title}
-                subtitle={subtitle}
-                onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
-                onLeave={() => router.push('/')}
-            >
-                {is2v2 && winnerTeam !== null && winnerTeam !== undefined ? (
-                    <div className="space-y-3">
-                        {[0, 1].map(teamIdx => {
-                            const teamScores = scores.filter(s => s.team === teamIdx);
-                            const isWinner = winnerTeam === teamIdx;
-                            const tc = TEAM_COLORS[teamIdx];
-                            return (
-                                <div key={teamIdx} className={`rounded-xl border p-3 ${isWinner ? `${tc.bg} border-${teamIdx === 0 ? 'blue' : 'red'}-500/50` : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tc.badge}`}>{TEAM_NAMES[teamIdx]}</span>
-                                        {isWinner && <span className="text-yellow-500 dark:text-yellow-400 text-sm font-bold">🏆 Vainqueurs</span>}
-                                    </div>
-                                    <div className="space-y-2">{teamScores.map(s => <ScoreRow key={s.userId} s={s} inTeam />)}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <div className="space-y-2">{scores.map(s => <ScoreRow key={s.userId} s={s} />)}</div>
-                )}
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">0–9 = valeur faciale · Skip/Reverse/+2 = 20 pts · Wild/+4 = 50 pts</p>
-            </GameOverModal>
-        );
-    }
 
     // ── Attente ────────────────────────────────────────────────────────────────
     if (!gameState || gameState.status === 'WAITING') {
@@ -597,6 +529,74 @@ export default function UnoPage() {
                     </div>
                 </div>
             )}
+
+            {gameState?.status === 'FINISHED' && !modalDismissed && (() => {
+                const scores = gameState.finalScores ?? [];
+                const winnerTeam = gameState.teams && gameState.winner
+                    ? gameState.teams[gameState.winner.userId]
+                    : null;
+                const title = is2v2 && winnerTeam !== null && winnerTeam !== undefined
+                    ? `${TEAM_NAMES[winnerTeam]} a gagné !`
+                    : `${gameState.winner?.username ?? '?'} a gagné !`;
+                const subtitle = is2v2 && winnerTeam !== null && winnerTeam !== undefined
+                    ? 'Mode 2v2 · Classement final'
+                    : gameState.spectator ? 'Vous avez observé cette partie' : 'Classement final';
+                const ScoreRow = ({ s, inTeam = false }: { s: FinalScore; inTeam?: boolean }) => (
+                    <div className={`flex items-center justify-between rounded-lg px-4 py-3
+                        ${!inTeam && s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : inTeam ? '' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}
+                        ${s.kicked ? 'opacity-60' : ''}`}>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xl w-7 text-center">{RANK_MEDAL[s.rank] ?? `#${s.rank}`}</span>
+                            <div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="font-semibold text-gray-900 dark:text-white">{s.username}</span>
+                                    {s.userId === me.userId && !gameState.spectator && <span className="text-gray-400 dark:text-gray-500 text-xs">(moi)</span>}
+                                    {s.kicked && <span className="text-xs bg-red-500/30 text-red-500 dark:text-red-400 px-1.5 py-0.5 rounded">AFK</span>}
+                                </div>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {s.cardsLeft === 0 ? '0 carte restante' : `${s.cardsLeft} carte${s.cardsLeft > 1 ? 's' : ''} — ${s.pointsInHand} pts en main`}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'}`}>{s.score > 0 ? `+${s.score}` : '0'}</span>
+                            <div className="text-xs text-gray-400 dark:text-gray-500">pts</div>
+                        </div>
+                    </div>
+                );
+                return (
+                    <GameOverModal
+                        title={title}
+                        subtitle={subtitle}
+                        onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
+                        onLeave={() => router.push('/')}
+                        onClose={() => setModalDismissed(true)}
+                        asModal
+                    >
+                        {is2v2 && winnerTeam !== null && winnerTeam !== undefined ? (
+                            <div className="space-y-3">
+                                {[0, 1].map(teamIdx => {
+                                    const teamScores = scores.filter(s => s.team === teamIdx);
+                                    const isWinner = winnerTeam === teamIdx;
+                                    const tc = TEAM_COLORS[teamIdx];
+                                    return (
+                                        <div key={teamIdx} className={`rounded-xl border p-3 ${isWinner ? `${tc.bg} border-${teamIdx === 0 ? 'blue' : 'red'}-500/50` : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tc.badge}`}>{TEAM_NAMES[teamIdx]}</span>
+                                                {isWinner && <span className="text-yellow-500 dark:text-yellow-400 text-sm font-bold">🏆 Vainqueurs</span>}
+                                            </div>
+                                            <div className="space-y-2">{teamScores.map(s => <ScoreRow key={s.userId} s={s} inTeam />)}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">{scores.map(s => <ScoreRow key={s.userId} s={s} />)}</div>
+                        )}
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">0–9 = valeur faciale · Skip/Reverse/+2 = 20 pts · Wild/+4 = 50 pts</p>
+                    </GameOverModal>
+                );
+            })()}
         </div>
     );
 }

@@ -10,6 +10,8 @@ let yahtzeeSocket: Socket | null = null;
 let puissance4Socket: Socket | null = null;
 let justOneSocket: Socket | null = null;
 let impostorSocket: Socket | null = null;
+let diamantSocket: Socket | null = null;
+let battleshipSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -84,4 +86,18 @@ export function getImpostorSocket(): Socket | null {
     if (!impostorSocket) impostorSocket = createSocket(process.env.NEXT_PUBLIC_IMPOSTOR_SERVER_URL ?? "http://localhost:10010", "Impostor Socket");
     if (!impostorSocket.connected) impostorSocket.connect();
     return impostorSocket;
+}
+
+export function getDiamantSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!diamantSocket) diamantSocket = createSocket(process.env.NEXT_PUBLIC_DIAMANT_SERVER_URL ?? "http://localhost:10009", "Diamant Socket");
+    if (!diamantSocket.connected) diamantSocket.connect();
+    return diamantSocket;
+}
+
+export function getBattleshipSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!battleshipSocket) battleshipSocket = createSocket(process.env.NEXT_PUBLIC_BATTLESHIP_SERVER_URL ?? "http://localhost:10008", "Battleship Socket");
+    if (!battleshipSocket.connected) battleshipSocket.connect();
+    return battleshipSocket;
 }

@@ -19,15 +19,15 @@ const SHIPS_CONFIG = [
 
 // ── Ship image helpers ────────────────────────────────────────────────────────
 
-type ShipPart = 'proue' | 'middle' | 'poupe';
+type ShipPart = 'top' | 'middle' | 'bottom';
 
 function shipImageSrc(part: ShipPart, color: 'grey' | 'orange'): string {
     return `/battleship/${part}-${color}.png`;
 }
 
 function getShipPart(index: number, size: number): ShipPart {
-    if (index === 0) return 'proue';
-    if (index === size - 1) return 'poupe';
+    if (index === 0) return 'top';
+    if (index === size - 1) return 'bottom';
     return 'middle';
 }
 

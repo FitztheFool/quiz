@@ -209,6 +209,7 @@ export default function DiamantPage() {
 
     const myUserId = session.user.id;
     const me = state.players.find((p) => p.userId === myUserId);
+    const [modalDismissed, setModalDismissed] = useState(false);
     const amInCave = me?.inCave ?? false;
     const canDecide = state.decisionPhase && amInCave && state.myDecision === null;
 
@@ -429,13 +430,14 @@ export default function DiamantPage() {
             </main>
 
             {/* Game over */}
-            {state.phase === 'finished' && (
+            {state.phase === 'finished' && !modalDismissed && (
                 <GameOverModal
                     emoji={state.winnerId === myUserId ? '🏆' : '💀'}
                     title={state.winnerId === myUserId ? 'Victoire !' : 'Partie terminée'}
                     subtitle="Fin de l'expédition dans la grotte de Tacora"
                     onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                     onLeave={() => router.push('/')}
+                    onClose={() => setModalDismissed(true)}
                     asModal
                 />
             )}

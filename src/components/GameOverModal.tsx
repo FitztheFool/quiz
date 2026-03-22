@@ -10,6 +10,7 @@ interface GameOverModalProps {
     children?: React.ReactNode;
     onLobby: () => void;
     onLeave: () => void;
+    onClose?: () => void;
     /** true = fixed overlay on top of the board; false (default) = full page */
     asModal?: boolean;
 }
@@ -21,10 +22,20 @@ export default function GameOverModal({
     children,
     onLobby,
     onLeave,
+    onClose,
     asModal = false,
 }: GameOverModalProps) {
     const card = (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-2xl space-y-4">
+        <div className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-2xl space-y-4">
+            {onClose && (
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition-all text-lg"
+                    aria-label="Fermer"
+                >
+                    ✕
+                </button>
+            )}
             <div className="text-6xl">{emoji}</div>
             <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h2>
@@ -50,7 +61,10 @@ export default function GameOverModal({
 
     if (asModal) {
         return (
-            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+            <div
+                className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+                onClick={onClose ? (e) => { if (e.target === e.currentTarget) onClose(); } : undefined}
+            >
                 {card}
             </div>
         );

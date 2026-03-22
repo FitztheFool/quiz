@@ -2,7 +2,7 @@
 // context/ChatContext.tsx
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { getLobbySocket } from '@/lib/socket';
 
@@ -16,6 +16,7 @@ type ChatContextType = {
     myTeam: 0 | 1 | undefined;
     hasTeamChat: boolean;
     sendChat: (text: string, tab: 'lobby' | 'team') => void;
+    overrideMyTeam: (team: 0 | 1 | undefined) => void;
 };
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -67,6 +68,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         };
     }, [socket, session?.user?.id]);
 
+    const overrideMyTeam = (team: 0 | 1 | undefined) => {
+        setMyTeam(team);
+        if (team !== undefined) socket?.emit('chat:joinTeam', { team });
+    };
+
     const sendChat = (text: string, tab: 'lobby' | 'team') => {
         if (!lobbyId) return;
         socket?.emit('chat:send', {
@@ -77,7 +83,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <ChatContext.Provider value={{ lobbyId, setLobbyId, messages, teamMessages, myTeam, hasTeamChat, sendChat }}>
+        <ChatContext.Provider value={{ lobbyId, setLobbyId, messages, teamMessages, myTeam, hasTeamChat, sendChat, overrideMyTeam }}>
             {children}
         </ChatContext.Provider>
     );

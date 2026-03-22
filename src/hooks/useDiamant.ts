@@ -2,7 +2,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { getDiamantSocket } from '@/lib/socket';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -86,9 +87,6 @@ export interface DiamantState {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-const DIAMANT_SERVER_URL =
-    process.env.NEXT_PUBLIC_DIAMANT_SERVER_URL ?? 'http://localhost:10009';
-
 export function useDiamant({
     lobbyId,
     userId,
@@ -143,10 +141,8 @@ export function useDiamant({
         if (joinedRef.current) return;
         joinedRef.current = true;
 
-        const socket = io(DIAMANT_SERVER_URL, {
-            transports: ['websocket'],
-            withCredentials: true,
-        });
+        const socket = getDiamantSocket();
+        if (!socket) return;
         socketRef.current = socket;
 
         let joinAttempts = 0;
