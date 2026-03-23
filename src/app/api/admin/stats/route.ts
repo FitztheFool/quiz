@@ -133,7 +133,22 @@ export async function GET(req: NextRequest) {
         gameId: string;
         quiz: { id: string; title: string } | null;
     }>();
+
     for (const a of filteredAttemptsForPage) {
+        const key = a.gameId ?? `solo-${a.user.username}-${a.createdAt.getTime()}`;
+        const existing = filteredGameIndex.get(key);
+        if (existing) {
+            existing.createdAt = a.createdAt;
+            existing.gameType = a.gameType;
+            // Garder le quiz de allPlayersForPage s'il existe déjà
+            if (!existing.quiz && a.quiz) {
+                existing.quiz = { id: a.quiz.id, title: a.quiz.title };
+            }
+        }
+    }
+
+    // D'abord, indexer TOUS les joueurs pour avoir le quiz
+    for (const a of allPlayersForPage) {
         const key = a.gameId ?? `solo-${a.user.username}-${a.createdAt.getTime()}`;
         if (!filteredGameIndex.has(key)) {
             filteredGameIndex.set(key, {
@@ -144,6 +159,7 @@ export async function GET(req: NextRequest) {
             });
         }
     }
+
 
     const gameMap = new Map<string, {
         createdAt: Date;

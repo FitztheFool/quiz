@@ -161,7 +161,9 @@ function AnswerText({ result }: { result: QuestionResult }) {
                     <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Réponses attendues :</p>
                     <div className="space-y-1">
                         {result.correctAnswerText.split(', ').map((c, i) => {
-                            const isGood = result.userAnswerText.split(', ').some(u => u.trim().toLowerCase() === c.trim().toLowerCase());
+                            const isGood = result.strictOrder
+                                ? result.userAnswerText.split(', ')[i]?.trim().toLowerCase() === c.trim().toLowerCase()
+                                : result.userAnswerText.split(', ').some(u => u.trim().toLowerCase() === c.trim().toLowerCase());
                             return (
                                 <div key={i} className={`text-sm px-3 py-1.5 rounded-lg border font-medium ${isGood
                                     ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300'
@@ -272,7 +274,9 @@ function QuestionCard({ result, index, leaderboard, currentUserId }: {
                                     result.type === 'MULTI_TEXT' ? (
                                         <span className="text-xs flex-1 flex flex-wrap gap-1">
                                             {playerResult.userAnswerText.split(', ').map((ans, i) => {
-                                                const isGood = correctAnswers.includes(ans.trim().toLowerCase());
+                                                const isGood = result.strictOrder
+                                                    ? ans.trim().toLowerCase() === correctAnswers[i]
+                                                    : correctAnswers.includes(ans.trim().toLowerCase());
                                                 return (
                                                     <span key={i} className={`font-medium ${isGood ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                                                         {ans}{i < playerResult.userAnswerText.split(', ').length - 1 ? ',' : ''}

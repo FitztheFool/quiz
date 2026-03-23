@@ -257,7 +257,7 @@ export default function LobbyCodePage() {
     const [tabooTrapWordCount, setTabooTrapWordCount] = useState(5);
     const [tabooMaxAttempts, setTabooMaxAttempts] = useState(10);
     const [tabooTrapDuration, setTabooTrapDuration] = useState(60);
-    const [quizTimeMode, setQuizTimeMode] = useState<'per_question' | 'total' | 'none'>('per_question');
+    const [quizTimeMode, setQuizTimeMode] = useState<'quiz:per_question' | 'total' | 'none'>('quiz:per_question');
     const [quizTimePerQuestion, setQuizTimePerQuestion] = useState(15);
     const [skyjowEliminateRows, setSkyjowEliminateRows] = useState(false);
     const [teams, setTeams] = useState<Record<string, 0 | 1> | null>(null);
@@ -349,7 +349,7 @@ export default function LobbyCodePage() {
                 setTabooMaxAttempts(state.tabooOptions.maxAttempts ?? 10);
                 setTabooTrapDuration(state.tabooOptions.trapDuration ?? 60);
             }
-            if (state.timeMode) setQuizTimeMode(state.timeMode as 'per_question' | 'total' | 'none');
+            if (state.timeMode) setQuizTimeMode(state.timeMode as 'quiz:per_question' | 'total' | 'none');
             if (state.timePerQuestion) setQuizTimePerQuestion(state.timePerQuestion);
             if (state.skyjowOptions) setSkyjowEliminateRows(state.skyjowOptions.eliminateRows ?? false);
             if (state.battleshipOptions) {
@@ -414,7 +414,7 @@ export default function LobbyCodePage() {
                 setIsPublicState(m.isPublic ?? false);
                 if (m.unoOptions) { setUnoTeamMode(m.unoOptions.teamMode as 'none' | '2v2'); setUnoTeamWinMode(m.unoOptions.teamWinMode as 'one' | 'both'); setUnoStackable(m.unoOptions.stackable); setUnoJumpIn(m.unoOptions.jumpIn); }
                 if (m.tabooOptions) { setTabooTurnDuration(m.tabooOptions.turnDuration); setTabooTotalRounds(m.tabooOptions.totalRounds); setTabooTrapWordCount(m.tabooOptions.trapWordCount); setTabooMaxAttempts(m.tabooOptions.maxAttempts); setTabooTrapDuration(m.tabooOptions.trapDuration); }
-                if (m.quizOptions) { setQuizTimeMode(m.quizOptions.timeMode as 'per_question' | 'total' | 'none'); setQuizTimePerQuestion(m.quizOptions.timePerQuestion); }
+                if (m.quizOptions) { setQuizTimeMode(m.quizOptions.timeMode as 'quiz:per_question' | 'total' | 'none'); setQuizTimePerQuestion(m.quizOptions.timePerQuestion); }
                 if (m.skyjowOptions) setSkyjowEliminateRows(m.skyjowOptions.eliminateRows);
                 if (m.battleshipOptions) { setGridSize(m.battleshipOptions.gridSize); setTurnTime(m.battleshipOptions.turnTime); }
                 if (m.impostorOptions) { setImpostorRounds(m.impostorOptions.rounds ?? 1); setImpostorTime(m.impostorOptions.timePerRound ?? 60); }
@@ -617,7 +617,7 @@ export default function LobbyCodePage() {
                                     <select value={quizTimeMode}
                                         onChange={e => { setQuizTimeMode(e.target.value as typeof quizTimeMode); socket?.emit('lobby:setQuizOptions', { timeMode: e.target.value, timePerQuestion: quizTimePerQuestion }); }}
                                         className="font-sans w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-                                        <option value="per_question">Par question</option>
+                                        <option value="quiz:per_question">Par question</option>
                                         <option value="total">Temps total</option>
                                         <option value="none">Sans limite</option>
                                     </select>

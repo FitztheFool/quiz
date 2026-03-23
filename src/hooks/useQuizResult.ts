@@ -134,7 +134,7 @@ export function useQuizResult() {
         };
 
         const onServerTimeLeft = ({ timeLeft: t }: { timeLeft: number }) => {
-            if (timeModeRef.current === 'per_question') {
+            if (timeModeRef.current === 'quiz:per_question') {
                 setTimeLeft(prev => {
                     if (prev === null || Math.abs(t - prev) > 5) {
                         startCountdown(t);

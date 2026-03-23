@@ -88,7 +88,7 @@ export default function QuizPage() {
 
     const socket = useMemo(() => getQuizSocket(), []);
 
-    const [timeMode, setTimeMode] = useState<'per_question' | 'total' | 'none' | null>(null);
+    const [timeMode, setTimeMode] = useState<'quiz:per_question' | 'total' | 'none' | null>(null);
     const [timePerQuestion, setTimePerQuestion] = useState(0);
     const timePerQuestionRef = useRef(0);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -137,7 +137,7 @@ export default function QuizPage() {
     useEffect(() => {
         if (!socket) return;
         const handler = ({ timeMode: tm, timePerQuestion: tpq }: { timeMode: string; timePerQuestion: number }) => {
-            const mode = tm as 'per_question' | 'total' | 'none';
+            const mode = tm as 'quiz:per_question' | 'total' | 'none';
             setTimeMode(mode);
             setTimePerQuestion(tpq);
             timePerQuestionRef.current = tpq;
@@ -418,7 +418,7 @@ export default function QuizPage() {
 
     const canProceed =
         currentQuestion.type === 'TEXT' ? freeTextAnswer.trim().length > 0
-            : currentQuestion.type === 'MULTI_TEXT' ? multiTextAnswers.length === (currentQuestion.answers?.length ?? 0) && multiTextAnswers.every(t => t.trim().length > 0)
+            : currentQuestion.type === 'MULTI_TEXT' ? multiTextAnswers.length === (currentQuestion.answers?.length ?? 0) && multiTextAnswers.every(t => (t ?? '').trim().length > 0)
                 : currentQuestion.type === 'MCQ' ? selectedAnswers.length > 0
                     : selectedAnswer !== '';
 
@@ -580,24 +580,31 @@ export default function QuizPage() {
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 italic">
                                     {currentQuestion.strictOrder ? '💡 Remplissez chaque champ dans le bon ordre' : "💡 Remplissez chaque champ avec une bonne réponse (l'ordre n'a pas d'importance)"}
                                 </p>
-                                {!showFeedback && currentQuestion.answers?.map((_, i) => (
+
+                                {/* Inputs toujours visibles, désactivés après validation */}
+                                {currentQuestion.answers?.map((_, i) => (
                                     <input
                                         key={i}
                                         value={multiTextAnswers[i] || ''}
                                         onChange={e => { const u = [...multiTextAnswers]; u[i] = e.target.value; setMultiTextAnswers(u); }}
                                         placeholder={`Réponse ${i + 1}`}
-                                        className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-600 dark:focus:border-blue-500 focus:outline-none bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+                                        disabled={showFeedback}
+                                        className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-600 dark:focus:border-blue-500 focus:outline-none bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-60"
                                     />
                                 ))}
+
+                                {/* Réponses attendues affichées EN DESSOUS après validation */}
                                 {showFeedback && feedback && (
-                                    <div className="border-2 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">
+                                    <div className="border-2 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 mt-2">
                                         <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Réponses attendues :</p>
                                         <div className="space-y-1">
                                             {(feedback.correctAnswers ?? []).map((correctText, i) => {
-                                                const isGood = multiTextAnswers.some(u => u.trim().toLowerCase() === correctText.trim().toLowerCase());
+                                                const isGood = currentQuestion.strictOrder
+                                                    ? (multiTextAnswers[i] ?? '').trim().toLowerCase() === correctText.trim().toLowerCase()
+                                                    : multiTextAnswers.some(u => (u ?? '').trim().toLowerCase() === correctText.trim().toLowerCase());
                                                 return (
                                                     <div key={i} className={`text-sm px-3 py-1.5 rounded-lg border font-medium
-                                                        ${isGood
+                                ${isGood
                                                             ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300'
                                                             : 'bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'}`}>
                                                         {isGood ? '✓' : '•'} {correctText}
