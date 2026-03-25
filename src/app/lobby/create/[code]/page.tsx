@@ -450,7 +450,11 @@ export default function LobbyCodePage() {
 
     const handleGameTypeChange = (g: GameType) => {
         setGameTypeState(g);
+        setCanStart(false);
         socket?.emit('lobby:setGameType', { gameType: g });
+        const newMax = Math.max(...MAX_PLAYERS_BY_GAME[g]);
+        setMaxPlayersState(newMax);
+        socket?.emit('lobby:setMeta', { maxPlayers: newMax });
     };
 
     const handleUnoTeamMode = (mode: 'none' | '2v2') => {
@@ -524,19 +528,25 @@ export default function LobbyCodePage() {
 
                         {/* Sélecteur de jeu */}
                         <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5">
-                            <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Jeu</label>
+                            <div className="flex items-center gap-2 mb-3">
+                                <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Jeu</label>
+                                {(() => {
+                                    const minP = EXACT_PLAYERS[gameType] ?? (MIN_PLAYERS[gameType] ?? 2);
+                                    const missing = minP - players.length;
+                                    return missing > 0 ? (
+                                        <span className="text-xs text-orange-500 dark:text-orange-400">
+                                            (En attente de {missing} participant{missing > 1 ? 's' : ''})
+                                        </span>
+                                    ) : null;
+                                })()}
+                            </div>
                             <div className="grid grid-cols-5 gap-2">
                                 {GAME_OPTIONS.map(g => {
-                                    const exact = EXACT_PLAYERS[g.value];
-                                    const gMin = MIN_PLAYERS[g.value] ?? 2;
-                                    const gMaxList = MAX_PLAYERS_BY_GAME[g.value];
-                                    const gMax = gMaxList ? Math.max(...gMaxList) : Infinity;
-                                    const incompatible = exact ? players.length !== exact : players.length < gMin || players.length > gMax;
-                                    const disabled = gameType !== g.value && (!isHost || incompatible);
+                                    const disabled = gameType !== g.value && !isHost;
                                     return (
                                         <button key={g.value}
-                                            onClick={() => isHost && !incompatible && handleGameTypeChange(g.value)}
-                                            title={!isHost && gameType !== g.value ? 'Seul l\'hôte peut changer de jeu' : incompatible ? `Requiert ${exact ? `exactement ${exact}` : `${gMin}–${gMax}`} joueurs` : g.label}
+                                            onClick={() => isHost && handleGameTypeChange(g.value)}
+                                            title={!isHost && gameType !== g.value ? 'Seul l\'hôte peut changer de jeu' : g.label}
                                             className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
                                                 ${gameType === g.value
                                                     ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300 shadow-sm'
