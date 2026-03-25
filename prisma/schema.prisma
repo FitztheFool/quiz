@@ -88,7 +88,6 @@ model User {
   deactivatedAt  DateTime?
   bannedAt       DateTime?
   deletedAt  DateTime?
-  oauthPendings  OauthPending[]
 
   createdQuizzes Quiz[]
   attempts       Attempt[]
@@ -99,12 +98,11 @@ model User {
 }
 
 model OauthPending {
-  token      String   @id
-  userId     String
-  baseName   String
+  token       String   @id
+  userId      String
+  baseName    String
   suggestions String[]
-  expiresAt  DateTime
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
 
   @@map("oauth_pending")
 }
