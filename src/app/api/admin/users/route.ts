@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
                 createdAt: true,
                 lastSeen: true,
                 deactivatedAt: true,
+                bannedAt: true,
                 _count: { select: { createdQuizzes: true } },
                 attempts: { select: { gameType: true } },
             },
@@ -81,8 +82,23 @@ export async function PATCH(req: NextRequest) {
     const auth = await requireAdmin();
     if (auth.error) return auth.error;
 
-    const { userId, role } = await req.json();
+    const body = await req.json();
 
+    if (body.action === 'toggleBan') {
+        const { userId } = body;
+        if (!userId) return NextResponse.json({ error: 'userId manquant' }, { status: 400 });
+        const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true, bannedAt: true } });
+        if (!target) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
+        if (target.role === 'ADMIN') return NextResponse.json({ error: 'Impossible de bannir un admin' }, { status: 403 });
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { bannedAt: target.bannedAt ? null : new Date() },
+            select: { id: true, bannedAt: true },
+        });
+        return NextResponse.json(user);
+    }
+
+    const { userId, role } = body;
     if (!userId || !role) {
         return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
     }

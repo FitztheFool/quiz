@@ -21,6 +21,7 @@ interface AdminUser {
     createdAt: string;
     lastSeen: string | null;
     deactivatedAt: string | null;
+    bannedAt: string | null;
     image: string | null;
 }
 
@@ -290,6 +291,14 @@ export default function AdminPanel() {
         else alert((await res.json())?.error ?? 'Erreur');
     };
 
+    const handleToggleBan = async (userId: string, isBanned: boolean) => {
+        const action = isBanned ? 'réactiver' : 'désactiver';
+        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ce compte ?`)) return;
+        const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, action: 'toggleBan' }) });
+        if (res.ok) await fetchUsers(userPage);
+        else alert((await res.json())?.error ?? 'Erreur');
+    };
+
     const handleDeleteUser = async (userId: string, username: string) => {
         if (!confirm(`Supprimer l'utilisateur "${username}" ?`)) return;
         const res = await fetch('/api/admin/users', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
@@ -554,7 +563,22 @@ export default function AdminPanel() {
                                     <table className="w-full text-sm">
                                         <thead className="bg-white dark:bg-gray-900">
                                             <tr className="text-left">
-                                                {['', 'Utilisateur', 'Email', 'Inscrit le', 'Vu le', 'Statut', 'Rôle', 'Actions'].map(h => (
+                                                {['', 'Utilisateur', 'Email', 'Inscrit le', 'Vu le'].map(h => (
+                                                    <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
+                                                ))}
+                                                <th className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                                    <span className="inline-flex items-center gap-1">
+                                                        Statut
+                                                        <span className="relative group">
+                                                            <span className="cursor-help text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-[11px] font-bold leading-none">ⓘ</span>
+                                                            <div className="absolute left-1/2 -translate-x-1/2 top-5 z-50 hidden group-hover:block w-56 bg-gray-900 dark:bg-gray-700 text-white text-[11px] rounded-lg shadow-lg p-3 normal-case tracking-normal font-normal">
+                                                                <p className="mb-1"><span className="font-semibold text-green-400">Actif</span> / <span className="font-semibold text-red-400">Banni</span> — désactivation admin, bloque la connexion.</p>
+                                                                <p><span className="font-semibold text-orange-400">Désactivé</span> — auto-désactivation par l'utilisateur, réactivée à la reconnexion.</p>
+                                                            </div>
+                                                        </span>
+                                                    </span>
+                                                </th>
+                                                {['Rôle', 'Actions'].map(h => (
                                                     <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
                                                 ))}
                                             </tr>
@@ -578,9 +602,26 @@ export default function AdminPanel() {
                                                         {user.lastSeen ? new Date(user.lastSeen).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                                                     </td>
                                                     <td className="px-3 py-2">
-                                                        {user.deactivatedAt
-                                                            ? <span className="text-xs font-semibold text-red-600 dark:text-red-400">{new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}</span>
-                                                            : <span className="text-xs font-semibold text-green-600 dark:text-green-400">Actif</span>}
+                                                        <div className="flex flex-col gap-1">
+                                                            {user.role !== 'ADMIN' ? (
+                                                                <button
+                                                                    onClick={() => handleToggleBan(user.id, !!user.bannedAt)}
+                                                                    className={`text-[10px] font-semibold px-2 py-0.5 border rounded-lg transition-colors ${user.bannedAt
+                                                                        ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                                                        : 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                                                    }`}
+                                                                >
+                                                                    {user.bannedAt ? 'Banni' : 'Actif'}
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-xs font-semibold text-green-600 dark:text-green-400">Actif</span>
+                                                            )}
+                                                            {user.deactivatedAt && (
+                                                                <span className="text-[10px] text-orange-500 dark:text-orange-400 whitespace-nowrap">
+                                                                    Désactivé {new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-3 py-2">
                                                         {user.role === 'ADMIN' ? (

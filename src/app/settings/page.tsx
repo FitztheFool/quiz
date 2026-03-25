@@ -89,6 +89,7 @@ export default function SettingsPage() {
             } else {
                 setAvatarStatus({ type: 'success', msg: 'Avatar mis à jour !' });
                 setAvatarPreview(data.imageUrl);
+                await updateSession();
             }
         } catch {
             setAvatarStatus({ type: 'error', msg: 'Erreur réseau.' });
@@ -113,6 +114,7 @@ export default function SettingsPage() {
             } else {
                 setUsernameStatus({ type: 'success', msg: 'Username mis à jour !' });
                 setUsernameEdit(false);
+                await updateSession();
             }
         } catch {
             setUsernameStatus({ type: 'error', msg: 'Erreur réseau.' });
@@ -137,6 +139,7 @@ export default function SettingsPage() {
                 setEmailUpdated(true);
                 setEmailEdit(false);
                 setEmailStatus({ type: 'success', msg: 'Email mis à jour !' });
+                await updateSession();
             }
         } catch {
             setEmailStatus({ type: 'error', msg: 'Erreur réseau.' });

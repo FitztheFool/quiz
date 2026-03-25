@@ -28,9 +28,9 @@ export const authOptions: NextAuthOptions = {
             credentials: { token: { type: 'text' } },
             async authorize(credentials) {
                 if (!credentials?.token) return null;
-                const entry = getPending(credentials.token);
+                const entry = await getPending(credentials.token);
                 if (!entry) return null;
-                deletePending(credentials.token);
+                await deletePending(credentials.token);
                 const user = await prisma.user.findUnique({
                     where: { id: entry.userId },
                     select: { id: true, email: true, username: true, role: true, image: true },
@@ -69,6 +69,10 @@ export const authOptions: NextAuthOptions = {
                     throw new Error('Aucun utilisateur trouvé');
                 }
 
+                if (user.bannedAt) {
+                    throw new Error('deactivated');
+                }
+
                 const isPasswordValid = await compare(credentials.password, user.passwordHash);
                 if (!isPasswordValid) {
                     throw new Error('Mot de passe incorrect');
@@ -98,8 +102,9 @@ export const authOptions: NextAuthOptions = {
             if (account?.provider !== 'credentials') {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: user.id },
-                    select: { deactivatedAt: true, passwordHash: true },
+                    select: { deactivatedAt: true, passwordHash: true, bannedAt: true },
                 });
+                if (dbUser?.bannedAt) return '/login?error=AccountBanned';
                 // Bloquer si le compte résolu (via email) est un compte credentials
                 if (dbUser?.passwordHash) {
                     return '/login?error=OAuthAccountConflict';
@@ -126,7 +131,7 @@ export const authOptions: NextAuthOptions = {
                         if (suggestions.length < 3) {
                             suggestions.push(`user_${user.id.slice(-8)}`);
                         }
-                        const token = createPending(user.id, base, suggestions.slice(0, 3));
+                        const token = await createPending(user.id, base, suggestions.slice(0, 3));
                         return `/auth/choose-username?token=${token}`;
                     }
                 }
@@ -147,13 +152,18 @@ export const authOptions: NextAuthOptions = {
                 token.image = user.image ?? null;
                 token.email = user.email ?? null;
             }
-            // Always refresh role from DB so changes take effect without re-login
+            // Always refresh from DB so changes take effect without re-login
             if (token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
-                    select: { role: true },
+                    select: { role: true, username: true, image: true, email: true },
                 });
-                if (dbUser) token.role = dbUser.role;
+                if (dbUser) {
+                    token.role = dbUser.role;
+                    if (dbUser.username) token.username = dbUser.username;
+                    if (dbUser.image) token.image = dbUser.image;
+                    if (dbUser.email) token.email = dbUser.email;
+                }
             }
             return token;
         },

@@ -21,6 +21,7 @@ function LoginForm() {
     const [error, setError] = useState(() => {
         const e = searchParams.get('error');
         if (e === 'OAuthAccountConflict') return 'Un compte existe déjà avec cet email ou ce pseudo. Connectez-vous avec votre mot de passe.';
+        if (e === 'AccountBanned') return 'Votre compte a été banni.';
         return '';
     });
     const [loading, setLoading] = useState(false);
@@ -48,7 +49,8 @@ function LoginForm() {
             });
 
             if (result?.error) {
-                setError('Email ou mot de passe incorrect');
+                if (result.error === 'deactivated') setError('Votre compte a été banni.');
+                else setError('Email ou mot de passe incorrect');
             } else {
                 router.push(callbackUrl);  // ← supprimer result?.url
                 router.refresh();
