@@ -5,6 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import DiscordProvider from 'next-auth/providers/discord';
 import { compare } from 'bcryptjs';
 import prisma from './prisma';
+import { createPending, getPending, deletePending } from './oauthPendingStore';
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
@@ -20,6 +21,29 @@ export const authOptions: NextAuthOptions = {
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID!,
             clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+        }),
+        CredentialsProvider({
+            id: 'oauth-completion',
+            name: 'oauth-completion',
+            credentials: { token: { type: 'text' } },
+            async authorize(credentials) {
+                if (!credentials?.token) return null;
+                const entry = getPending(credentials.token);
+                if (!entry) return null;
+                deletePending(credentials.token);
+                const user = await prisma.user.findUnique({
+                    where: { id: entry.userId },
+                    select: { id: true, email: true, username: true, role: true, image: true },
+                });
+                if (!user) return null;
+                return {
+                    id: user.id,
+                    email: user.email ?? '',
+                    username: user.username ?? '',
+                    role: user.role,
+                    image: user.image ?? null,
+                };
+            },
         }),
         CredentialsProvider({
             name: 'credentials',
@@ -86,7 +110,22 @@ export const authOptions: NextAuthOptions = {
                         select: { id: true },
                     });
                     if (usernameConflict) {
-                        return '/login?error=OAuthAccountConflict';
+                        const base = user.name;
+                        const suggestions: string[] = [];
+                        const candidates = [
+                            `${base}_${Math.floor(Math.random() * 900 + 100)}`,
+                            `${base}${Math.floor(Math.random() * 900 + 100)}`,
+                            `${base}_${Math.floor(Math.random() * 900 + 100)}`,
+                        ];
+                        for (const c of candidates) {
+                            const taken = await prisma.user.findFirst({ where: { username: c }, select: { id: true } });
+                            if (!taken) suggestions.push(c);
+                        }
+                        if (suggestions.length < 3) {
+                            suggestions.push(`user_${user.id.slice(-8)}`);
+                        }
+                        const token = createPending(user.id, base, suggestions.slice(0, 3));
+                        return `/auth/choose-username?token=${token}`;
                     }
                 }
                 if (dbUser?.deactivatedAt) {
