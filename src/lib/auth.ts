@@ -73,9 +73,14 @@ export const authOptions: NextAuthOptions = {
         async signIn({ user, account }) {
             if (account?.provider === 'oauth-completion') return true;
             if (account?.provider !== 'credentials') {
-                const dbUser = await prisma.user.findUnique({
-                    where: { id: user.id },
-                    select: { deactivatedAt: true, passwordHash: true, bannedAt: true },
+                const dbUser = await prisma.user.findFirst({
+                    where: {
+                        OR: [
+                            { id: user.id },
+                            ...(user.email ? [{ email: user.email }] : []),
+                        ],
+                    },
+                    select: { id: true, deactivatedAt: true, passwordHash: true, bannedAt: true },
                 });
                 if (dbUser?.bannedAt) return '/login?error=AccountBanned';
                 if (dbUser?.passwordHash) return '/login?error=OAuthAccountConflict';
@@ -114,7 +119,7 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 if (dbUser?.deactivatedAt) {
-                    await prisma.user.update({ where: { id: user.id }, data: { deactivatedAt: null } });
+                    await prisma.user.update({ where: { id: dbUser.id }, data: { deactivatedAt: null } });
                 }
             }
             return true;
