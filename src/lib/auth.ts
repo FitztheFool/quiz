@@ -5,22 +5,40 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import DiscordProvider from 'next-auth/providers/discord';
 import { compare } from 'bcryptjs';
 import prisma from './prisma';
-import { createPending } from './oauthPendingStore';
+import { createPending, getPending, deletePending } from './oauthPendingStore';
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
-    session: {
-        strategy: 'jwt',
-    },
-    pages: {
-        signIn: '/login',
-        signOut: '/login',
-        error: '/login',
-    },
+    session: { strategy: 'jwt' },
+    pages: { signIn: '/login', signOut: '/login', error: '/login' },
     providers: [
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID!,
             clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+        }),
+        // Finalise la connexion OAuth après sélection du pseudo
+        CredentialsProvider({
+            id: 'oauth-completion',
+            name: 'oauth-completion',
+            credentials: { token: { type: 'text' } },
+            async authorize(credentials) {
+                if (!credentials?.token) return null;
+                const entry = await getPending(credentials.token);
+                if (!entry) return null;
+                await deletePending(credentials.token);
+                const user = await prisma.user.findUnique({
+                    where: { id: entry.userId },
+                    select: { id: true, email: true, username: true, role: true, image: true },
+                });
+                if (!user) return null;
+                return {
+                    id: user.id,
+                    email: user.email ?? '',
+                    username: user.username ?? '',
+                    role: user.role,
+                    image: user.image ?? null,
+                };
+            },
         }),
         CredentialsProvider({
             name: 'credentials',
@@ -32,7 +50,6 @@ export const authOptions: NextAuthOptions = {
                 if (!credentials?.identifier || !credentials?.password) {
                     throw new Error('Email/pseudo et mot de passe requis');
                 }
-
                 const user = await prisma.user.findFirst({
                     where: {
                         OR: [
@@ -41,39 +58,20 @@ export const authOptions: NextAuthOptions = {
                         ],
                     },
                 });
-
-                if (!user || !user.passwordHash) {
-                    throw new Error('Aucun utilisateur trouvé');
-                }
-
-                if (user.bannedAt) {
-                    throw new Error('deactivated');
-                }
-
+                if (!user || !user.passwordHash) throw new Error('Aucun utilisateur trouvé');
+                if (user.bannedAt) throw new Error('deactivated');
                 const isPasswordValid = await compare(credentials.password, user.passwordHash);
-                if (!isPasswordValid) {
-                    throw new Error('Mot de passe incorrect');
-                }
-
+                if (!isPasswordValid) throw new Error('Mot de passe incorrect');
                 if (user.deactivatedAt) {
-                    await prisma.user.update({
-                        where: { id: user.id },
-                        data: { deactivatedAt: null },
-                    });
+                    await prisma.user.update({ where: { id: user.id }, data: { deactivatedAt: null } });
                 }
-
-                return {
-                    id: user.id,
-                    email: user.email ?? '',
-                    username: user.username ?? '',
-                    role: user.role,
-                    image: user.image ?? null,
-                };
+                return { id: user.id, email: user.email ?? '', username: user.username ?? '', role: user.role, image: user.image ?? null };
             },
         }),
     ],
     callbacks: {
         async signIn({ user, account }) {
+            if (account?.provider === 'oauth-completion') return true;
             if (account?.provider !== 'credentials') {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: user.id },
@@ -81,6 +79,40 @@ export const authOptions: NextAuthOptions = {
                 });
                 if (dbUser?.bannedAt) return '/login?error=AccountBanned';
                 if (dbUser?.passwordHash) return '/login?error=OAuthAccountConflict';
+
+                // Conflit pseudo : nouvel utilisateur Discord dont le pseudo est déjà pris
+                if (!dbUser && user.name) {
+                    const conflict = await prisma.user.findFirst({
+                        where: { username: user.name, passwordHash: { not: null } },
+                        select: { id: true },
+                    });
+                    if (conflict) {
+                        const stem = user.name.replace(/[_]+$/, '');
+                        const suggestions: string[] = [];
+                        for (const c of [
+                            `${stem}_${Math.floor(Math.random() * 900 + 100)}`,
+                            `${stem}${Math.floor(Math.random() * 900 + 100)}`,
+                            `${stem}_${Math.floor(Math.random() * 900 + 100)}`,
+                        ]) {
+                            const taken = await prisma.user.findFirst({ where: { username: c }, select: { id: true } });
+                            if (!taken) suggestions.push(c);
+                        }
+                        if (suggestions.length < 3) suggestions.push(`user_${user.id.slice(-8)}`);
+                        const token = await createPending(user.id, user.name, suggestions.slice(0, 3), {
+                            email: user.email ?? null,
+                            name: user.name ?? null,
+                            image: user.image ?? null,
+                            provider: account!.provider,
+                            providerAccountId: account!.providerAccountId,
+                            type: account!.type,
+                            access_token: account!.access_token ?? null,
+                            token_type: account!.token_type ?? null,
+                            scope: account!.scope ?? null,
+                        });
+                        return `/auth/choose-username?token=${token}`;
+                    }
+                }
+
                 if (dbUser?.deactivatedAt) {
                     await prisma.user.update({ where: { id: user.id }, data: { deactivatedAt: null } });
                 }
@@ -91,23 +123,11 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
-                token.username = user.username || user.name || '';
+                token.username = (user as any).username || user.name || '';
                 token.image = user.image ?? null;
                 token.email = user.email ?? null;
             }
-            // On first sign-in, check if username selection is pending
-            if (trigger === 'signIn' && token.id) {
-                const pending = await prisma.oauthPending.findFirst({
-                    where: { userId: token.id as string, expiresAt: { gt: new Date() } },
-                    select: { token: true },
-                });
-                if (pending) token.needsUsernameToken = pending.token;
-            }
-            // Clear needsUsernameToken when session is explicitly updated
-            if (trigger === 'update') {
-                token.needsUsernameToken = undefined;
-            }
-            // Always refresh from DB so changes take effect without re-login
+            if (trigger === 'update') token.needsUsernameToken = undefined;
             if (token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
@@ -127,40 +147,23 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
                 session.user.username = token.username as string;
-                session.user.image = token.image as string ?? null;
-                session.user.email = token.email as string ?? null;
-                if (token.needsUsernameToken) {
-                    (session as any).needsUsernameToken = token.needsUsernameToken as string;
-                }
+                session.user.image = (token.image as string) ?? null;
+                session.user.email = (token.email as string) ?? null;
             }
             return session;
         },
     },
     events: {
         createUser: async ({ user }) => {
+            // Nouvel utilisateur OAuth sans conflit : assigne le pseudo Discord
             const base = user.name || `user_${user.id.slice(-8)}`;
             let username = base;
             const taken = await prisma.user.findFirst({ where: { username: base, NOT: { id: user.id } } });
-            if (taken) {
-                username = `user_${user.id.slice(-8)}`;
-                // Username conflict with a credentials account — create pending selection
-                const stem = base.replace(/[_]+$/, '');
-                const suggestions: string[] = [];
-                const candidates = [
-                    `${stem}_${Math.floor(Math.random() * 900 + 100)}`,
-                    `${stem}${Math.floor(Math.random() * 900 + 100)}`,
-                    `${stem}_${Math.floor(Math.random() * 900 + 100)}`,
-                ];
-                for (const c of candidates) {
-                    const conflict = await prisma.user.findFirst({ where: { username: c }, select: { id: true } });
-                    if (!conflict) suggestions.push(c);
-                }
-                if (suggestions.length < 3) suggestions.push(`user_${user.id.slice(-8)}`);
-                await createPending(user.id, base, suggestions.slice(0, 3));
-            }
+            if (taken) username = `user_${user.id.slice(-8)}`;
             await prisma.user.update({ where: { id: user.id }, data: { username } });
         },
         signIn: async ({ user, account }) => {
+            if (account?.provider === 'oauth-completion') return;
             await prisma.user.updateMany({
                 where: { id: user.id },
                 data: {

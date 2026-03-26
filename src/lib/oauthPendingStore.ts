@@ -1,7 +1,24 @@
 // src/lib/oauthPendingStore.ts
 import prisma from './prisma';
 
-export async function createPending(userId: string, baseName: string, suggestions: string[]): Promise<string> {
+export type OauthMetadata = {
+    email: string | null;
+    name: string | null;
+    image: string | null;
+    provider: string;
+    providerAccountId: string;
+    type: string;
+    access_token?: string | null;
+    token_type?: string | null;
+    scope?: string | null;
+};
+
+export async function createPending(
+    userId: string,
+    baseName: string,
+    suggestions: string[],
+    metadata?: OauthMetadata,
+): Promise<string> {
     const token = crypto.randomUUID();
     await prisma.oauthPending.create({
         data: {
@@ -10,6 +27,7 @@ export async function createPending(userId: string, baseName: string, suggestion
             baseName,
             suggestions,
             expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+            metadata: metadata ?? undefined,
         },
     });
     return token;
@@ -21,7 +39,12 @@ export async function getPending(token: string) {
         if (entry) await prisma.oauthPending.delete({ where: { token } });
         return null;
     }
-    return { userId: entry.userId, baseName: entry.baseName, suggestions: entry.suggestions };
+    return {
+        userId: entry.userId,
+        baseName: entry.baseName,
+        suggestions: entry.suggestions,
+        metadata: entry.metadata as OauthMetadata | null,
+    };
 }
 
 export async function deletePending(token: string) {

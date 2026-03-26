@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPending, deletePending } from '@/lib/oauthPendingStore';
+import { getPending } from '@/lib/oauthPendingStore';
 import prisma from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
@@ -17,13 +17,44 @@ export async function POST(req: NextRequest) {
         const taken = await prisma.user.findFirst({ where: { username, NOT: { id: entry.userId } }, select: { id: true } });
         if (taken) return NextResponse.json({ error: 'Ce pseudo est déjà pris' }, { status: 409 });
 
-        const userExists = await prisma.user.findUnique({ where: { id: entry.userId }, select: { id: true } });
-        if (!userExists) {
-            await deletePending(token);
-            return NextResponse.json({ error: 'session_expired' }, { status: 410 });
+        const meta = entry.metadata;
+
+        // Crée l'utilisateur s'il n'existe pas encore (signIn callback a redirigé avant création)
+        await prisma.user.upsert({
+            where: { id: entry.userId },
+            update: { username },
+            create: {
+                id: entry.userId,
+                email: meta?.email ?? `${entry.userId}@discord.placeholder`,
+                name: meta?.name ?? null,
+                image: meta?.image ?? null,
+                username,
+            },
+        });
+
+        // Crée le compte OAuth si non existant (nécessaire pour les futures connexions Discord)
+        if (meta?.provider && meta?.providerAccountId) {
+            await prisma.account.upsert({
+                where: {
+                    provider_providerAccountId: {
+                        provider: meta.provider,
+                        providerAccountId: meta.providerAccountId,
+                    },
+                },
+                update: {},
+                create: {
+                    userId: entry.userId,
+                    type: meta.type,
+                    provider: meta.provider,
+                    providerAccountId: meta.providerAccountId,
+                    access_token: meta.access_token ?? null,
+                    token_type: meta.token_type ?? null,
+                    scope: meta.scope ?? null,
+                },
+            });
         }
-        await prisma.user.update({ where: { id: entry.userId }, data: { username } });
-        await deletePending(token);
+
+        // Le pending reste pour que oauth-completion puisse signer l'utilisateur
         return NextResponse.json({ ok: true });
     } catch (err) {
         console.error('[pick-username] error:', err);

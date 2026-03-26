@@ -103,6 +103,7 @@ model OauthPending {
   baseName    String
   suggestions String[]
   expiresAt   DateTime
+  metadata    Json?
 
   @@map("oauth_pending")
 }

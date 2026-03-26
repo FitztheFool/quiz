@@ -1,13 +1,12 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 function ChooseUsernameForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { update: updateSession } = useSession();
     const token = searchParams.get('token') ?? '';
 
     const [baseName, setBaseName] = useState('');
@@ -55,7 +54,8 @@ function ChooseUsernameForm() {
                 return;
             }
 
-            await updateSession();
+            const result = await signIn('oauth-completion', { token, redirect: false });
+            if (result?.error) { setError('Erreur de connexion'); setLoading(false); return; }
             router.replace('/dashboard');
         } catch {
             setError('Une erreur est survenue');
