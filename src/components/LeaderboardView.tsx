@@ -9,6 +9,7 @@ import { GAME_CONFIG, GAME_COLOR, GameType as Game } from '@/lib/gameConfig';
 import Pagination from '@/components/Pagination';
 import GameFilterPills, { GameFilter } from '@/components/GameFilterPills';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 
 interface LeaderboardEntry {
@@ -187,12 +188,7 @@ export default function LeaderboardView({ game }: Props) {
                         <p className="text-gray-400 text-sm mt-1">Soyez le premier à jouer !</p>
                     </div>
                 ) : (
-                    <div className={`relative transition-opacity duration-150 ${refetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                        {refetching && (
-                            <div className="absolute inset-0 z-10 flex items-center justify-center">
-                                <LoadingSpinner fullScreen={false} />
-                            </div>
-                        )}
+                    <LoadingOverlay loading={refetching}>
 
                         <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
                             <table className="w-full table-fixed divide-y divide-gray-100">
@@ -257,7 +253,7 @@ export default function LeaderboardView({ game }: Props) {
                                 />
                             </>
                         )}
-                    </div>
+                    </LoadingOverlay>
                 )}
             </div>
         </div>
