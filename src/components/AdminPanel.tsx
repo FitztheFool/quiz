@@ -1,4 +1,13 @@
-// src/components/AdminPanel.tsx
+// src/components/AdminPanel.tsx  (diff — only the changed parts shown with comments)
+//
+// Changes vs original:
+//   • PLACEMENT_EMOJI removed (now re-exported from ActivityTable)
+//   • Inline stat chips replaced with <StatChip />
+//   • Inline activity <table> replaced with <ActivityTable variant="admin" />
+//   • Inline loading overlay replaced with <LoadingOverlay />
+//   • PlayerButton is now used inside ActivityTable — no direct usage here
+// ─────────────────────────────────────────────────────────────────────────────
+
 'use client';
 
 import { useSession } from 'next-auth/react';
@@ -6,12 +15,14 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
 import { GAME_EMOJI_MAP, GAME_LABEL_MAP, GAME_COLOR } from '@/lib/gameConfig';
-import PlayerModal from '@/components/PlayerModal'
+import PlayerModal from '@/components/PlayerModal';
 import GameFilterPills, { type GameFilter } from '@/components/GameFilterPills';
 import GameStatCards from '@/components/GameStatCards';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { plural } from '@/lib/utils';
-
+import StatChip from '@/components/StatChip';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import ActivityTable, { type ActivityRow } from '@/components/ActivityTable';
 
 interface AdminUser {
     id: string;
@@ -43,24 +54,6 @@ interface AdminCategory {
     _count: { quizzes: number };
 }
 
-type GameType = 'QUIZ' | 'UNO' | 'TABOO' | 'SKYJOW' | 'YAHTZEE' | 'PUISSANCE4' | 'JUST_ONE' | 'BATTLESHIP' | 'DIAMANT' | 'IMPOSTOR';
-
-interface RecentActivity {
-    createdAt: string;
-    gameType: GameType;
-    gameId: string;
-    quiz: { id: string; title: string } | null;
-    playerCount: number;
-    players: { username: string; score: number; placement: number | null }[];
-}
-
-interface ActivityMeta {
-    page: number;
-    pageSize: number;
-    totalGames: number;
-    totalPages: number;
-}
-
 interface AdminStats {
     totals: {
         gameStats: Record<string, { count: number; points: number; rounds: number }>;
@@ -78,8 +71,13 @@ interface AdminStats {
         maxPossibleScore: number;
         questionCount: number;
     }[];
-    recentActivity: RecentActivity[];
-    activityMeta: ActivityMeta;
+    recentActivity: ActivityRow[];
+    activityMeta: {
+        page: number;
+        pageSize: number;
+        totalGames: number;
+        totalPages: number;
+    };
 }
 
 type AdminTab = 'stats' | 'users' | 'quizzes' | 'categories';
@@ -95,19 +93,30 @@ const SECTION_ID: Record<AdminTab, string> = {
     categories: 'admin-categories',
 };
 
-const PLACEMENT_EMOJI: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
-
-
-function CollapseSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+function CollapseSection({
+    title,
+    defaultOpen = true,
+    children,
+}: {
+    title: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}) {
     const [open, setOpen] = useState(defaultOpen);
     return (
         <div>
             <button
-                onClick={() => setOpen(o => !o)}
+                onClick={() => setOpen((o) => !o)}
                 className="flex items-center justify-between w-full text-left mb-3 group"
             >
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{title}</h2>
-                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 transition-transform duration-200 text-[10px] group-hover:bg-gray-300 dark:group-hover:bg-gray-600 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    {title}
+                </h2>
+                <span
+                    className={`inline-flex items-center justify-center w-5 h-5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 transition-transform duration-200 text-[10px] group-hover:bg-gray-300 dark:group-hover:bg-gray-600 ${open ? 'rotate-0' : '-rotate-90'}`}
+                >
+                    ▾
+                </span>
             </button>
             {open && children}
         </div>
@@ -126,7 +135,7 @@ export default function AdminPanel() {
     };
 
     const [activeTab, setActiveTab] = useState<AdminTab>(() =>
-        typeof window !== 'undefined' ? hashToTab(window.location.hash) : 'stats'
+        typeof window !== 'undefined' ? hashToTab(window.location.hash) : 'stats',
     );
 
     const [users, setUsers] = useState<AdminUser[]>([]);
@@ -156,7 +165,10 @@ export default function AdminPanel() {
     const [loadingStats, setLoadingStats] = useState(false);
     const [loadingActivity, setLoadingActivity] = useState(false);
 
-    const [playerModal, setPlayerModal] = useState<{ gameId: string; players: { username: string; score: number; placement: number | null }[] } | null>(null);
+    const [playerModal, setPlayerModal] = useState<{
+        gameId: string;
+        players: { username: string; score: number; placement: number | null }[];
+    } | null>(null);
 
     const { data: session } = useSession();
 
@@ -169,75 +181,114 @@ export default function AdminPanel() {
         }, 0);
     }, []);
 
-    const buildStatsUrl = useCallback((period: number, page: number, q: string, gameType: GameFilter | 'ALL') => {
-        const params = new URLSearchParams({ period: String(period), page: String(page), pageSize: String(ACTIVITY_PAGE_SIZE) });
-        if (q.trim()) params.set('q', q.trim());
-        if (gameType !== 'ALL') params.set('gameType', gameType);
-        return `/api/admin/stats?${params.toString()}`;
-    }, []);
+    const buildStatsUrl = useCallback(
+        (period: number, page: number, q: string, gameType: GameFilter | 'ALL') => {
+            const params = new URLSearchParams({
+                period: String(period),
+                page: String(page),
+                pageSize: String(ACTIVITY_PAGE_SIZE),
+            });
+            if (q.trim()) params.set('q', q.trim());
+            if (gameType !== 'ALL') params.set('gameType', gameType);
+            return `/api/admin/stats?${params.toString()}`;
+        },
+        [],
+    );
 
-    const fetchStatsFull = useCallback(async (
-        period = activityPeriod, page = 1,
-        q = activityUserQueryRef.current,
-        gameType: GameFilter | 'ALL' = activityGameFilterRef.current,
-    ) => {
-        setLoadingStats(true);
-        try {
-            const res = await fetch(buildStatsUrl(period, page, q, gameType), { cache: 'no-store' });
-            if (res.ok) setStats(await res.json());
-        } catch (err) { console.error(err); }
-        finally { setLoadingStats(false); }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [buildStatsUrl]);
-
-    const refreshActivity = useCallback(async (
-        period: number, page: number, q: string,
-        gameType: GameFilter | 'ALL' = activityGameFilterRef.current,
-    ) => {
-        setLoadingActivity(true);
-        try {
-            const res = await fetch(buildStatsUrl(period, page, q, gameType), { cache: 'no-store' });
-            if (!res.ok) return;
-            const data: AdminStats = await res.json();
-            setStats(prev => prev ? { ...prev, recentActivity: data.recentActivity, activityMeta: data.activityMeta } : data);
-        } catch (err) { console.error(err); }
-        finally { setLoadingActivity(false); }
-    }, [buildStatsUrl]);
-
-    const fetchUsers = useCallback(async (page = 1) => {
-        const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE), sort: userSort });
-        if (userQuery.trim()) params.set('q', userQuery.trim());
-        const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json();
-        setUsers(data.users);
-        setUserTotalPages(data.totalPages);
-        setUserPage(page);
-    }, [userQuery, userSort]);
-
-    const fetchTab = useCallback(async (tab: AdminTab) => {
-        setLoading(true);
-        try {
-            if (tab === 'users') {
-                await fetchUsers(1);
-            } else if (tab === 'quizzes') {
-                const res = await fetch(`/api/admin/quiz?page=1&pageSize=${PAGE_SIZE}`, { cache: 'no-store' });
-                if (res.ok) { const data = await res.json(); setQuizzes(data.quizzes); setQuizTotalPages(data.totalPages); setQuizPage(1); }
-            } else if (tab === 'categories') {
-                const res = await fetch('/api/admin/categories', { cache: 'no-store' });
-                if (res.ok) setCategories(await res.json());
+    const fetchStatsFull = useCallback(
+        async (
+            period = activityPeriod,
+            page = 1,
+            q = activityUserQueryRef.current,
+            gameType: GameFilter | 'ALL' = activityGameFilterRef.current,
+        ) => {
+            setLoadingStats(true);
+            try {
+                const res = await fetch(buildStatsUrl(period, page, q, gameType), { cache: 'no-store' });
+                if (res.ok) setStats(await res.json());
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingStats(false);
             }
-        } catch (err) { console.error(err); }
-        finally { setLoading(false); }
-    }, [fetchUsers]);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [buildStatsUrl],
+    );
+
+    const refreshActivity = useCallback(
+        async (period: number, page: number, q: string, gameType: GameFilter | 'ALL' = activityGameFilterRef.current) => {
+            setLoadingActivity(true);
+            try {
+                const res = await fetch(buildStatsUrl(period, page, q, gameType), { cache: 'no-store' });
+                if (!res.ok) return;
+                const data: AdminStats = await res.json();
+                setStats((prev) =>
+                    prev
+                        ? { ...prev, recentActivity: data.recentActivity, activityMeta: data.activityMeta }
+                        : data,
+                );
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingActivity(false);
+            }
+        },
+        [buildStatsUrl],
+    );
+
+    const fetchUsers = useCallback(
+        async (page = 1) => {
+            const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE), sort: userSort });
+            if (userQuery.trim()) params.set('q', userQuery.trim());
+            const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: 'no-store' });
+            if (!res.ok) return;
+            const data = await res.json();
+            setUsers(data.users);
+            setUserTotalPages(data.totalPages);
+            setUserPage(page);
+        },
+        [userQuery, userSort],
+    );
+
+    const fetchTab = useCallback(
+        async (tab: AdminTab) => {
+            setLoading(true);
+            try {
+                if (tab === 'users') {
+                    await fetchUsers(1);
+                } else if (tab === 'quizzes') {
+                    const res = await fetch(`/api/admin/quiz?page=1&pageSize=${PAGE_SIZE}`, { cache: 'no-store' });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setQuizzes(data.quizzes);
+                        setQuizTotalPages(data.totalPages);
+                        setQuizPage(1);
+                    }
+                } else if (tab === 'categories') {
+                    const res = await fetch('/api/admin/categories', { cache: 'no-store' });
+                    if (res.ok) setCategories(await res.json());
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [fetchUsers],
+    );
 
     useEffect(() => {
         if (activeTab === 'stats') {
-            setActivityPage(1); setActivityUserQuery('');
-            activityUserQueryRef.current = ''; activityGameFilterRef.current = 'ALL';
+            setActivityPage(1);
+            setActivityUserQuery('');
+            activityUserQueryRef.current = '';
+            activityGameFilterRef.current = 'ALL';
             setGameFilter('ALL');
             fetchStatsFull(activityPeriod, 1, '', 'ALL');
-        } else { fetchTab(activeTab); }
+        } else {
+            fetchTab(activeTab);
+        }
         scrollToSection(activeTab);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);
@@ -252,7 +303,10 @@ export default function AdminPanel() {
     useEffect(() => {
         activityUserQueryRef.current = activityUserQuery;
         if (activeTab !== 'stats') return;
-        const timer = setTimeout(() => { setActivityPage(1); refreshActivity(activityPeriod, 1, activityUserQuery); }, 400);
+        const timer = setTimeout(() => {
+            setActivityPage(1);
+            refreshActivity(activityPeriod, 1, activityUserQuery);
+        }, 400);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activityUserQuery]);
@@ -277,16 +331,27 @@ export default function AdminPanel() {
         return () => window.removeEventListener('hashchange', onHashChange);
     }, []);
 
-    const handleActivityPageChange = (p: number) => { setActivityPage(p); refreshActivity(activityPeriod, p, activityUserQueryRef.current, activityGameFilterRef.current); };
+    const handleActivityPageChange = (p: number) => {
+        setActivityPage(p);
+        refreshActivity(activityPeriod, p, activityUserQueryRef.current, activityGameFilterRef.current);
+    };
     const handleUserPageChange = async (p: number) => { await fetchUsers(p); };
     const handleQuizPageChange = async (p: number) => {
         setQuizPage(p);
         const res = await fetch(`/api/admin/quiz?page=${p}&pageSize=${PAGE_SIZE}`, { cache: 'no-store' });
-        if (res.ok) { const data = await res.json(); setQuizzes(data.quizzes); setQuizTotalPages(data.totalPages); }
+        if (res.ok) {
+            const data = await res.json();
+            setQuizzes(data.quizzes);
+            setQuizTotalPages(data.totalPages);
+        }
     };
 
     const handleRoleChange = async (userId: string, role: string) => {
-        const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, role }) });
+        const res = await fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, role }),
+        });
         if (res.ok) await fetchUsers(userPage);
         else alert((await res.json())?.error ?? 'Erreur');
     };
@@ -294,43 +359,67 @@ export default function AdminPanel() {
     const handleToggleBan = async (userId: string, isBanned: boolean) => {
         const action = isBanned ? 'réactiver' : 'désactiver';
         if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ce compte ?`)) return;
-        const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, action: 'toggleBan' }) });
+        const res = await fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, action: 'toggleBan' }),
+        });
         if (res.ok) await fetchUsers(userPage);
         else alert((await res.json())?.error ?? 'Erreur');
     };
 
     const handleDeleteUser = async (userId: string, username: string) => {
         if (!confirm(`Supprimer l'utilisateur "${username}" ?`)) return;
-        const res = await fetch('/api/admin/users', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
+        const res = await fetch('/api/admin/users', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId }),
+        });
         if (res.ok) await fetchUsers(userPage);
         else alert((await res.json()).error);
     };
 
     const handleDeleteQuiz = async (quizId: string, title: string) => {
         if (!confirm(`Supprimer le quiz "${title}" ?`)) return;
-        const res = await fetch('/api/admin/quiz', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quizId }) });
+        const res = await fetch('/api/admin/quiz', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quizId }),
+        });
         if (res.ok) handleQuizPageChange(quizPage);
         else alert((await res.json())?.error ?? 'Erreur');
     };
 
     const handleCreateCategory = async () => {
         if (!newCategoryName.trim()) return;
-        const res = await fetch('/api/admin/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newCategoryName }) });
+        const res = await fetch('/api/admin/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newCategoryName }),
+        });
         if (res.ok) { setNewCategoryName(''); fetchTab('categories'); }
         else alert((await res.json()).error);
     };
 
     const handleRenameCategory = async () => {
         if (!editingCategory || !editingCategory.name.trim()) return;
-        const res = await fetch('/api/admin/categories', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ categoryId: editingCategory.id, name: editingCategory.name }) });
+        const res = await fetch('/api/admin/categories', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categoryId: editingCategory.id, name: editingCategory.name }),
+        });
         if (res.ok) { setEditingCategory(null); fetchTab('categories'); }
         else alert((await res.json())?.error ?? 'Erreur');
     };
 
     const handleDeleteCategory = async (categoryId: string, name: string) => {
         if (!confirm(`Supprimer la catégorie "${name}" ?`)) return;
-        const res = await fetch('/api/admin/categories', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ categoryId }) });
-        if (res.ok) setCategories(categories.filter(c => c.id !== categoryId));
+        const res = await fetch('/api/admin/categories', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categoryId }),
+        });
+        if (res.ok) setCategories(categories.filter((c) => c.id !== categoryId));
         else alert((await res.json()).error);
     };
 
@@ -343,7 +432,9 @@ export default function AdminPanel() {
 
     return (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 md:p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">🛡️ Administration</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                🛡️ Administration
+            </h2>
 
             <div className="flex flex-wrap gap-2 mb-6">
                 {tabs.map((t) => (
@@ -351,8 +442,8 @@ export default function AdminPanel() {
                         key={t.key}
                         onClick={() => { setActiveTab(t.key); scrollToSection(t.key); }}
                         className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ${activeTab === t.key
-                            ? 'bg-red-600 text-white border-red-600'
-                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                ? 'bg-red-600 text-white border-red-600'
+                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                     >
                         {t.emoji} {t.label}
@@ -369,42 +460,42 @@ export default function AdminPanel() {
                     <div id="admin-stats" className="scroll-mt-24 space-y-4">
                         {stats && (
                             <>
-                                {/* Chips overview */}
+                                {/* ── Chips d'aperçu ── */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    {[
-                                        { label: 'utilisateurs', value: stats.totals.users },
-                                        { label: 'quiz créés', value: stats.totals.quizzes },
-                                        { label: 'parties jouées', value: Object.values(stats.totals.gameStats).reduce((a, b) => a + b.count, 0) },
-                                        { label: 'points marqués', value: stats.totals.pointsScored },
-                                    ].map((stat) => (
-                                        <div key={stat.label} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
-                                            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value.toLocaleString()}</div>
-                                            <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{stat.label}</div>
-                                        </div>
-                                    ))}
+                                    <StatChip label="utilisateurs" value={stats.totals.users} />
+                                    <StatChip label="quiz créés" value={stats.totals.quizzes} />
+                                    <StatChip
+                                        label="parties jouées"
+                                        value={Object.values(stats.totals.gameStats).reduce((a, b) => a + b.count, 0)}
+                                    />
+                                    <StatChip label="points marqués" value={stats.totals.pointsScored} />
                                 </div>
 
-                                {/* Statistiques par jeu */}
-                                {Object.values(stats.totals.gameStats).some(v => v.count > 0) && (
+                                {/* ── Statistiques par jeu ── */}
+                                {Object.values(stats.totals.gameStats).some((v) => v.count > 0) && (
                                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
-                                        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Statistiques par jeu</h2>
+                                        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+                                            Statistiques par jeu
+                                        </h2>
                                         <GameStatCards gameStats={stats.totals.gameStats} />
                                     </div>
                                 )}
 
-                                {/* Top quizzes */}
+                                {/* ── Top quizzes ── */}
                                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
                                     <CollapseSection title="🏆 Quiz les plus joués" defaultOpen={false}>
                                         <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                                             <table className="w-full text-sm">
                                                 <thead className="bg-white dark:bg-gray-900">
                                                     <tr className="text-left">
-                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Quiz</th>
-                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Questions</th>
-                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Parties</th>
-                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Score moy.</th>
-                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Score max</th>
-                                                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center">Max possible</th>
+                                                        {['Quiz', 'Questions', 'Parties', 'Score moy.', 'Score max', 'Max possible'].map((h) => (
+                                                            <th
+                                                                key={h}
+                                                                className="px-4 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-center first:text-left"
+                                                            >
+                                                                {h}
+                                                            </th>
+                                                        ))}
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
@@ -428,7 +519,7 @@ export default function AdminPanel() {
                                     </CollapseSection>
                                 </div>
 
-                                {/* Activité récente */}
+                                {/* ── Activité récente ── */}
                                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
                                     <CollapseSection title="🕐 Activité récente">
                                         <div className="flex flex-wrap gap-2 items-center mb-3">
@@ -454,11 +545,18 @@ export default function AdminPanel() {
                                                     className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg text-gray-700 dark:text-gray-300 w-48 focus:outline-none focus:ring-2 focus:ring-red-400"
                                                 />
                                                 {activityUserQuery && (
-                                                    <button onClick={() => setActivityUserQuery('')} className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-base">×</button>
+                                                    <button
+                                                        onClick={() => setActivityUserQuery('')}
+                                                        className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-base"
+                                                    >
+                                                        ×
+                                                    </button>
                                                 )}
                                             </div>
 
-                                            {loadingActivity && <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent" />}
+                                            {loadingActivity && (
+                                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent" />
+                                            )}
 
                                             {stats.activityMeta && (
                                                 <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
@@ -476,51 +574,21 @@ export default function AdminPanel() {
                                             />
                                         </div>
 
-                                        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
-                                            <table className="w-full table-fixed text-sm">
-                                                <thead className="bg-white dark:bg-gray-900">
-                                                    <tr>
-                                                        <th style={{ width: '22%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Jeu</th>
-                                                        <th style={{ width: '38%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Quiz</th>
-                                                        <th style={{ width: '16%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Joueurs</th>
-                                                        <th style={{ width: '24%' }} className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Date</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                                                    {stats.recentActivity.length === 0 ? (
-                                                        <tr><td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">Aucune activité pour cette période.</td></tr>
-                                                    ) : (
-                                                        stats.recentActivity.map((activity) => (
-                                                            <tr key={activity.gameId} className="hover:bg-white dark:hover:bg-gray-900 transition-colors">
-                                                                <td className="px-3 py-2 whitespace-nowrap">
-                                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${GAME_COLOR[activity.gameType]?.badge ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
-                                                                        {GAME_EMOJI_MAP[activity.gameType]} {GAME_LABEL_MAP[activity.gameType] ?? activity.gameType}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-3 py-2 whitespace-nowrap max-w-[140px]">
-                                                                    {activity.quiz
-                                                                        ? <Link href={`/quiz/${activity.quiz.id}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block">{activity.quiz.title}</Link>
-                                                                        : <span className="text-gray-300 dark:text-gray-600">—</span>}
-                                                                </td>
-                                                                <td className="px-3 py-2">
-                                                                    <button onClick={() => setPlayerModal({ gameId: activity.gameId, players: activity.players })} className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                                                        👥 {activity.playerCount}
-                                                                    </button>
-                                                                </td>
-                                                                <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-400 dark:text-gray-500">
-                                                                    {new Date(activity.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                                                                    {' '}
-                                                                    {new Date(activity.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                        {/* ↓ Replaced inline <table> with shared component */}
+                                        <ActivityTable
+                                            rows={stats.recentActivity}
+                                            variant="admin"
+                                            onPlayerClick={(row) =>
+                                                setPlayerModal({ gameId: row.gameId, players: row.players })
+                                            }
+                                        />
 
                                         {stats.activityMeta && stats.activityMeta.totalPages > 1 && (
-                                            <Pagination currentPage={activityPage} totalPages={stats.activityMeta.totalPages} onPageChange={handleActivityPageChange} />
+                                            <Pagination
+                                                currentPage={activityPage}
+                                                totalPages={stats.activityMeta.totalPages}
+                                                onPageChange={handleActivityPageChange}
+                                            />
                                         )}
                                     </CollapseSection>
                                 </div>
@@ -536,7 +604,6 @@ export default function AdminPanel() {
                 <>
                     {activeTab === 'users' && (
                         <div id="admin-users" className="scroll-mt-24 space-y-4">
-                            {/* Filtres */}
                             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex flex-wrap gap-2 items-center">
                                 <input
                                     type="text"
@@ -557,13 +624,12 @@ export default function AdminPanel() {
                                 </select>
                             </div>
 
-                            {/* Table */}
                             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
                                 <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                                     <table className="w-full text-sm">
                                         <thead className="bg-white dark:bg-gray-900">
                                             <tr className="text-left">
-                                                {['', 'Utilisateur', 'Email', 'Inscrit le', 'Vu le'].map(h => (
+                                                {['', 'Utilisateur', 'Email', 'Inscrit le', 'Vu le'].map((h) => (
                                                     <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
                                                 ))}
                                                 <th className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
@@ -578,7 +644,7 @@ export default function AdminPanel() {
                                                         </span>
                                                     </span>
                                                 </th>
-                                                {['Rôle', 'Actions'].map(h => (
+                                                {['Rôle', 'Actions'].map((h) => (
                                                     <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
                                                 ))}
                                             </tr>
@@ -608,8 +674,7 @@ export default function AdminPanel() {
                                                                     onClick={() => handleToggleBan(user.id, !!user.bannedAt)}
                                                                     className={`text-[10px] font-semibold px-2 py-0.5 border rounded-lg transition-colors ${user.bannedAt
                                                                         ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                                                        : 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20'
-                                                                    }`}
+                                                                        : 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20'}`}
                                                                 >
                                                                     {user.bannedAt ? 'Banni' : 'Actif'}
                                                                 </button>
@@ -658,7 +723,7 @@ export default function AdminPanel() {
                                     <table className="w-full text-sm">
                                         <thead className="bg-white dark:bg-gray-900">
                                             <tr className="text-left">
-                                                {['Titre', 'Créateur', 'Catégorie', 'Questions', 'Parties', 'Visibilité', 'Actions'].map(h => (
+                                                {['Titre', 'Créateur', 'Catégorie', 'Questions', 'Parties', 'Visibilité', 'Actions'].map((h) => (
                                                     <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
                                                 ))}
                                             </tr>
@@ -698,7 +763,6 @@ export default function AdminPanel() {
 
                     {activeTab === 'categories' && (
                         <div id="admin-categories" className="scroll-mt-24 space-y-4">
-                            {/* Ajout */}
                             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex gap-2">
                                 <input
                                     type="text"
@@ -711,7 +775,6 @@ export default function AdminPanel() {
                                 <button onClick={handleCreateCategory} className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">+ Ajouter</button>
                             </div>
 
-                            {/* Liste */}
                             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-2">
                                 {categories.map((cat) => (
                                     <div key={cat.id} className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-2.5">

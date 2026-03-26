@@ -30,7 +30,10 @@ export default function GameStatCards({ gameStats }: Props) {
                         bg: 'bg-gray-50 dark:bg-gray-800/50',
                         label: 'text-gray-600 dark:text-gray-400',
                     };
-                    const pct = wins !== undefined && count > 0 ? Math.round((wins / count) * 100) : null;
+                    const NO_WINRATE = new Set(['QUIZ', 'YAHTZEE', 'DIAMANT', 'JUST_ONE']);
+                    const pct = wins !== undefined && count > 0 && !NO_WINRATE.has(type)
+                        ? Math.round((wins / count) * 100)
+                        : null;
                     const barColor = pct !== null
                         ? pct >= 60 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500'
                         : '';
@@ -45,7 +48,7 @@ export default function GameStatCards({ gameStats }: Props) {
                                         {GAME_LABEL_MAP[type] ?? type}
                                     </span>
                                 </div>
-                                {pct !== null && type !== 'JUST_ONE' && (
+                                {pct !== null && (
                                     <span className={`text-xs font-bold shrink-0 ${c.label}`}>{pct}%</span>
                                 )}
                             </div>
@@ -67,7 +70,7 @@ export default function GameStatCards({ gameStats }: Props) {
                             </div>
 
                             {/* Win % bar */}
-                            {pct !== null && type !== 'JUST_ONE' && (
+                            {pct !== null && (
                                 <div className="mt-2.5 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                     <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
                                 </div>

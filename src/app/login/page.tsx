@@ -22,6 +22,7 @@ function LoginForm() {
         const e = searchParams.get('error');
         if (e === 'OAuthAccountConflict') return 'Un compte existe déjà avec cet email ou ce pseudo. Connectez-vous avec votre mot de passe.';
         if (e === 'AccountBanned') return 'Votre compte a été banni.';
+        if (e === 'SessionExpired') return 'Session expirée, veuillez vous reconnecter avec Discord.';
         return '';
     });
     const [loading, setLoading] = useState(false);

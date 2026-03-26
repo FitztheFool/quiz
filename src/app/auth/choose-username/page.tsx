@@ -1,12 +1,13 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 function ChooseUsernameForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { update: updateSession } = useSession();
     const token = searchParams.get('token') ?? '';
 
     const [baseName, setBaseName] = useState('');
@@ -22,12 +23,12 @@ function ChooseUsernameForm() {
         fetch(`/api/auth/pending-username?token=${token}`)
             .then(r => r.json())
             .then(data => {
-                if (data.error) { router.replace('/login?error=OAuthAccountConflict'); return; }
+                if (data.error) { router.replace('/login'); return; }
                 setBaseName(data.baseName);
                 setSuggestions(data.suggestions);
                 setSelected(data.suggestions[0] ?? '');
             })
-            .catch(() => router.replace('/login?error=OAuthAccountConflict'))
+            .catch(() => router.replace('/login'))
             .finally(() => setFetching(false));
     }, [token, router]);
 
@@ -44,10 +45,17 @@ function ChooseUsernameForm() {
                 body: JSON.stringify({ token, username }),
             });
             const data = await res.json();
-            if (!res.ok) { setError(data.error ?? 'Erreur'); setLoading(false); return; }
+            if (!res.ok) {
+                if (data.error === 'session_expired') {
+                    router.replace('/login?error=SessionExpired');
+                    return;
+                }
+                setError(data.error ?? 'Erreur');
+                setLoading(false);
+                return;
+            }
 
-            const result = await signIn('oauth-completion', { token, redirect: false });
-            if (result?.error) { setError('Erreur de connexion'); setLoading(false); return; }
+            await updateSession();
             router.replace('/dashboard');
         } catch {
             setError('Une erreur est survenue');
@@ -105,7 +113,7 @@ function ChooseUsernameForm() {
                         </div>
 
                         <button type="submit" disabled={loading} className="btn-primary w-full">
-                            {loading ? 'Connexion...' : 'Confirmer et se connecter'}
+                            {loading ? 'Enregistrement...' : 'Confirmer'}
                         </button>
                     </form>
                 </div>

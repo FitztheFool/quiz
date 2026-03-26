@@ -5,13 +5,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getLobbySocket } from '@/lib/socket';
-import Chat from '@/components/Chat/Chat';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useChat } from '@/context/ChatContext';
 import {
-    GAME_CONFIG,
     GAME_OPTIONS,
-    GAME_COLOR,
     MAX_PLAYERS_BY_GAME,
     MIN_PLAYERS,
     EXACT_PLAYERS,
