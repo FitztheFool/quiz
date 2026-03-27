@@ -1,6 +1,7 @@
 // src/app/uno/[code]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
 
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
@@ -265,56 +266,12 @@ export default function UnoPage() {
 
 
     // ── Attente ────────────────────────────────────────────────────────────────
-    if (!gameState || gameState.status === 'WAITING') {
-        const joined = lobbyState?.players.length ?? 0;
-        const required = lobbyState?.options?.teamMode === '2v2' ? 4 : 2;
-        return (
-            <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
-                {/* Top bar */}
-                <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-                    <div className="w-48 shrink-0">
-                        <span className="font-bold">🃏 UNO</span>
-                    </div>
-                    <div className="flex-1 flex justify-center">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">En attente de joueurs…</span>
-                    </div>
-                    <div className="w-48 shrink-0 flex justify-end" />
-                </header>
-
-                {/* Content */}
-                <main className="flex-1 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 w-full max-w-md text-center">
-                        <div className="text-5xl mb-4 animate-pulse">🃏</div>
-                        <h1 className="text-xl font-bold mb-1">Démarrage de la partie…</h1>
-                        {lobbyState?.options?.teamMode === '2v2' && (
-                            <p className="text-blue-500 dark:text-blue-400 text-xs font-semibold mb-2">Mode 2v2 · {joined}/{required} joueurs</p>
-                        )}
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-                            {joined} joueur{joined > 1 ? 's' : ''} connecté{joined > 1 ? 's' : ''}…
-                        </p>
-                        <div className="space-y-2 text-left mb-6">
-                            {lobbyState?.players.map(p => (
-                                <div key={p.userId} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-                                    <span className="text-green-500 dark:text-green-400">✓</span>
-                                    <span>{p.username}</span>
-                                    {p.userId === lobbyState.hostId && <span className="text-yellow-500 dark:text-yellow-400 text-xs">👑</span>}
-                                    {p.userId === me.userId && <span className="text-gray-400 dark:text-gray-500 text-xs">(moi)</span>}
-                                </div>
-                            ))}
-                        </div>
-                        <button onClick={() => router.push(`/lobby/create/${lobbyId}`)}
-                            className="w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
-                            Retour au lobby
-                        </button>
-                        <button onClick={() => router.push('/')}
-                            className="mt-3 w-full py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            Quitter
-                        </button>
-                    </div>
-                </main>
-            </div>
-        );
-    }
+    if (!gameState || gameState.status === 'WAITING') return (
+        <GameWaitingScreen icon="🃏" gameName="UNO" lobbyId={lobbyId}
+            players={lobbyState?.players ?? []}
+            myUserId={me.userId}
+            hostId={lobbyState?.hostId} />
+    );
 
     // ── Jeu en cours ───────────────────────────────────────────────────────────
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];

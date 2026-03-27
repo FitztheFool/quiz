@@ -9,6 +9,7 @@ import { useBattleship } from '@/hooks/useBattleship';
 import PlacementPhase from '@/components/Battleship/PlacementPhase';
 import BattleshipBoard from '@/components/Battleship/BattleshipBoard';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
 
@@ -60,6 +61,12 @@ export default function BattleshipPage() {
 
     const myUserId = session.user.id;
     const isMyTurn = state.currentTurnUserId === myUserId;
+
+    if (state.phase === 'waiting') return (
+        <GameWaitingScreen icon="🚢" gameName="Bataille Navale" lobbyId={lobbyId}
+            players={state.players.filter((p): p is NonNullable<typeof p> => p !== null)}
+            myUserId={myUserId} />
+    );
 
     // Spectator view
     if (state.yourSeat === null && state.players.some(p => p !== null)) {
@@ -123,7 +130,7 @@ export default function BattleshipPage() {
                         </span>
                         <span className="text-gray-400 dark:text-gray-600">vs</span>
                         <span className={`${state.phase === 'playing' && !isMyTurn ? 'font-bold text-gray-900 dark:text-white' : 'font-normal text-gray-500 dark:text-gray-400'}`}>
-                            {opponent?.username ?? (state.phase === 'waiting' ? 'En attente…' : 'Adversaire')}
+                            {opponent?.username ?? 'Adversaire'}
                             {state.phase === 'playing' && !isMyTurn && ' ⚡'}
                         </span>
                     </div>
@@ -156,16 +163,6 @@ export default function BattleshipPage() {
             {/* Body */}
             <main className="flex-1 overflow-auto p-4">
                 <div className="flex flex-col items-center gap-4 h-full">
-
-                    {/* Waiting */}
-                    {state.phase === 'waiting' && (
-                        <div className="flex flex-1 items-center justify-center">
-                            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 flex flex-col items-center gap-3">
-                                <LoadingSpinner fullScreen={false} message="En attente du second joueur…" />
-                                <p className="text-gray-500 dark:text-gray-400 text-xs font-mono">{lobbyId}</p>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Placement */}
                     {state.phase === 'placement' && (

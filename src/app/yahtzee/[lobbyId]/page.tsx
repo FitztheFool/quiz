@@ -1,6 +1,7 @@
 // src/app/yahtzee/[lobbyId]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
 
 import TurnTimer from '@/components/TurnTimer';
@@ -196,6 +197,10 @@ export default function YahtzeePage() {
   if (isNotFound) notFound();
 
   const myId = me.id;
+
+  if (!game) return (
+    <GameWaitingScreen icon="🎲" gameName="Yahtzee" lobbyId={lobbyId} players={[]} myUserId={myId} />
+  );
   const isMyTurn = game?.currentUserId === myId;
   const myPlayer = game?.players.find(p => p.userId === myId);
   const currentPlayer = game ? game.players[game.currentIndex] : null;
@@ -239,7 +244,6 @@ export default function YahtzeePage() {
     );
   }
 
-  if (!game) return <LoadingSpinner />;
 
   const upperTotal = UPPER_CATS.reduce((a, c) => a + (myPlayer?.scoreCard[c as keyof ScoreCard] as number ?? 0), 0);
   const upperNeeded = Math.max(0, 63 - upperTotal);

@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDiamant, Card, PlayerInfo } from '@/hooks/useDiamant';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
 
@@ -183,6 +184,10 @@ export default function DiamantPage() {
     const amInCave = me?.inCave ?? false;
     const canDecide = state.decisionPhase && amInCave && state.myDecision === null;
 
+    if (state.phase === 'waiting') return (
+        <GameWaitingScreen icon="💎" gameName="Diamant" lobbyId={lobbyId} players={state.players} myUserId={myUserId} />
+    );
+
     return (
         <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
 
@@ -248,13 +253,6 @@ export default function DiamantPage() {
             {/* Body */}
             <main className="flex-1 overflow-auto p-4 flex flex-col items-center gap-4">
                 <div className="w-full max-w-3xl flex flex-col gap-5">
-
-                    {/* Waiting */}
-                    {state.phase === 'waiting' && (
-                        <div className="py-16">
-                            <LoadingSpinner fullScreen={false} message="En attente des explorateurs…" />
-                        </div>
-                    )}
 
                     {/* Playing */}
                     {state.phase === 'playing' && (

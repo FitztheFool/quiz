@@ -1,6 +1,7 @@
 // src/app/taboo/[lobbyId]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
 
 import { useEffect, useRef, useState } from 'react';
@@ -259,8 +260,11 @@ export default function TabooGamePage() {
     }, [game?.attempts]);
 
     if (isNotFound) notFound();
-    if (status === 'loading' || !game) return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner />;
     if (status !== 'authenticated') return null;
+    if (!game) return (
+        <GameWaitingScreen icon="🗣️" gameName="Taboo" lobbyId={lobbyId} players={[]} myUserId={myId} />
+    );
 
     const myTeam = game.teams?.[myId] ?? null;
     const currentOratorId = game.currentTeam !== null

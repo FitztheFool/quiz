@@ -539,19 +539,37 @@ export default function LobbyCodePage() {
                             </div>
                             <div className="grid grid-cols-5 gap-2">
                                 {GAME_OPTIONS.map(g => {
-                                    const disabled = gameType !== g.value && !isHost;
+                                    const maxForGame = Math.max(...MAX_PLAYERS_BY_GAME[g.value]);
+                                    const minForGame = MIN_PLAYERS[g.value] ?? 2;
+                                    const tooManyPlayers = isHost && gameType !== g.value && maxForGame < players.length;
+                                    const notEnoughPlayers = isHost && gameType !== g.value && !tooManyPlayers && players.length < minForGame;
+                                    const disabled = gameType !== g.value && (!isHost || tooManyPlayers);
+                                    const title = tooManyPlayers
+                                        ? `Trop de joueurs (max ${maxForGame})`
+                                        : notEnoughPlayers
+                                            ? `Il manque des joueurs (min ${minForGame})`
+                                            : !isHost && gameType !== g.value
+                                                ? 'Seul l\'hôte peut changer de jeu'
+                                                : g.label;
                                     return (
                                         <button key={g.value}
-                                            onClick={() => isHost && handleGameTypeChange(g.value)}
-                                            title={!isHost && gameType !== g.value ? 'Seul l\'hôte peut changer de jeu' : g.label}
-                                            className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
+                                            onClick={() => isHost && !tooManyPlayers && handleGameTypeChange(g.value)}
+                                            title={title}
+                                            className={`relative flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
                                                 ${gameType === g.value
                                                     ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300 shadow-sm'
                                                     : disabled
                                                         ? 'border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 text-gray-300 dark:text-slate-700 cursor-not-allowed'
-                                                        : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'}`}>
+                                                        : notEnoughPlayers
+                                                            ? 'border-amber-300 dark:border-amber-700/60 bg-amber-50/50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 hover:border-amber-400 dark:hover:border-amber-600 cursor-pointer'
+                                                            : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'}`}>
                                             <span className="text-2xl">{g.icon}</span>
                                             <span className="leading-tight text-center">{g.label}</span>
+                                            {notEnoughPlayers && (
+                                                <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-amber-400 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                                                    !
+                                                </span>
+                                            )}
                                         </button>
                                     );
                                 })}

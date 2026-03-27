@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getImpostorSocket } from '@/lib/socket';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
 import { useChat } from '@/context/ChatContext';
 
@@ -357,36 +358,11 @@ export default function ImpostorPage() {
 
     // ─── Attente ──────────────────────────────────────────────────────────────
 
-    if (roundState === 'WAITING') {
-        return (
-            <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
-                {header}
-                <main className="flex-1 overflow-auto p-6 flex flex-col items-center justify-center gap-6">
-                    <div className="text-6xl">🎭</div>
-                    <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">En attente du lancement…</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">L'hôte va bientôt démarrer la partie</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 w-full max-w-md">
-                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-                            Joueurs connectés ({players.length})
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                            {players.map(p => (
-                                <span key={p.id} className={`px-3 py-1.5 rounded-full text-sm font-medium
-                                    ${p.id === userId
-                                        ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
-                                    {p.name}{p.id === userId ? ' (vous)' : ''}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                    <LoadingSpinner />
-                </main>
-            </div>
-        );
-    }
+    if (roundState === 'WAITING') return (
+        <GameWaitingScreen icon="🎭" gameName="Imposteur" lobbyId={lobbyId}
+            players={players.map(p => ({ userId: p.id, username: p.name }))}
+            myUserId={userId} />
+    );
 
     // ─── Phase d'écriture (tour par tour) ────────────────────────────────────
 

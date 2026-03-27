@@ -16,6 +16,7 @@ import { getPuissance4Socket } from '@/lib/socket';
 import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,6 +150,10 @@ export default function Puissance4Page() {
 
     if (status === 'loading') return <LoadingSpinner />;
     if (isNotFound) notFound();
+
+    if (gameState?.status === 'waiting' && me) return (
+        <GameWaitingScreen icon="🔴" gameName="Puissance 4" lobbyId={lobbyId} players={players} myUserId={me.userId} />
+    );
 
     const winnerPlayer = gameState?.winner !== null && gameState?.winner !== 'draw'
         ? players.find(p => p.colorIndex === gameState?.winner)
@@ -298,14 +303,6 @@ export default function Puissance4Page() {
                             ))}
                         </div>
                     </div>
-
-                    {/* ── En attente d'un joueur ── */}
-                    {gameState?.status === 'waiting' && !playerLeft && (
-                        <div className="flex flex-col items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-8 py-6 shadow-sm">
-                            <LoadingSpinner fullScreen={false} message="En attente d'un adversaire…" />
-                            <p className="text-xs text-gray-400 dark:text-gray-600 font-mono">{lobbyId}</p>
-                        </div>
-                    )}
 
                     {/* ── Joueur parti ── */}
                     {playerLeft && (

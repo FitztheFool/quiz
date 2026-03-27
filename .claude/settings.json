@@ -11,7 +11,12 @@
       "Bash(grep \"^import.*TurnTimer\\\\|^import.*useState\" /home/faros/quiz/src/app/diamant/[lobbyId]/page.tsx)",
       "Bash(grep -n \"timerSeconds\\\\|timerMax\\\\|timerRef\\\\|startTimer\\\\|stopTimer\\\\|<Timer \" /home/faros/quiz/src/app/just-one/[lobbyId]/page.tsx)",
       "Bash(grep -n \"setTimer\\\\b\\\\|maxTimer\\\\|timerRef\\\\|startTimer\\\\|<Timer \" /home/faros/quiz/src/app/impostor/[lobbyId]/page.tsx)",
-      "Bash(grep -n \"inactivitySeconds\\\\|inactivityIntervalRef\\\\|TimerBadge\\\\|timeLeft\\\\|yahtzee:timer\" /home/faros/quiz/src/app/skyjow/[lobbyId]/page.tsx /home/faros/quiz/src/app/yahtzee/[lobbyId]/page.tsx)"
+      "Bash(grep -n \"inactivitySeconds\\\\|inactivityIntervalRef\\\\|TimerBadge\\\\|timeLeft\\\\|yahtzee:timer\" /home/faros/quiz/src/app/skyjow/[lobbyId]/page.tsx /home/faros/quiz/src/app/yahtzee/[lobbyId]/page.tsx)",
+      "Bash(head -20 /home/faros/quiz/src/components/Battleship/*.tsx)",
+      "Bash(ls /home/faros/quiz/src/app/quiz/[id]/)",
+      "Bash(grep -n \"^import\" /home/faros/quiz/src/app/quiz/[id]/page.tsx)",
+      "Bash(grep -n \"notFound\\\\|useSearchParams\\\\|useMemo\\\\|useCallback\\\\|useRef\\\\|Link\\\\b\" /home/faros/quiz/src/app/quiz/[id]/page.tsx)",
+      "Bash(grep -n \"notFound\\\\b\\\\|<Link\" /home/faros/quiz/src/app/quiz/[id]/page.tsx)"
     ],
     "additionalDirectories": [
       "/home/faros/dev-launcher/impostor-server/src",

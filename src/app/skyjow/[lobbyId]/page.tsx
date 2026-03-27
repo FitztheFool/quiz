@@ -1,6 +1,7 @@
 // src/app/skyjow/[lobbyId]/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import TurnTimer from '@/components/TurnTimer';
 import GameOverModal from '@/components/GameOverModal';
 
@@ -434,16 +435,9 @@ export default function skyjowGamePage() {
 
     // ── Écran d'attente ────────────────────────────────────────────────────────
 
-    if (phase === 'waiting' || players.length === 0) {
-        return (
-            <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-                <div className="text-center">
-                    <div className="text-5xl mb-4 animate-bounce">🃏</div>
-                    <LoadingSpinner message="Chargement de la partie…" />
-                </div>
-            </div>
-        );
-    }
+    if (phase === 'waiting' || players.length === 0) return (
+        <GameWaitingScreen icon="🂠" gameName="Skyjow" lobbyId={lobbyId} players={players} myUserId={userId} />
+    );
 
     // ── Interface principale ───────────────────────────────────────────────────
 

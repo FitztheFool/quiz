@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getJustOneSocket } from '@/lib/socket';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import GameWaitingScreen from '@/components/GameWaitingScreen';
 import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
 
@@ -197,6 +198,12 @@ export default function JustOnePage() {
     if (isNotFound) notFound();
     if (status !== 'authenticated') return null;
 
+    if (roundState === 'WAITING' && !guesserName) return (
+        <GameWaitingScreen icon="🔤" gameName="Just One" lobbyId={lobbyId}
+            players={players.map(p => ({ userId: p.id, username: p.name }))}
+            myUserId={me} />
+    );
+
     const renderPhase = () => {
 
         // END GAME
@@ -262,6 +269,7 @@ export default function JustOnePage() {
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                         <span className="font-semibold text-gray-900 dark:text-white">{guesserName}</span> choisit son mot…
                     </p>
+                    {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                     {card && (
                         <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 mt-2">
                             <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 uppercase tracking-wider">La carte</p>
