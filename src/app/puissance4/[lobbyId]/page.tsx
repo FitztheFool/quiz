@@ -113,7 +113,11 @@ export default function Puissance4Page() {
         if (!socket || !lobbyId || status !== 'authenticated' || !me) return;
 
         const onPlayers = (data: PlayerInfo[]) => setPlayers(data);
-        const onState = (state: GameState) => { setGameState(state); setDropping(false); };
+        const onState = (state: GameState) => {
+            setGameState(state);
+            setDropping(false);
+            if (state.status === 'playing') setModalDismissed(false);
+        };
         const onPlayerLeft = () => setPlayerLeft(true);
 
         socket.on('notFound', () => setIsNotFound(true));
@@ -197,13 +201,8 @@ export default function Puissance4Page() {
                         )}
                     </div>
 
-                    {/* Right: scores + abandon */}
+                    {/* Right: abandon */}
                     <div className="w-48 shrink-0 flex justify-end items-center gap-2 text-sm font-medium">
-                        {players.length === 2 && gameState ? (
-                            <span>
-                                {PLAYER_COLORS[0].emoji} {gameState.scores[0]} — {PLAYER_COLORS[1].emoji} {gameState.scores[1]}
-                            </span>
-                        ) : null}
                         {gameState?.status === 'playing' && (
                             <button
                                 onClick={() => { if (confirm('Abandonner la partie ?')) socket?.emit('p4:surrender'); }}

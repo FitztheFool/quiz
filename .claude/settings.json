@@ -18,7 +18,8 @@
       "/home/faros/dev-launcher/diamant-server/src",
       "/home/faros/dev-launcher/yahtzee-server/src",
       "/home/faros/dev-launcher/just-one-server/src",
-      "/home/faros/dev-launcher/taboo-server/src"
+      "/home/faros/dev-launcher/taboo-server/src",
+      "/home/faros/dev-launcher/puissance4-server/src"
     ]
   }
 }

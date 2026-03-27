@@ -55,9 +55,13 @@ export default function Sidebar({ isOpen, onClose, isAuthenticated, userRole, us
             <div className="px-3 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                 {!collapsed && (
                     <div className="min-w-0">
-                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                            {isAuthenticated ? 'Dashboard' : 'Menu'}
-                        </h1>
+                        {isAuthenticated ? (
+                            <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                Dashboard
+                            </Link>
+                        ) : (
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Menu</h1>
+                        )}
                         {isAuthenticated && (
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{userName ?? userEmail}</p>
                         )}

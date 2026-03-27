@@ -61,7 +61,8 @@ function getBar(type: string, stat: GameStat): { pct: number; label: string; win
 
     const pct = Math.round((wins / count) * 100);
     const color = pct >= 60 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500';
-    return { pct, label: `${pct}% vict.`, wins, color };
+    const NO_WINS_COUNTER = new Set(['PUISSANCE4', 'BATTLESHIP']);
+    return { pct, label: `${pct}% vict.`, wins: NO_WINS_COUNTER.has(type) ? null : wins, color };
 }
 
 export default function GameStatCards({ gameStats }: Props) {
