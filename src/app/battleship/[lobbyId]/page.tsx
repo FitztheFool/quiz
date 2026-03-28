@@ -1,17 +1,16 @@
 // src/app/Battleship/[lobbyId]/page.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { useBattleship } from '@/hooks/useBattleship';
+import { useGamePage } from '@/hooks/useGamePage';
 import PlacementPhase from '@/components/Battleship/PlacementPhase';
 import BattleshipBoard from '@/components/Battleship/BattleshipBoard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
-import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
+import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 
 // ── Turn timer bar ────────────────────────────────────────────────────────────
 
@@ -21,17 +20,7 @@ const TurnTimerBar = ({ endsAt, duration }: { endsAt: number; duration: number }
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function BattleshipPage() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
-
-    const { setLobbyId } = useChat();
-
-    useEffect(() => {
-        setLobbyId(lobbyId);
-        return () => setLobbyId(null);
-    }, [lobbyId, setLobbyId]);
+    const { session, status, router, me: meInfo, lobbyId, modalDismissed, setModalDismissed } = useGamePage();
 
     // Read options from sessionStorage (set by lobby before redirect)
     const options = useMemo(() => {
@@ -46,20 +35,19 @@ export default function BattleshipPage() {
 
     const { state, placeShips, shoot, surrender, clearError, gameNotFound } = useBattleship({
         lobbyId,
-        userId: session?.user?.id ?? '',
-        username: session?.user?.username ?? session?.user?.email ?? 'Joueur',
+        userId: meInfo.userId,
+        username: meInfo.username,
         avatar: session?.user?.image ?? null,
         options,
     });
 
     const [lastShot, setLastShot] = useState<string | null>(null);
-    const [modalDismissed, setModalDismissed] = useState(false);
 
     if (status === 'loading') return <LoadingSpinner />;
     if (gameNotFound) notFound();
     if (status !== 'authenticated') { router.push('/login'); return null; }
 
-    const myUserId = session.user.id;
+    const myUserId = meInfo.userId;
     const isMyTurn = state.currentTurnUserId === myUserId;
 
     if (state.phase === 'waiting') return (
@@ -237,6 +225,9 @@ export default function BattleshipPage() {
                     surrender: won ? "L'adversaire a abandonné." : 'Vous avez abandonné.',
                     disconnect: won ? "L'adversaire s'est déconnecté." : 'Vous avez été déconnecté.',
                 };
+                const orderedPlayers = [...state.players].sort((a, b) =>
+                    (b?.userId === state.winnerUserId ? 1 : 0) - (a?.userId === state.winnerUserId ? 1 : 0)
+                );
                 return (
                     <GameOverModal
                         emoji={won ? '🏆' : '💀'}
@@ -246,7 +237,22 @@ export default function BattleshipPage() {
                         onLeave={() => router.push('/')}
                         onClose={() => setModalDismissed(true)}
                         asModal
-                    />
+                    >
+                        <GameScoreLeaderboard
+                            myUserId={myUserId}
+                            entries={orderedPlayers.filter(Boolean).map((p) => {
+                                const isWinner = p!.userId === state.winnerUserId;
+                                const isLoserByForfeit = !isWinner && (state.gameOverReason === 'surrender' || state.gameOverReason === 'disconnect');
+                                return {
+                                    userId: p!.userId,
+                                    username: p!.username,
+                                    score: isWinner ? 'Victoire' : 'Défaite',
+                                    badges: isLoserByForfeit ? [state.gameOverReason === 'surrender' ? 'Abandon' : 'Déconnexion'] : undefined,
+                                    disqualified: isLoserByForfeit,
+                                };
+                            })}
+                        />
+                    </GameOverModal>
                 );
             })()}
         </div>

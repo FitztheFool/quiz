@@ -3,13 +3,11 @@
 
 import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { getImpostorSocket } from '@/lib/socket';
+import { useGamePage } from '@/hooks/useGamePage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
-import { useChat } from '@/context/ChatContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,11 +36,7 @@ import TurnTimer from '@/components/TurnTimer';
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ImpostorPage() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
-    const { setLobbyId } = useChat();
+    const { session, status, me, router, lobbyId, isNotFound, setIsNotFound } = useGamePage();
 
     const [players, setPlayers] = useState<Player[]>([]);
     const [role, setRole] = useState<Role | null>(null);
@@ -83,19 +77,14 @@ export default function ImpostorPage() {
 
     const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
     const [timerDuration, setTimerDuration] = useState(60);
-    const [isNotFound, setIsNotFound] = useState(false);
 
-    const userId = session?.user?.id ?? '';
+    const userId = me.userId;
     const socket = getImpostorSocket();
 
     function startTimer(seconds: number) {
         setTimerDuration(seconds);
         setTimerEndsAt(Date.now() + seconds * 1000);
     }
-
-    useEffect(() => {
-        if (lobbyId) setLobbyId(lobbyId);
-    }, [lobbyId, setLobbyId]);
 
     useEffect(() => {
         if (status === 'unauthenticated') router.push('/');

@@ -3,13 +3,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { getJustOneSocket } from '@/lib/socket';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
-import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
+import { useGamePage } from '@/hooks/useGamePage';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,15 +58,10 @@ function ScoreBadge({ score }: { score: number }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function JustOnePage() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
+    const { session, status, router, me: meInfo, lobbyId, isNotFound, setIsNotFound } = useGamePage();
 
     const socket = useMemo(() => getJustOneSocket(), []);
     const joinedRef = useRef(false);
-
-    const [isNotFound, setIsNotFound] = useState(false);
     const [players, setPlayers] = useState<Player[]>([]);
     const [guesserId, setGuesserId] = useState<string | null>(null);
     const [guesserName, setGuesserName] = useState('');
@@ -94,15 +87,8 @@ export default function JustOnePage() {
 
     const [currentWordIndex, setCurrentWordIndex] = useState<number | null>(null);
 
-    const { setLobbyId } = useChat();
-
-    useEffect(() => {
-        setLobbyId(lobbyId);
-        return () => setLobbyId(null);
-    }, [lobbyId]);
-
-    const me = session?.user?.id ?? '';
-    const myName = session?.user?.username ?? session?.user?.email ?? 'Moi';
+    const me = meInfo.userId;
+    const myName = meInfo.username;
     const isGuesser = guesserId === me;
 
     function startTimer(seconds: number) {
@@ -174,7 +160,7 @@ export default function JustOnePage() {
             stopTimer();
         });
 
-        socket.on('just_one:gameEnd', (payload: { score: number; level: string }) => {
+        socket.on('just_one:finished', (payload: { score: number; level: string }) => {
             setRoundState('END_GAME');
             setFinalScore(payload);
             stopTimer();
@@ -189,7 +175,7 @@ export default function JustOnePage() {
             socket.off('just_one:cluesValidated');
             socket.off('just_one:guessStart');
             socket.off('just_one:roundResult');
-            socket.off('just_one:gameEnd');
+            socket.off('just_one:finished');
             joinedRef.current = false;
         };
     }, [socket, lobbyId, status, me]);

@@ -696,17 +696,15 @@ async function main() {
         let scoreA = 0, scoreB = 0, trapA = 0, trapB = 0;
 
         for (let r = 0; r < totalRounds; r++) {
-            // Chaque manche : l'équipe A donne des indices (3-12 mots, avec 0-2 piégés)
-            const wordsA = Math.floor(Math.random() * 10) + 3;
-            const trapsA = Math.random() < 0.4 ? Math.floor(Math.random() * 3) : 0;
-            scoreA += Math.max(0, wordsA - trapsA);
-            trapA += trapsA;
+            // Manche A : 0 ou 1 point — soit équipe A devine (scoreA+1), soit équipe B piège (trapB+1), soit rien
+            const randA = Math.random();
+            if (randA < 0.55) { scoreA += 1; }        // mot deviné par A
+            else if (randA < 0.75) { scoreB += 1; trapB += 1; } // mot piégé par B
 
-            // Équipe B
-            const wordsB = Math.floor(Math.random() * 10) + 3;
-            const trapsB = Math.random() < 0.4 ? Math.floor(Math.random() * 3) : 0;
-            scoreB += Math.max(0, wordsB - trapsB);
-            trapB += trapsB;
+            // Manche B : idem
+            const randB = Math.random();
+            if (randB < 0.55) { scoreB += 1; }        // mot deviné par B
+            else if (randB < 0.75) { scoreA += 1; trapA += 1; } // mot piégé par A
         }
 
         // Placement final — un seul attempt par joueur à la fin de la partie

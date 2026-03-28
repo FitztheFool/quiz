@@ -16,7 +16,12 @@
       "Bash(ls /home/faros/quiz/src/app/quiz/[id]/)",
       "Bash(grep -n \"^import\" /home/faros/quiz/src/app/quiz/[id]/page.tsx)",
       "Bash(grep -n \"notFound\\\\|useSearchParams\\\\|useMemo\\\\|useCallback\\\\|useRef\\\\|Link\\\\b\" /home/faros/quiz/src/app/quiz/[id]/page.tsx)",
-      "Bash(grep -n \"notFound\\\\b\\\\|<Link\" /home/faros/quiz/src/app/quiz/[id]/page.tsx)"
+      "Bash(grep -n \"notFound\\\\b\\\\|<Link\" /home/faros/quiz/src/app/quiz/[id]/page.tsx)",
+      "Bash(grep -n \"amber-300\\\\|amber-50\\\\|amber-600\\\\|amber-400\\\\|amber-700\" /home/faros/quiz/src/app/lobby/create/[code]/page.tsx)",
+      "Bash(grep -r \"useParams\\\\|useRouter\\\\|useSession\\\\|getSocket\\\\|GameWaitingScreen\\\\|GameOverModal\" /home/faros/quiz/src/app/*/[lobbyId]/page.tsx)",
+      "Bash(for game:*)",
+      "Bash(do file=\"$game/[lobbyId]/page.tsx\" echo \"=== $game ===\" head -15 \"$file\")",
+      "Bash(ls -la /home/faros/dev-launcher/*/src/)"
     ],
     "additionalDirectories": [
       "/home/faros/dev-launcher/impostor-server/src",

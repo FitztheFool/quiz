@@ -218,7 +218,7 @@ export function useBattleship({
         });
 
         // ── Game over ─────────────────────────────────────────────────────────
-        socket.on('battleship:gameOver', (payload: GameOverPayload) => {
+        socket.on('battleship:finished', (payload: GameOverPayload) => {
             setState((prev) => {
                 // Reveal full grids
                 const myGrid = payload.grids.find((g) => g.userId === userId);
@@ -264,6 +264,7 @@ export function useBattleship({
 
         return () => {
             socket.off('notFound');
+            socket.off('battleship:finished');
             socket.disconnect();
             socketRef.current = null;
             joinedRef.current = false;

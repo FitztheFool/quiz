@@ -3,14 +3,13 @@
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
+import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 
 import TurnTimer from '@/components/TurnTimer';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { getYahtzeeSocket } from '@/lib/socket';
-import { useChat } from '@/context/ChatContext';
+import { useGamePage } from '@/hooks/useGamePage';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type ScoreCard = {
@@ -128,36 +127,27 @@ function Die({ value, held, onClick, rolling, disabled }: {
 
 // ── Main Page ──────────────────────────────────────────────────────────────
 export default function YahtzeePage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const params = useParams<{ lobbyId: string }>();
-  const lobbyId = params?.lobbyId ?? '';
+  const { session, status, router, me: meInfo, lobbyId, isNotFound, setIsNotFound } = useGamePage();
 
   const socket = useMemo(() => getYahtzeeSocket(), []);
   const joinedRef = useRef(false);
 
   const [game, setGame] = useState<GameState | null>(null);
-  const [results, setResults] = useState<{ userId: string; username: string; total: number; afk?: boolean; abandon?: boolean }[] | null>(null);
+  const [results, setResults] = useState<{ userId: string; username: string; total: number; afk?: boolean; abandon?: boolean; scoreCard?: ScoreCard }[] | null>(null);
+  const [eliminatedPlayers, setEliminatedPlayers] = useState<{ userId: string; username: string; total: number; scoreCard: ScoreCard; abandon?: boolean; afk?: boolean }[]>([]);
   const [rolling, setRolling] = useState(false);
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
-  const [isNotFound, setIsNotFound] = useState(false);
   const [toasts, setToasts] = useState<{ id: number; message: string; type: 'warning' | 'kick' }[]>([]);
   const toastIdRef = useRef(0);
   const me = session?.user;
-  const { setLobbyId } = useChat();
-
-  useEffect(() => {
-    setLobbyId(lobbyId);
-    return () => setLobbyId(null);
-  }, [lobbyId]);
 
 
   useEffect(() => {
     if (!socket || !lobbyId || status !== 'authenticated' || !me?.id) return;
 
     const doJoin = () => {
-      socket.emit('yahtzee:join', { lobbyId, playerId: me?.id, username: me?.name ?? me?.email ?? 'Joueur' });
+      socket.emit('yahtzee:join', { lobbyId, userId: me?.id, username: me?.name ?? me?.email ?? 'Joueur' });
     };
 
     if (socket.connected) { doJoin(); } else { socket.once('connect', doJoin); }
@@ -179,7 +169,11 @@ export default function YahtzeePage() {
         addToast(`⚠️ ${username} n'a pas joué — sera exclu au prochain timeout`, 'warning');
       }
     });
-    socket.on('yahtzee:playerKicked', ({ username }: { username: string }) => {
+    socket.on('yahtzee:playerSurrendered', ({ userId, username, scoreCard, total }: { userId: string; username: string; scoreCard: ScoreCard; total: number }) => {
+      setEliminatedPlayers(prev => [...prev, { userId, username, total, scoreCard, abandon: true }]);
+    });
+    socket.on('yahtzee:playerKicked', ({ userId, username, scoreCard, total }: { userId: string; username: string; scoreCard?: ScoreCard; total?: number }) => {
+      if (userId && scoreCard) setEliminatedPlayers(prev => [...prev, { userId, username, total: total ?? 0, scoreCard, afk: true }]);
       addToast(`🚫 ${username} a été exclu pour inactivité`, 'kick');
     });
 
@@ -190,6 +184,7 @@ export default function YahtzeePage() {
       socket.off('yahtzee:finished');
       socket.off('yahtzee:afkWarning');
       socket.off('yahtzee:playerKicked');
+      socket.off('yahtzee:playerSurrendered');
     };
   }, [socket, lobbyId, status, me?.id]);
 
@@ -219,26 +214,54 @@ export default function YahtzeePage() {
   const forceScore = () => { if (!isMyTurn || !canScore) return; socket?.emit('yahtzee:forceScore', { lobbyId, userId: myId }); };
 
   if (results) {
-    const sorted = [...results].sort((a, b) => b.total - a.total);
+    const sorted = [...results].sort((a, b) => {
+      if (a.abandon && !b.abandon) return 1;
+      if (!a.abandon && b.abandon) return -1;
+      if (a.afk && !b.afk) return 1;
+      if (!a.afk && b.afk) return -1;
+      return b.total - a.total;
+    });
+    const MEDAL: Record<number, string> = { 0: '🥇', 1: '🥈', 2: '🥉' };
+    const hasForfeits = sorted.some(p => p.abandon || p.afk);
+    let rankIdx = 0;
     return (
       <GameOverModal
         title="Partie terminée !"
-        subtitle="Classement final"
+        subtitle={hasForfeits ? sorted.filter(p => !p.abandon && !p.afk).map(p => p.username).join(', ') + ' remporte la victoire !' : 'Classement final'}
         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
         onLeave={() => router.push('/')}
       >
         <div className="space-y-2">
-          {sorted.map((p, i) => (
-            <div key={p.userId} className={`flex items-center justify-between px-4 py-3 rounded-xl ${i === 0 ? 'bg-amber-400/20 border border-amber-400/50' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}`}>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
-                <span className={`font-bold ${p.userId === myId ? 'text-amber-300' : 'text-white'}`}>{p.username}{p.userId === myId && ' (moi)'}</span>
-                {p.afk && <span className="text-xs bg-red-500/30 text-red-400 px-1.5 py-0.5 rounded">AFK</span>}
-                {p.abandon && <span className="text-xs bg-orange-500/30 text-orange-400 px-1.5 py-0.5 rounded">Abandon</span>}
+          {sorted.map((p) => {
+            const disq = !!(p.abandon || p.afk);
+            const isFirst = !disq && rankIdx === 0;
+            const rank = disq ? null : rankIdx++;
+            return (
+              <div key={p.userId} className={`rounded-xl border px-4 py-3 ${isFirst ? 'bg-amber-400/20 border-amber-400/50' : disq ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{disq ? '🚫' : (MEDAL[rank!] ?? `${rank! + 1}.`)}</span>
+                    <span className={`font-bold ${p.userId === myId ? 'text-amber-600 dark:text-amber-300' : 'text-gray-800 dark:text-white'}`}>
+                      {p.username}{p.userId === myId && ' (moi)'}
+                    </span>
+                    {p.abandon && <span className="text-xs bg-orange-500/30 text-orange-400 px-1.5 py-0.5 rounded">Abandon</span>}
+                    {!p.abandon && p.afk && <span className="text-xs bg-red-500/30 text-red-400 px-1.5 py-0.5 rounded">AFK</span>}
+                  </div>
+                  <span className={`font-black text-xl ${isFirst ? 'text-amber-500 dark:text-amber-400' : 'text-gray-600 dark:text-gray-300'}`}>{p.total} pts</span>
+                </div>
+                {disq && p.scoreCard && (
+                  <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {([...UPPER_CATS, ...LOWER_CATS] as (keyof ScoreCard)[]).map(cat => (
+                      <div key={cat} className="flex justify-between">
+                        <span>{CAT_LABELS[cat]}</span>
+                        <span className="font-mono">{p.scoreCard![cat] ?? 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className={`font-black text-xl ${i === 0 ? 'text-amber-400' : 'text-gray-300'}`}>{p.total} pts</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </GameOverModal>
     );
@@ -450,6 +473,26 @@ export default function YahtzeePage() {
                   <div className="flex justify-between text-sm pt-2">
                     <span className="font-bold text-blue-600 dark:text-blue-300">Total</span>
                     <span className="font-black text-blue-600 dark:text-blue-300">{p.total}</span>
+                  </div>
+                </div>
+              </details>
+            ))}
+            {eliminatedPlayers.filter(p => p.userId !== myId).map(p => (
+              <details key={p.userId} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden opacity-50">
+                <summary className="px-5 py-4 cursor-pointer font-semibold text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                  <span className="flex items-center gap-2">🚫 Fiche de {p.username} <span className="text-xs font-normal">{p.abandon ? '(Abandon)' : '(AFK)'}</span></span>
+                  <span className="text-gray-400 dark:text-gray-500 text-sm">{p.total} pts</span>
+                </summary>
+                <div className="px-5 pb-4 space-y-1">
+                  {[...UPPER_CATS, ...LOWER_CATS].map(cat => (
+                    <div key={cat} className="flex justify-between text-sm py-1 border-b border-gray-100 dark:border-gray-700/50">
+                      <span className="text-gray-500 dark:text-gray-400">{CAT_LABELS[cat]}</span>
+                      <span className="text-gray-400 dark:text-gray-500">{p.scoreCard[cat as keyof ScoreCard] as number}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-sm pt-2">
+                    <span className="font-bold text-gray-500 dark:text-gray-400">Total</span>
+                    <span className="font-black text-gray-500 dark:text-gray-400">{p.total}</span>
                   </div>
                 </div>
               </details>

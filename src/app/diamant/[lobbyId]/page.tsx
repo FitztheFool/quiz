@@ -1,15 +1,14 @@
 // src/app/diamant/[lobbyId]/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { useDiamant, Card, PlayerInfo } from '@/hooks/useDiamant';
+import { useGamePage } from '@/hooks/useGamePage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
-import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
+import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -119,7 +118,7 @@ function PlayerRow({ player, isMe }: { player: PlayerInfo; isMe: boolean }) {
             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${player.inCave ? 'bg-green-500 dark:bg-green-400 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />
 
             {/* Name */}
-            <span className={`text-sm font-semibold flex-1 ${isMe ? 'text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300'}`}>
+            <span className={`text-sm font-semibold flex-1 ${player.surrendered ? 'line-through text-gray-400 dark:text-gray-600' : isMe ? 'text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300'}`}>
                 {player.username}
                 {isMe && <span className="text-gray-400 dark:text-gray-500 text-xs font-normal ml-1">(moi)</span>}
             </span>
@@ -157,31 +156,22 @@ function PlayerRow({ player, isMe }: { player: PlayerInfo; isMe: boolean }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DiamantPage() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
-
-    const { setLobbyId } = useChat();
-    useEffect(() => {
-        setLobbyId(lobbyId);
-        return () => setLobbyId(null);
-    }, [lobbyId, setLobbyId]);
+    const { session, status, router, me: meInfo, lobbyId, modalDismissed, setModalDismissed } = useGamePage();
 
     const { state, decide, clearError, gameNotFound, surrender } = useDiamant({
         lobbyId,
-        userId: session?.user?.id ?? '',
-        username: session?.user?.username ?? session?.user?.email ?? 'Joueur',
+        userId: meInfo.userId,
+        username: meInfo.username,
     });
 
     if (status === 'loading') return <LoadingSpinner />;
     if (gameNotFound) notFound();
     if (status !== 'authenticated') { router.push('/login'); return null; }
 
-    const myUserId = session.user.id;
+    const myUserId = meInfo.userId;
     const me = state.players.find((p) => p.userId === myUserId);
-    const [modalDismissed, setModalDismissed] = useState(false);
     const amInCave = me?.inCave ?? false;
+    const iSurrendered = me?.surrendered ?? false;
     const canDecide = state.decisionPhase && amInCave && state.myDecision === null;
 
     if (state.phase === 'waiting') return (
@@ -230,8 +220,13 @@ export default function DiamantPage() {
                     )}
                     {state.phase === 'playing' && (
                         <button
-                            onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
+                            onClick={() => { if (!iSurrendered && confirm('Abandonner la partie ?')) surrender(); }}
+                            disabled={iSurrendered}
+                            className={`text-xs px-3 py-1.5 rounded-lg transition-all border ${
+                                iSurrendered
+                                    ? 'text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'
+                                    : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600'
+                            }`}
                         >
                             🏳️ Abandonner
                         </button>
@@ -415,7 +410,21 @@ export default function DiamantPage() {
                     onLeave={() => router.push('/')}
                     onClose={() => setModalDismissed(true)}
                     asModal
-                />
+                >
+                    <GameScoreLeaderboard
+                        myUserId={myUserId}
+                        entries={state.finalScores.map((p) => {
+                            const surrendered = state.players.find(pl => pl.userId === p.userId)?.surrendered ?? false;
+                            return {
+                                userId: p.userId,
+                                username: p.username,
+                                score: `${p.score} pts`,
+                                badges: surrendered ? ['Abandon'] : undefined,
+                                disqualified: surrendered,
+                            };
+                        })}
+                    />
+                </GameOverModal>
             )}
         </div>
     );

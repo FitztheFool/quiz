@@ -6,10 +6,8 @@ import GameOverModal from '@/components/GameOverModal';
 
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { getUnoSocket } from '@/lib/socket';
-import { useChat } from '@/context/ChatContext';
+import { useGamePage } from '@/hooks/useGamePage';
 
 type CardColor = 'red' | 'green' | 'blue' | 'yellow' | 'wild';
 type Card = { id: string; color: CardColor; value: string };
@@ -123,18 +121,13 @@ function UnoCard({ card, playable, selected, onClick, small }: {
 }
 
 export default function UnoPage() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
+    const { session, status, router, me, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
 
     const joinedRef = useRef(false);
     const socket = useMemo(() => getUnoSocket(), []);
 
     const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
     const [gameState, setGameState] = useState<GameState | null>(null);
-    const [modalDismissed, setModalDismissed] = useState(false);
-    const [isNotFound, setIsNotFound] = useState(false);
     const [selectedCard, setSelectedCard] = useState<Card | null>(null);
     const [showColorPicker, setShowColorPicker] = useState(false);
 
@@ -143,19 +136,6 @@ export default function UnoPage() {
     const inactivityIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const [unoReady, setUnoReady] = useState(false);
-
-    const { setLobbyId } = useChat();
-
-    useEffect(() => {
-        setLobbyId(lobbyId);
-        return () => setLobbyId(null);
-    }, [lobbyId]);
-
-
-    const me = useMemo(() => ({
-        userId: session?.user?.id ?? '',
-        username: session?.user?.username ?? session?.user?.email ?? 'Joueur',
-    }), [session]);
 
 
     useEffect(() => {

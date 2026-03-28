@@ -14,6 +14,13 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Quiz App - Testez vos connaissances',
   description: 'Application de quiz interactive avec classements',
+  icons: {
+    icon: [
+      { url: '/logo/favicon.ico', sizes: 'any' },
+      { url: '/logo/icon-light.svg', type: 'image/svg+xml' },
+    ],
+    apple: { url: '/logo/icon-light-192.png', sizes: '192x192' },
+  },
 };
 
 

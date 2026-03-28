@@ -98,11 +98,12 @@ function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onCh
     );
 }
 
-function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, categoryId, onCategoryChange }: {
+function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, selectedQuestionCount, categories, categoryId, onCategoryChange }: {
     isHost: boolean;
-    onSelect: (id: string, title: string) => void;
+    onSelect: (id: string, title: string, questionCount?: number) => void;
     selectedId?: string;
     selectedTitle?: string;
+    selectedQuestionCount?: number;
     categories: { id: string; name: string; _count: { quizzes: number } }[];
     categoryId: string;
     onCategoryChange: (catId: string) => void;
@@ -202,15 +203,18 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, categories, c
                     onBlur={() => setTimeout(() => setOpen(false), 150)}
                     placeholder="Rechercher un quiz…"
                     readOnly={!isHost}
-                    className={`font-sans w-full bg-gray-100 dark:bg-slate-700/60 border rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${isSelected ? 'border-green-500/60 pr-7' : 'border-gray-300 dark:border-slate-600/50'}`}
+                    className={`font-sans w-full bg-gray-100 dark:bg-slate-700/60 border rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${isSelected ? 'border-green-500/60 pr-16' : 'border-gray-300 dark:border-slate-600/50'}`}
                 />
                 {isSelected && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none">✅</span>
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none flex items-center gap-1">
+                        {selectedQuestionCount !== undefined && <span className="text-gray-400 dark:text-slate-500">({selectedQuestionCount})</span>}
+                        <span>✅</span>
+                    </span>
                 )}
                 {open && results.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600/50 rounded-lg shadow-xl overflow-y-auto max-h-64 font-sans">
                         {results.map(q => (
-                            <button key={q.id} onMouseDown={() => { onSelect(q.id, q.title); setQuery(''); setOpen(false); }}
+                            <button key={q.id} onMouseDown={() => { onSelect(q.id, q.title, q._count.questions); setQuery(''); setOpen(false); }}
                                 className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${selectedId === q.id ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
                                 <span className="font-medium truncate">{q.title}</span>
                                 <span className="text-gray-400 dark:text-slate-500 flex-shrink-0 ml-2">{q._count.questions}q</span>
@@ -243,6 +247,7 @@ export default function LobbyCodePage() {
     const [isPublic, setIsPublicState] = useState(false);
     const [selectedQuizId, setSelectedQuizId] = useState<string | undefined>();
     const [selectedQuizTitle, setSelectedQuizTitle] = useState('');
+    const [selectedQuizQuestionCount, setSelectedQuizQuestionCount] = useState<number | undefined>();
     const [selectedQuizCategoryId, setSelectedQuizCategoryId] = useState('');
     const [categories, setCategories] = useState<{ id: string; name: string; _count: { quizzes: number } }[]>([]);
     const [unoTeamMode, setUnoTeamMode] = useState<'none' | '2v2'>('none');
@@ -281,6 +286,7 @@ export default function LobbyCodePage() {
             .then(data => {
                 if (data?.title) setSelectedQuizTitle(data.title);
                 if (data?.category?.id) setSelectedQuizCategoryId(data.category.id);
+                if (data?._count?.questions !== undefined) setSelectedQuizQuestionCount(data._count.questions);
             })
             .catch(() => { });
     }, [selectedQuizId]);
@@ -449,6 +455,9 @@ export default function LobbyCodePage() {
         setGameTypeState(g);
         setCanStart(false);
         socket?.emit('lobby:setGameType', { gameType: g });
+        if (g === 'quiz' && selectedQuizId) {
+            socket?.emit('lobby:setQuiz', { quizId: selectedQuizId });
+        }
         const newMax = Math.max(...MAX_PLAYERS_BY_GAME[g]);
         setMaxPlayersState(newMax);
         socket?.emit('lobby:setMeta', { maxPlayers: newMax });
@@ -560,9 +569,7 @@ export default function LobbyCodePage() {
                                                     ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300 shadow-sm'
                                                     : disabled
                                                         ? 'border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 text-gray-300 dark:text-slate-700 cursor-not-allowed'
-                                                        : notEnoughPlayers
-                                                            ? 'border-amber-300 dark:border-amber-700/60 bg-amber-50/50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 hover:border-amber-400 dark:hover:border-amber-600 cursor-pointer'
-                                                            : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'}`}>
+                                                        : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'}`}>
                                             <span className="text-2xl">{g.icon}</span>
                                             <span className="leading-tight text-center">{g.label}</span>
                                             {notEnoughPlayers && (
@@ -632,10 +639,10 @@ export default function LobbyCodePage() {
                                 <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Options Quiz</p>
                                 <div className="space-y-1">
                                     <p className="text-xs text-gray-500 dark:text-slate-400">Quiz</p>
-                                    <QuizSearch isHost={isHost} selectedId={selectedQuizId} selectedTitle={selectedQuizTitle}
+                                    <QuizSearch isHost={isHost} selectedId={selectedQuizId} selectedTitle={selectedQuizTitle} selectedQuestionCount={selectedQuizQuestionCount}
                                         categories={categories} categoryId={selectedQuizCategoryId}
                                         onCategoryChange={catId => setSelectedQuizCategoryId(catId)}
-                                        onSelect={(id, title) => { setSelectedQuizId(id || undefined); setSelectedQuizTitle(title); if (id) socket?.emit('lobby:setQuiz', { quizId: id }); }} />
+                                        onSelect={(id, title, questionCount) => { setSelectedQuizId(id || undefined); setSelectedQuizTitle(title); setSelectedQuizQuestionCount(questionCount); if (id) socket?.emit('lobby:setQuiz', { quizId: id }); }} />
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-gray-500 dark:text-slate-400">Mode de temps</p>
@@ -853,7 +860,11 @@ export default function LobbyCodePage() {
                             {isHost ? (
                                 <button onClick={() => socket?.emit('lobby:start')} disabled={!canStart}
                                     className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-200 dark:disabled:from-slate-800 disabled:to-gray-200 dark:disabled:to-slate-800 disabled:text-gray-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed text-white font-bold text-sm transition-all shadow-lg shadow-green-500/20 disabled:shadow-none">
-                                    {canStart ? `🚀 Lancer ${selectedGame?.label ?? 'la partie'} !` : '⏳ En attente de joueurs…'}
+                                    {canStart
+                                        ? `🚀 Lancer ${selectedGame?.label ?? 'la partie'} !`
+                                        : gameType === 'quiz' && !selectedQuizId && players.length >= 2
+                                            ? '🎯 Choix du quiz…'
+                                            : '⏳ En attente de joueurs…'}
                                 </button>
                             ) : (
                                 <div className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 text-gray-400 dark:text-slate-500 text-sm font-semibold text-center">

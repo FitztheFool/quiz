@@ -10,11 +10,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { getPuissance4Socket } from '@/lib/socket';
-import { useChat } from '@/context/ChatContext';
 import GameOverModal from '@/components/GameOverModal';
+import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
+import { useGamePage } from '@/hooks/useGamePage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 
@@ -38,6 +37,7 @@ interface GameState {
     scores: [number, number];
     turnStartedAt: number | null;
     turnDuration: number;
+    reason?: 'surrender' | null;
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -70,10 +70,7 @@ function CellPiece({ value, isWin }: { value: Cell; isWin: boolean }) {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function Puissance4Page() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
+    const { session, status, router, me, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
 
     const socket = useMemo(() => getPuissance4Socket(), []);
     const joinedRef = useRef(false);
@@ -83,15 +80,8 @@ export default function Puissance4Page() {
     const [hoverCol, setHoverCol] = useState<number | null>(null);
     const [playerLeft, setPlayerLeft] = useState(false);
     const [dropping, setDropping] = useState(false);
-    const [modalDismissed, setModalDismissed] = useState(false);
-    const [isNotFound, setIsNotFound] = useState(false);
 
-    // Trouver mon index de couleur
-    const me = session?.user
-        ? { userId: session.user.id, username: session.user.username ?? session.user.email ?? 'Joueur' }
-        : null;
-
-    const myPlayer = players.find(p => p.userId === me?.userId);
+    const myPlayer = players.find(p => p.userId === me.userId);
     const myColorIndex = myPlayer?.colorIndex ?? null;
     const isMyTurn = gameState?.status === 'playing' && gameState.currentTurn === myColorIndex;
 
@@ -101,17 +91,9 @@ export default function Puissance4Page() {
         return new Set(gameState.winCells.map(([r, c]) => `${r}-${c}`));
     }, [gameState?.winCells]);
 
-
-    const { setLobbyId } = useChat();
-
-    useEffect(() => {
-        setLobbyId(lobbyId);
-        return () => setLobbyId(null);
-    }, [lobbyId]);
-
     // Connexion socket
     useEffect(() => {
-        if (!socket || !lobbyId || status !== 'authenticated' || !me) return;
+        if (!socket || !lobbyId || status !== 'authenticated' || !me.userId) return;
 
         const onPlayers = (data: PlayerInfo[]) => setPlayers(data);
         const onState = (state: GameState) => {
@@ -139,7 +121,7 @@ export default function Puissance4Page() {
             joinedRef.current = false;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [socket, lobbyId, status, me?.userId]);
+    }, [socket, lobbyId, status, me.userId]);
 
     const handleDrop = useCallback((col: number) => {
         if (!isMyTurn || dropping || !gameState) return;
@@ -151,7 +133,7 @@ export default function Puissance4Page() {
     if (status === 'loading') return <LoadingSpinner />;
     if (isNotFound) notFound();
 
-    if (gameState?.status === 'waiting' && me) return (
+    if (gameState?.status === 'waiting' && me.userId) return (
         <GameWaitingScreen icon="🔴" gameName="Puissance 4" lobbyId={lobbyId} players={players} myUserId={me.userId} />
     );
 
@@ -337,15 +319,34 @@ export default function Puissance4Page() {
                                     : `${winnerPlayer?.username ?? 'Adversaire'} gagne !`
                         }
                         subtitle={
-                            winnerPlayer && gameState.winner !== 'draw'
-                                ? `${PLAYER_COLORS[winnerPlayer.colorIndex].emoji} 4 en ligne !`
-                                : undefined
+                            gameState.reason === 'surrender'
+                                ? 'Abandon'
+                                : winnerPlayer && gameState.winner !== 'draw'
+                                    ? `${PLAYER_COLORS[winnerPlayer.colorIndex].emoji} 4 en ligne !`
+                                    : undefined
                         }
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                         onLeave={() => router.push('/')}
                         onClose={() => setModalDismissed(true)}
                         asModal
-                    />
+                    >
+                        <GameScoreLeaderboard
+                            myUserId={me.userId}
+                            entries={[player0, player1].filter(Boolean).sort((a, b) =>
+                                (gameState.scores[b!.colorIndex] ?? 0) - (gameState.scores[a!.colorIndex] ?? 0)
+                            ).map((p) => {
+                                const isWinner = p!.userId === winnerPlayer?.userId;
+                                const isLoserBySurrender = !isWinner && gameState.reason === 'surrender';
+                                return {
+                                    userId: p!.userId,
+                                    username: p!.username,
+                                    score: `${gameState.scores[p!.colorIndex] ?? 0} victoire${(gameState.scores[p!.colorIndex] ?? 0) !== 1 ? 's' : ''}`,
+                                    badges: isLoserBySurrender ? ['Abandon'] : undefined,
+                                    disqualified: isLoserBySurrender,
+                                };
+                            })}
+                        />
+                    </GameOverModal>
                 )}
 
             </div>

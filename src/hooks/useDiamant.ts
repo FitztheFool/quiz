@@ -24,6 +24,7 @@ export interface PlayerInfo {
     safeDiamonds: number;     // diamants dans le coffre (valeur 5)
     relicsOwned: number;      // reliques récupérées
     inCave: boolean;          // encore dans la grotte ?
+    surrendered: boolean;     // a abandonné la partie
     hasDecided: boolean;      // a voté ce tour ?
 }
 
@@ -252,13 +253,23 @@ export function useDiamant({
         });
 
         // ── Game over ─────────────────────────────────────────────────────────
-        socket.on('diamant:gameOver', (payload: any) => {
+        socket.on('diamant:finished', (payload: any) => {
             setState((prev) => ({
                 ...prev,
                 phase: 'finished',
                 finalScores: payload.scores ?? [],
                 winnerId: payload.winnerId ?? null,
                 decisionPhase: false,
+            }));
+        });
+
+        // ── Player surrendered ────────────────────────────────────────────────
+        socket.on('diamant:playerSurrendered', ({ userId }: { userId: string }) => {
+            setState((prev) => ({
+                ...prev,
+                players: prev.players.map((p) =>
+                    p.userId === userId ? { ...p, surrendered: true, inCave: false } : p
+                ),
             }));
         });
 

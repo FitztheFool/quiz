@@ -6,13 +6,13 @@ import GameOverModal from '@/components/GameOverModal';
 
 import { useEffect, useRef, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { getTabooSocket } from '@/lib/socket';
+import { useGamePage } from '@/hooks/useGamePage';
 import { TrapPhase } from '@/components/TrapPhase';
 import type { TrapSlotData } from '@/components/TrapPhase';
 import { useChat } from '@/context/ChatContext';
 import { plural } from '@/lib/utils';
+
 
 type Attempt = { word: string; userId: string; username: string };
 
@@ -136,10 +136,7 @@ function TopBar({
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function TabooGamePage() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
+    const { session, status, router, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
     const socketRef = useRef<ReturnType<typeof getTabooSocket>>(null);
 
     const joinedRef = useRef(false);
@@ -147,19 +144,12 @@ export default function TabooGamePage() {
     const isHostRef = useRef(false);
 
     const [game, setGame] = useState<TabooState | null>(null);
-    const [isNotFound, setIsNotFound] = useState(false);
     const [attemptInput, setAttemptInput] = useState('');
-    const [modalDismissed, setModalDismissed] = useState(false);
 
     const myId = session?.user?.id ?? '';
     const isHost = !!game && game.hostId === myId;
 
-    const { setLobbyId, overrideMyTeam } = useChat();
-
-    useEffect(() => {
-        setLobbyId(lobbyId);
-        return () => setLobbyId(null);
-    }, [lobbyId]);
+    const { overrideMyTeam } = useChat();
 
     useEffect(() => {
         const t = game?.teams?.[myId];
@@ -206,7 +196,7 @@ export default function TabooGamePage() {
 
     useEffect(() => {
         if (!lobbyId || status !== 'authenticated' || !myId) return;
-        const username = session.user.username ?? session.user.email ?? 'User';
+        const username = session?.user?.username ?? session?.user?.email ?? 'User';
 
         const socket = getTabooSocket();
         if (!socket) return;

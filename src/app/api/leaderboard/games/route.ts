@@ -91,9 +91,9 @@ export async function GET(req: NextRequest) {
             tabooRoundsByUser.map(r => [r.userId, r.total_rounds])
         );
 
-        const byUser = new Map<string, { scores: number[]; trapScores: number[]; placements: number[]; draws: number }>();
+        const byUser = new Map<string, { scores: number[]; trapScores: number[]; placements: number[]; draws: number; gameIds: Set<string> }>();
         for (const a of attempts) {
-            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], trapScores: [], placements: [], draws: 0 });
+            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], trapScores: [], placements: [], draws: 0, gameIds: new Set() });
             const u = byUser.get(a.userId)!;
             u.scores.push(a.score);
             u.trapScores.push(a.trapScore ?? 0);
@@ -102,11 +102,13 @@ export async function GET(req: NextRequest) {
             } else {
                 u.placements.push(a.placement);
             }
+            if (a.gameId) u.gameIds.add(a.gameId);
         }
 
         const sorted = Array.from(byUser.entries())
             .map(([userId, data]) => {
                 const gamesPlayed = data.scores.length;
+
                 const totalScore = data.scores.reduce((s, v) => s + v, 0);
                 const totalTrapScore = data.trapScores.reduce((s, v) => s + v, 0);
                 const avgScore = gamesPlayed > 0 ? Math.round(totalScore / gamesPlayed) : 0;
@@ -123,7 +125,7 @@ export async function GET(req: NextRequest) {
                         detail = `Moy. ${avgScore} pts · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
                     case 'taboo':
-                        detail = `${totalScore} devinés · ${totalTrapScore} piégés · ${totalRounds} manche${totalRounds > 1 ? 's' : ''}`;
+                        detail = `${totalScore - totalTrapScore} trouvé${totalScore - totalTrapScore > 1 ? 's' : ''} · ${totalTrapScore} piégé${totalTrapScore > 1 ? 's' : ''} · ${totalRounds} manche${totalRounds > 1 ? 's' : ''}`;
                         break;
                     case 'yahtzee':
                         detail = `Moy. ${avgScore} pts · ${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;

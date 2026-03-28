@@ -4,14 +4,13 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import TurnTimer from '@/components/TurnTimer';
 import GameOverModal from '@/components/GameOverModal';
+import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { getSkyjowSocket } from '@/lib/socket';
 import type { Socket } from 'socket.io-client';
-import { useChat } from '@/context/ChatContext';
+import { useGamePage } from '@/hooks/useGamePage';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +22,7 @@ type PlayerPublic = {
     score: number;
     liveScore?: number;
 };
-type ScoreEntry = { userId: string; username: string; roundScore: number; totalScore: number };
+type ScoreEntry = { userId: string; username: string; roundScore: number; totalScore: number; abandon?: boolean };
 
 type Phase = 'waiting' | 'flip2' | 'playing' | 'last_round' | 'ended' | 'round_end' | 'game_end';
 
@@ -138,10 +137,7 @@ const isPlayingPhase = (p: Phase) => p === 'playing' || p === 'last_round';
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function skyjowGamePage() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
-    const lobbyId = params?.lobbyId ?? '';
+    const { session, status, router, me: meInfo, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
 
     const skyjowRef = useRef<Socket | null>(null);
     const joinedRef = useRef(false);
@@ -149,7 +145,6 @@ export default function skyjowGamePage() {
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [myCards, setMyCards] = useState<CardState[]>([]);
     const [phase, setPhase] = useState<Phase>('waiting');
-    const [modalDismissed, setModalDismissed] = useState(false);
     const [round, setRound] = useState(1);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
     const [discardTop, setDiscardTop] = useState<number | null>(null);
@@ -157,9 +152,9 @@ export default function skyjowGamePage() {
     const [players, setPlayers] = useState<PlayerPublic[]>([]);
     const [scores, setScores] = useState<ScoreEntry[]>([]);
     const [notification, setNotification] = useState<string | null>(null);
-    const [isNotFound, setIsNotFound] = useState(false);
     const [roundEndData, setRoundEndData] = useState<{ scores: ScoreEntry[]; players: { userId: string; username: string; cards: CardState[] }[] } | null>(null);
     const [gameEndData, setGameEndData] = useState<{ scores: ScoreEntry[]; winnerId: string; winnerUsername: string } | null>(null);
+    const [surrenderedPlayers, setSurrenderedPlayers] = useState<{ userId: string; username: string; cards: CardState[] }[]>([]);
     const [drawnAction, setDrawnAction] = useState<'swap' | 'discard_flip' | null>(null);
     const [readyCount, setReadyCount] = useState(0);
     const [flip2Count, setFlip2Count] = useState(0);
@@ -167,17 +162,10 @@ export default function skyjowGamePage() {
     const [inactivityEndsAt, setInactivityEndsAt] = useState<number | null>(null);
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
 
-    const userId = session?.user?.id ?? '';
-    const username = session?.user?.username ?? session?.user?.email ?? 'User';
+    const userId = meInfo.userId;
+    const username = meInfo.username;
 
     const isCurrent = players[currentPlayerIndex]?.userId === userId;
-
-    const { setLobbyId } = useChat();
-
-    useEffect(() => {
-        setLobbyId(lobbyId);
-        return () => setLobbyId(null);
-    }, [lobbyId]);
 
     const notify = useCallback((msg: string, duration = 3000) => {
         setNotification(msg);
@@ -214,6 +202,7 @@ export default function skyjowGamePage() {
             setRoundEndData(null);
             setGameEndData(null);
             setFlip2Count(0);
+            setSurrenderedPlayers([]);
         });
 
         sock.on('skyjow:my_cards', ({ cards }: { cards: CardState[] }) => {
@@ -257,10 +246,14 @@ export default function skyjowGamePage() {
             setPhase('round_end');
         });
 
-        sock.on('skyjow:game_end', (data: { scores: ScoreEntry[]; winnerId: string; winnerUsername: string }) => {
+        sock.on('skyjow:finished', (data: { scores: ScoreEntry[]; winnerId: string; winnerUsername: string }) => {
             setGameEndData(data);
             setScores(data.scores);
             setPhase('game_end');
+        });
+
+        sock.on('skyjow:playerSurrendered', ({ userId: uid, username: uname, cards }: { userId: string; username: string; cards: CardState[] }) => {
+            setSurrenderedPlayers(prev => [...prev, { userId: uid, username: uname, cards }]);
         });
 
         sock.on('skyjow:inactivityWarning', ({ userId: uid, secondsLeft }: { userId: string; secondsLeft: number }) => {
@@ -298,6 +291,7 @@ export default function skyjowGamePage() {
             setDrawnCard(null);
             setRoundEndData(null);
             setFlip2Count(0);
+            setSurrenderedPlayers([]);
             notify(`🔄 Manche ${data.round} !`);
         });
 
@@ -311,7 +305,8 @@ export default function skyjowGamePage() {
             sock.off('skyjow:last_round');
             sock.off('skyjow:columns_removed');
             sock.off('skyjow:round_end');
-            sock.off('skyjow:game_end');
+            sock.off('skyjow:finished');
+            sock.off('skyjow:playerSurrendered');
             sock.off('skyjow:inactivityWarning');
             sock.off('skyjow:playerKicked');
             sock.off('skyjow:waiting_next_round');
@@ -513,6 +508,22 @@ export default function skyjowGamePage() {
                                 </div>
                             );
                         })}
+                        {surrenderedPlayers.map((p) => (
+                            <div key={p.userId} className="rounded-xl p-3 border border-gray-200 dark:border-gray-700 opacity-50">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-xs">🚫</span>
+                                        <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 line-through">{p.username}</span>
+                                    </div>
+                                    <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">Abandon</span>
+                                </div>
+                                <div className="grid grid-cols-4 gap-1">
+                                    {p.cards.map((card, idx) => (
+                                        <Card key={idx} card={{ ...card, revealed: true }} size="sm" />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
@@ -712,7 +723,11 @@ export default function skyjowGamePage() {
             </main>
 
             {phase === 'game_end' && gameEndData && !modalDismissed && (() => {
-                const sortedScores = [...gameEndData.scores].sort((a, b) => a.totalScore - b.totalScore);
+                const sortedScores = [...gameEndData.scores].sort((a, b) => {
+                    if (a.abandon && !b.abandon) return 1;
+                    if (!a.abandon && b.abandon) return -1;
+                    return a.totalScore - b.totalScore;
+                });
                 return (
                     <GameOverModal
                         title="Fin de partie !"
@@ -722,18 +737,16 @@ export default function skyjowGamePage() {
                         onClose={() => setModalDismissed(true)}
                         asModal
                     >
-                        <div className="space-y-2">
-                            {sortedScores.map((s, i) => (
-                                <div key={s.userId}
-                                    className={`flex justify-between items-center px-4 py-3 rounded-lg ${i === 0 ? 'bg-yellow-500/20 border border-yellow-500/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                                    <span className="text-gray-800 dark:text-gray-200 font-medium">
-                                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {s.username}
-                                        {s.userId === userId && <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(moi)</span>}
-                                    </span>
-                                    <span className={`font-bold text-lg ${i === 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-300'}`}>{s.totalScore} pts</span>
-                                </div>
-                            ))}
-                        </div>
+                        <GameScoreLeaderboard
+                            myUserId={userId}
+                            entries={sortedScores.map((s) => ({
+                                userId: s.userId,
+                                username: s.username,
+                                score: `${s.totalScore} pts`,
+                                badges: s.abandon ? ['Abandon'] : undefined,
+                                disqualified: s.abandon,
+                            }))}
+                        />
                     </GameOverModal>
                 );
             })()}

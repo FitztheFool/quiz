@@ -68,21 +68,23 @@ export async function GET(req: NextRequest) {
         // UNO, SKYJOW, TABOO
         const attempts = await prisma.attempt.findMany({
             where: { userId: { in: eligibleUserIds }, gameType: config.gameType },
-            select: { userId: true, score: true, trapScore: true, placement: true, createdAt: true },
+            select: { userId: true, score: true, trapScore: true, placement: true, gameId: true, rounds: true, createdAt: true },
         });
 
-        const byUser = new Map<string, { scores: number[]; trapScores: number[]; placements: number[] }>();
+        const byUser = new Map<string, { scores: number[]; trapScores: number[]; placements: number[]; roundsByGame: Map<string, number> }>();
         for (const a of attempts) {
-            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], trapScores: [], placements: [] });
+            if (!byUser.has(a.userId)) byUser.set(a.userId, { scores: [], trapScores: [], placements: [], roundsByGame: new Map() });
             const u = byUser.get(a.userId)!;
             u.scores.push(a.score);
             u.trapScores.push(a.trapScore ?? 0);
             if (a.placement !== null) u.placements.push(a.placement);
+            if (a.gameId && a.rounds) u.roundsByGame.set(a.gameId, a.rounds);
         }
 
         const sorted = Array.from(byUser.entries())
             .map(([userId, data]) => {
                 const gamesPlayed = data.scores.length;
+                const totalRounds = Array.from(data.roundsByGame.values()).reduce((s, v) => s + v, 0);
                 const totalScore = data.scores.reduce((s, v) => s + v, 0);
                 const totalTrapScore = data.trapScores.reduce((s, v) => s + v, 0);
                 const avgScore = gamesPlayed > 0 ? Math.round(totalScore / gamesPlayed) : 0;
@@ -92,7 +94,7 @@ export async function GET(req: NextRequest) {
                 const detail = game === 'skyjow'
                     ? `Moy. ${avgScore} pts · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`
                     : game === 'taboo'
-                        ? `${totalScore} deviné${totalScore > 1 ? 's' : ''} · ${totalTrapScore} piégé${totalTrapScore > 1 ? 's' : ''} · ${gamesPlayed} manche${gamesPlayed > 1 ? 's' : ''}`
+                        ? `${totalScore - totalTrapScore} trouvé${totalScore - totalTrapScore > 1 ? 's' : ''} · ${totalTrapScore} piégé${totalTrapScore > 1 ? 's' : ''} · ${totalRounds} manche${totalRounds > 1 ? 's' : ''}`
                         : `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
 
                 return {
