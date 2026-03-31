@@ -179,4 +179,5 @@ export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string) => string>>
     battleship: (id) => `/battleship/${id}`,
     diamant: (id) => `/diamant/${id}`,
     impostor: (id) => `/impostor/${id}`,
+    quiz: (id) => `/quiz/${id}`,
 };
