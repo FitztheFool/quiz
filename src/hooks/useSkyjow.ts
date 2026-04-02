@@ -14,7 +14,9 @@ export type PlayerPublic = {
     score: number;
     liveScore?: number;
 };
-export type ScoreEntry = { userId: string; username: string; roundScore: number; totalScore: number; abandon?: boolean };
+export type ScoreEntry = {
+    userId: string; username: string; roundScore: number; totalScore: number; abandon?: boolean; afk?: boolean;
+};
 export type Phase = 'waiting' | 'flip2' | 'playing' | 'last_round' | 'ended' | 'round_end' | 'game_end';
 
 export type GameState = {
@@ -63,6 +65,11 @@ export function useSkyjow({
     const [flip2Count, setFlip2Count] = useState(0);
     const [inactivityEndsAt, setInactivityEndsAt] = useState<number | null>(null);
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
+    const [turnStartedAt, setTurnStartedAt] = useState<number | null>(null);
+    const [turnDuration, setTurnDuration] = useState<number>(90);
+    // ── Nouveau : timer commun flip2 ──────────────────────────────────────────
+    const [flip2EndsAt, setFlip2EndsAt] = useState<number | null>(null);
+    const [flip2Duration, setFlip2Duration] = useState<number>(90);
 
     const isCurrent = players[currentPlayerIndex]?.userId === userId;
 
@@ -97,6 +104,14 @@ export function useSkyjow({
             setGameEndData(null);
             setFlip2Count(0);
             setSurrenderedPlayers([]);
+            // Réinitialiser le timer flip2 (le serveur va émettre flip2TimerStarted juste après)
+            setFlip2EndsAt(null);
+        });
+
+        // ── NOUVEAU : timer commun flip2 ──────────────────────────────────────
+        sock.on('skyjow:flip2TimerStarted', ({ endsAt, duration }: { endsAt: number; warningAt: number; duration: number }) => {
+            setFlip2EndsAt(endsAt);
+            setFlip2Duration(duration);
         });
 
         sock.on('skyjow:my_cards', ({ cards }: { cards: CardState[] }) => {
@@ -114,9 +129,13 @@ export function useSkyjow({
             setScores(state.scores);
         });
 
-        sock.on('skyjow:turn', ({ currentUserId }: { currentPlayerIndex: number; currentUserId: string }) => {
+        sock.on('skyjow:turn', ({ currentUserId }) => {
             setInactivityEndsAt(null);
             setInactivityUserId(null);
+            setTurnStartedAt(Date.now());
+            setTurnDuration(90);
+            // Quand le tour de jeu commence, le timer flip2 n'a plus lieu d'être affiché
+            setFlip2EndsAt(null);
             if (currentUserId === userId) notify('🎯 C\'est ton tour !');
         });
 
@@ -138,16 +157,31 @@ export function useSkyjow({
             setRoundEndData(data);
             setScores(data.scores);
             setPhase('round_end');
+            setFlip2EndsAt(null);
         });
 
-        sock.on('skyjow:finished', (data: { scores: ScoreEntry[]; winnerId: string; winnerUsername: string }) => {
+        sock.on('skyjow:finished', (data: {
+            scores: ScoreEntry[];
+            winnerId: string;
+            winnerUsername: string;
+            players?: { userId: string; username: string; cards: CardState[] }[];
+        }) => {
             setGameEndData(data);
             setScores(data.scores);
+            if (data.players) {
+                setPlayers(prev => prev.map(p => {
+                    const updated = data.players!.find(dp => dp.userId === p.userId);
+                    return updated ? { ...p, cards: updated.cards } : p;
+                }));
+            }
             setPhase('game_end');
+            setFlip2EndsAt(null);
         });
 
-        sock.on('skyjow:playerSurrendered', ({ userId: uid, username: uname, cards }: { userId: string; username: string; cards: CardState[] }) => {
-            setSurrenderedPlayers(prev => [...prev, { userId: uid, username: uname, cards }]);
+        sock.on('skyjow:playerSurrendered', ({ userId: uid, username: uname, cards }) => {
+            setSurrenderedPlayers(prev =>
+                prev.find(p => p.userId === uid) ? prev : [...prev, { userId: uid, username: uname, cards }]
+            );
         });
 
         sock.on('skyjow:inactivityWarning', ({ userId: uid, secondsLeft }: { userId: string; secondsLeft: number }) => {
@@ -155,9 +189,14 @@ export function useSkyjow({
             setInactivityEndsAt(Date.now() + secondsLeft * 1000);
         });
 
-        sock.on('skyjow:playerKicked', () => {
+        sock.on('skyjow:playerKicked', ({ userId: uid, username: uname, cards }) => {
             setInactivityEndsAt(null);
             setInactivityUserId(null);
+            if (cards) {
+                setSurrenderedPlayers(prev =>
+                    prev.find(p => p.userId === uid) ? prev : [...prev, { userId: uid, username: uname, cards }]
+                );
+            }
         });
 
         sock.on('skyjow:waiting_next_round', ({ scores: s }: { scores: ScoreEntry[] }) => {
@@ -182,12 +221,15 @@ export function useSkyjow({
             setRoundEndData(null);
             setFlip2Count(0);
             setSurrenderedPlayers([]);
+            // Réinitialiser le timer flip2 (le serveur va émettre flip2TimerStarted juste après)
+            setFlip2EndsAt(null);
             notify(`🔄 Manche ${data.round} !`);
         });
 
         return () => {
             sock.off('notFound', onNotFound);
             sock.off('skyjow:game_started');
+            sock.off('skyjow:flip2TimerStarted');
             sock.off('skyjow:my_cards');
             sock.off('skyjow:state');
             sock.off('skyjow:turn');
@@ -282,5 +324,9 @@ export function useSkyjow({
         handleCardClick,
         readyNextRound,
         surrender,
+        turnStartedAt,
+        turnDuration,
+        flip2EndsAt,
+        flip2Duration,
     };
 }

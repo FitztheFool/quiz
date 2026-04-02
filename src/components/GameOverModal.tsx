@@ -11,6 +11,7 @@ interface GameOverModalProps {
     onLobby: () => void;
     onLeave: () => void;
     onClose?: () => void;
+    lobbyLabel?: string;
     /** true = fixed overlay on top of the board; false (default) = full page */
     asModal?: boolean;
 }
@@ -23,6 +24,7 @@ export default function GameOverModal({
     onLobby,
     onLeave,
     onClose,
+    lobbyLabel,
     asModal = false,
 }: GameOverModalProps) {
     const card = (
@@ -47,7 +49,7 @@ export default function GameOverModal({
                     onClick={onLobby}
                     className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all"
                 >
-                    Retour au lobby
+                    {lobbyLabel ?? 'Retour au lobby'}
                 </button>
                 <button
                     onClick={onLeave}

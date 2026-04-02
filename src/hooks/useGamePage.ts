@@ -7,8 +7,9 @@ import { useChat } from '@/context/ChatContext';
 export function useGamePage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const params = useParams<{ lobbyId: string }>();
+    const params = useParams<{ lobbyId: string; gameId?: string }>();
     const lobbyId = params?.lobbyId ?? '';
+    const gameId = params?.gameId ?? '';
     const { setLobbyId } = useChat();
 
     const [isNotFound, setIsNotFound] = useState(false);
@@ -24,5 +25,5 @@ export function useGamePage() {
         username: session?.user?.username ?? session?.user?.email ?? 'Joueur',
     }), [session]);
 
-    return { lobbyId, session, status, router, me, isNotFound, setIsNotFound, modalDismissed, setModalDismissed };
+    return { lobbyId, gameId, session, status, router, me, isNotFound, setIsNotFound, modalDismissed, setModalDismissed };
 }

@@ -52,6 +52,7 @@ type LobbyState = {
     timeMode?: string;
     timePerQuestion?: number;
     quizId?: string | null;
+    gameId?: string | null;
     teams?: Record<string, 0 | 1> | null;
 };
 
@@ -243,6 +244,8 @@ export default function LobbyCodePage() {
     const [canStart, setCanStart] = useState(false);
     const [tabooOk, setTabooOk] = useState(false);
     const [isLaunching, setIsLaunching] = useState(false);
+    const [activeGameId, setActiveGameId] = useState<string | null>(null);
+    const [activeGameType, setActiveGameType] = useState<GameType | null>(null);
 
     const [gameType, setGameTypeState] = useState<GameType>('uno');
     const [maxPlayers, setMaxPlayersState] = useState(8);
@@ -363,17 +366,14 @@ export default function LobbyCodePage() {
             }
             if (state.impostorOptions) { setImpostorRounds(state.impostorOptions.rounds ?? 1); setImpostorTime(state.impostorOptions.timePerRound ?? 60); }
 
-            // ── Redirect si partie en cours ───────────────────────────────
+            // ── Partie en cours : afficher un bandeau, ne pas auto-rediriger ─
             if (state.status === 'PLAYING') {
-                const routeFn = GAME_ROUTES[state.gameType];
-                if (routeFn) {
-                    router.push(routeFn(lobbyId));
-                } else if (state.gameType === 'quiz' && state.quizId) {
-                    sessionStorage.setItem(`lobby_timeMode_${lobbyId}`, state.timeMode ?? 'none');
-                    sessionStorage.setItem(`lobby_timePerQuestion_${lobbyId}`, String(state.timePerQuestion ?? 15));
-                    router.push(`/quiz/${state.quizId}?lobby=${lobbyId}`);
-                }
-                return;
+                // For quiz, the second URL segment is the quizId, not the gameId UUID
+                setActiveGameId(state.gameType === 'quiz' ? (state.quizId ?? null) : (state.gameId ?? null));
+                setActiveGameType(state.gameType ?? null);
+            } else {
+                setActiveGameId(null);
+                setActiveGameType(null);
             }
 
             // ── canStart via GAME_CONFIG ──────────────────────────────────
@@ -406,16 +406,17 @@ export default function LobbyCodePage() {
         socket.on('lobby:kicked', () => { alert('Vous avez été expulsé.'); router.push('/lobby/all'); });
 
         // ── game:start via GAME_ROUTES ────────────────────────────────────
-        socket.on('game:start', (payload: { gameType: GameType; quizId?: string; timeMode?: string; timePerQuestion?: number }) => {
+        socket.on('game:start', (payload: { gameType: GameType; gameId?: string; quizId?: string; timeMode?: string; timePerQuestion?: number }) => {
             setIsLaunching(true);
-            const routeFn = GAME_ROUTES[payload.gameType];
-            if (routeFn) {
-                router.push(routeFn(lobbyId));
-            } else {
-                // quiz
+            setActiveGameId(null);
+            setActiveGameType(null);
+            if (payload.gameType === 'quiz') {
                 sessionStorage.setItem(`lobby_timeMode_${lobbyId}`, payload.timeMode ?? 'none');
                 sessionStorage.setItem(`lobby_timePerQuestion_${lobbyId}`, String(payload.timePerQuestion ?? 15));
-                router.push(`/quiz/${payload.quizId}?lobby=${lobbyId}`);
+                router.push(`/quiz/${lobbyId}/${payload.quizId}`);
+            } else {
+                const routeFn = GAME_ROUTES[payload.gameType];
+                if (routeFn) router.push(routeFn(lobbyId, payload.gameId));
             }
         });
 
@@ -869,6 +870,17 @@ export default function LobbyCodePage() {
                         </div>
 
                         {/* Actions */}
+                        {activeGameId && activeGameType && (
+                            <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 text-sm">
+                                <span className="text-amber-700 dark:text-amber-300 font-medium">⚠️ Partie en cours</span>
+                                <button
+                                    onClick={() => { const fn = GAME_ROUTES[activeGameType]; if (fn) router.push(fn(lobbyId, activeGameId)); }}
+                                    className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-white font-semibold text-xs transition-all"
+                                >
+                                    Rejoindre
+                                </button>
+                            </div>
+                        )}
                         <div className="flex gap-2">
                             <button onClick={() => { socket?.emit('lobby:leave'); router.push('/'); }}
                                 className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700/50 text-gray-500 dark:text-slate-400 text-sm font-semibold hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-300 transition-all bg-white dark:bg-slate-900/80">

@@ -169,15 +169,15 @@ export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
     diamant: `${GAME_CONFIG.diamant.icon} Diamant — 2 à 8 joueurs.`,
 };
 
-export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string) => string>> = {
-    uno: (id) => `/uno/${id}`,
-    taboo: (id) => `/taboo/${id}`,
-    skyjow: (id) => `/skyjow/${id}`,
-    yahtzee: (id) => `/yahtzee/${id}`,
-    puissance4: (id) => `/puissance4/${id}`,
-    just_one: (id) => `/just-one/${id}`,
-    battleship: (id) => `/battleship/${id}`,
-    diamant: (id) => `/diamant/${id}`,
-    impostor: (id) => `/impostor/${id}`,
-    quiz: (id) => `/quiz/${id}`,
+export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string, gameId?: string) => string>> = {
+    uno: (id, gid) => gid ? `/uno/${id}/${gid}` : `/uno/${id}`,
+    taboo: (id, gid) => gid ? `/taboo/${id}/${gid}` : `/taboo/${id}`,
+    skyjow: (id, gid) => gid ? `/skyjow/${id}/${gid}` : `/skyjow/${id}`,
+    yahtzee: (id, gid) => gid ? `/yahtzee/${id}/${gid}` : `/yahtzee/${id}`,
+    puissance4: (id, gid) => gid ? `/puissance4/${id}/${gid}` : `/puissance4/${id}`,
+    just_one: (id, gid) => gid ? `/just-one/${id}/${gid}` : `/just-one/${id}`,
+    battleship: (id, gid) => gid ? `/battleship/${id}/${gid}` : `/battleship/${id}`,
+    diamant: (id, gid) => gid ? `/diamant/${id}/${gid}` : `/diamant/${id}`,
+    impostor: (id, gid) => gid ? `/impostor/${id}/${gid}` : `/impostor/${id}`,
+    quiz: (id, gid) => gid ? `/quiz/${id}/${gid}` : `/quiz/${id}`,
 };

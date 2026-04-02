@@ -36,9 +36,11 @@ export function useQuizResult() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { data: session, status } = useSession();
-    const quizId = params?.id as string;
+    // Support both /quiz/[id]/result (solo) and /quiz/[id]/[quizId]/result (multiplayer)
+    // In solo: params.id = quizId. In multiplayer: params.id = lobbyId, params.quizId = quizId
+    const quizId = ((params?.quizId ?? params?.id) as string) ?? '';
     const [isHost, setIsHost] = useState(false);
-    const lobbyCodeFromUrl = searchParams.get('lobby');
+    const lobbyCodeFromUrl = params?.quizId ? (params?.id as string) : searchParams.get('lobby');
 
     const [payload, setPayload] = useState<ResultPayload | null>(() => {
         if (typeof window === 'undefined') return null;
@@ -64,13 +66,15 @@ export function useQuizResult() {
 
     const [timeMode] = useState<string | null>(() => {
         if (typeof window === 'undefined') return null;
-        const code = new URLSearchParams(window.location.search).get('lobby');
+        // In multiplayer /quiz/[id]/[quizId]/result: params.id = lobbyId
+        // In solo /quiz/[id]/result with ?lobby=: use search param
+        const code = params?.quizId ? (params?.id as string) : new URLSearchParams(window.location.search).get('lobby');
         return sessionStorage.getItem(`lobby_timeMode_${code}`) ?? null;
     });
 
     const [timePerQuestion] = useState<number>(() => {
         if (typeof window === 'undefined') return 0;
-        const code = new URLSearchParams(window.location.search).get('lobby');
+        const code = params?.quizId ? (params?.id as string) : new URLSearchParams(window.location.search).get('lobby');
         return parseInt(sessionStorage.getItem(`lobby_timePerQuestion_${code}`) ?? '0', 10);
     });
 
