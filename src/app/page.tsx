@@ -3,7 +3,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { GAME_CONFIG } from '@/lib/gameConfig';
+import { GAME_CONFIG, SOLO_GAMES } from '@/lib/gameConfig';
+import { SoloBadge } from '@/components/SoloBadge';
 
 const PAGE_SIZE = 6;
 
@@ -143,10 +144,12 @@ export default function HomePage() {
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                     {GAMES.map(g => (
                         <Link key={g.key} href={g.href}
-                            className="group flex flex-col items-center gap-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl py-4 px-2 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all">
+                            className="relative overflow-hidden group flex flex-col items-center gap-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl py-4 px-2 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all">
                             <span className="text-2xl group-hover:scale-110 transition-transform">{g.icon}</span>
                             <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 text-center leading-tight">{g.label}</span>
+                            {SOLO_GAMES[g.key] && <SoloBadge color={SOLO_GAMES[g.key]} />}
                         </Link>
+
                     ))}
                 </div>
             </section >

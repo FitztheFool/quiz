@@ -169,6 +169,15 @@ export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
     diamant: `${GAME_CONFIG.diamant.icon} Diamant — 2 à 8 joueurs.`,
 };
 
+export const SOLO_GAMES: Record<string, string> = {
+    //yahtzee: '#854F0B',
+    quiz: '#A32D2D',
+    //puissance4: '#A32D2D',
+    //battleship: '#185FA5',
+    //diamant: '#534AB7',
+    //uno: '#A32D2D',
+};
+
 // URL slugs for games that use /[slug]/[lobbyId]/[gameId] routing (excludes quiz)
 export const GAME_URL_SLUGS = ['uno', 'skyjow', 'taboo', 'yahtzee', 'puissance4', 'just-one', 'battleship', 'diamant', 'impostor'] as const;
 

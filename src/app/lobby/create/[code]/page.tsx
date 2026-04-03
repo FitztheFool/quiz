@@ -7,6 +7,8 @@ import { useSession } from 'next-auth/react';
 import { getLobbySocket } from '@/lib/socket';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useChat } from '@/context/ChatContext';
+import { SoloBadge } from '@/components/SoloBadge';
+
 import {
     GAME_OPTIONS,
     MAX_PLAYERS_BY_GAME,
@@ -582,7 +584,7 @@ export default function LobbyCodePage() {
                                         <button key={g.value}
                                             onClick={() => isHost && !tooManyPlayers && handleGameTypeChange(g.value)}
                                             title={title}
-                                            className={`relative flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
+                                            className={`relative overflow-hidden flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
                                                 ${gameType === g.value
                                                     ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300 shadow-sm'
                                                     : disabled
@@ -594,6 +596,9 @@ export default function LobbyCodePage() {
                                                 <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-amber-400 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
                                                     !
                                                 </span>
+                                            )}
+                                            {g.value === 'yahtzee' && (
+                                                <img src="/game/solo.svg" alt="Solo" className="absolute inset-0 w-full h-full pointer-events-none" />
                                             )}
                                         </button>
                                     );
@@ -890,7 +895,7 @@ export default function LobbyCodePage() {
                                 <button onClick={() => { setIsLaunching(true); socket?.emit('lobby:start'); }} disabled={!canStart || isLaunching}
                                     className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-200 dark:disabled:from-slate-800 disabled:to-gray-200 dark:disabled:to-slate-800 disabled:text-gray-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed text-white font-bold text-sm transition-all shadow-lg shadow-green-500/20 disabled:shadow-none">
                                     {isLaunching
-                                        ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Lancement…</span>
+                                        ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>Lancement…</span>
                                         : canStart
                                             ? `🚀 Lancer ${selectedGame?.label ?? 'la partie'} !`
                                             : gameType === 'quiz' && !selectedQuizId && players.length >= 2
@@ -902,7 +907,7 @@ export default function LobbyCodePage() {
                             ) : (
                                 <div className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 text-gray-400 dark:text-slate-500 text-sm font-semibold text-center">
                                     {isLaunching
-                                        ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Lancement…</span>
+                                        ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>Lancement…</span>
                                         : '⏳ En attente du host…'}
                                 </div>
                             )}
