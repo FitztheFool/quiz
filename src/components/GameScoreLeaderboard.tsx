@@ -37,7 +37,7 @@ export default function GameScoreLeaderboard({
                     >
                         <div className="flex items-center gap-3">
                             <span className="text-2xl">
-                                {p.disqualified ? '🚫' : (MEDAL[rank!] ?? `${rank! + 1}.`)}
+                                {p.disqualified ? (p.badges?.includes('AFK') ? '⌛' : '🚫') : (MEDAL[rank!] ?? `${rank! + 1}.`)}
                             </span>
                             <span className={`font-bold ${p.userId === myUserId ? 'text-amber-600 dark:text-amber-300' : 'text-gray-800 dark:text-white'}`}>
                                 {p.username}{p.userId === myUserId && ' (moi)'}

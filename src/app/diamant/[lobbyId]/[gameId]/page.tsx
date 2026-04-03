@@ -28,10 +28,9 @@ const DANGER_EMOJI: Record<string, string> = {
     ram: '🐏',
 };
 
-// ── Timer bar ─────────────────────────────────────────────────────────────────
-
-import TurnTimer from '@/components/TurnTimer';
-const TimerBar = ({ endsAt, duration }: { endsAt: number; duration: number }) => <TurnTimer endsAt={endsAt} duration={duration} label="Temps pour décider" />;
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
 
 // ── Card component ────────────────────────────────────────────────────────────
 
@@ -189,66 +188,32 @@ export default function DiamantPage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
-            {/* Header */}
-            <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-                {/* Left slot */}
-                <div className="w-48 shrink-0 flex items-center gap-2">
-                    <span className="text-xl">💎</span>
-                    <h1 className="text-base font-black tracking-tight text-amber-800 dark:text-amber-100">Diamant</h1>
-                </div>
-
-                {/* Center slot — round dots + label */}
-                <div className="flex-1 flex justify-center items-center gap-2">
+            <GamePageHeader
+                left={<><span className="text-xl">💎</span><h1 className="text-base font-black tracking-tight text-amber-800 dark:text-amber-100">Diamant</h1></>}
+                center={<>
                     {Array.from({ length: state.totalRounds }, (_, i) => (
-                        <div
-                            key={i}
-                            className={`w-2.5 h-2.5 rounded-full transition-all ${i < state.round - 1
-                                ? 'bg-gray-400 dark:bg-gray-600'
-                                : i === state.round - 1
-                                    ? 'bg-amber-400 shadow-lg shadow-amber-400/50'
-                                    : 'bg-gray-200 border border-gray-300 dark:bg-gray-800 dark:border-gray-700'
-                                }`}
-                        />
+                        <div key={i} className={`w-2.5 h-2.5 rounded-full transition-all ${i < state.round - 1 ? 'bg-gray-400 dark:bg-gray-600' : i === state.round - 1 ? 'bg-amber-400 shadow-lg shadow-amber-400/50' : 'bg-gray-200 border border-gray-300 dark:bg-gray-800 dark:border-gray-700'}`} />
                     ))}
-                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">
-                        Manche {state.round}/{state.totalRounds}
-                    </span>
-                </div>
-
-                {/* Right slot — my safe score + abandon */}
-                <div className="w-48 shrink-0 flex justify-end items-center gap-2">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">Manche {state.round}/{state.totalRounds}</span>
+                </>}
+                right={<>
                     {me && (
                         <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-1.5 text-sm">
                             <span className="text-amber-600 dark:text-amber-400 font-bold">💎{me.safeRubies}</span>
-                            {me.relicPoints > 0 && (
-                                <>
-                                    <span className="text-gray-400 dark:text-gray-600">+</span>
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                                        🏺{me.relicPoints}pts
-                                    </span>
-                                </>
-                            )}
+                            {me.relicPoints > 0 && (<><span className="text-gray-400 dark:text-gray-600">+</span><span className="text-emerald-600 dark:text-emerald-400 font-bold">🏺{me.relicPoints}pts</span></>)}
                             <span className="text-gray-400 dark:text-gray-600">=</span>
-                            <span className="text-gray-800 dark:text-white font-black">
-                                {me.safeRubies + me.relicPoints}
-                            </span>
+                            <span className="text-gray-800 dark:text-white font-black">{me.safeRubies + me.relicPoints}</span>
                             <span className="text-gray-400 dark:text-gray-600 text-xs">pts</span>
                         </div>
                     )}
-                    {state.phase === 'playing' && (
-                        <button
-                            onClick={() => { if (!iSurrendered && confirm('Abandonner la partie ?')) surrender(); }}
-                            disabled={iSurrendered}
-                            className={`text-xs px-3 py-1.5 rounded-lg transition-all border ${iSurrendered
-                                ? 'text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'
-                                : 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600'
-                                }`}
-                        >
-                            🏳️ Abandonner
-                        </button>
-                    )}
-                </div>
-            </header>
+                    {state.phase === 'playing' && <SurrenderButton onSurrender={surrender} disabled={iSurrendered} />}
+                </>}
+            />
+
+            {/* Timer bar */}
+            {state.phase === 'playing' && state.decisionPhase && (
+                <TimerBar endsAt={state.decisionEndsAt} duration={state.decisionDuration} label="Temps pour décider" />
+            )}
 
             {/* Error toast */}
             {state.error && (
@@ -301,11 +266,6 @@ export default function DiamantPage() {
                                             : '🃏 Révélation de la prochaine carte…'
                                     }
                                 </div>
-                            )}
-
-                            {/* Timer */}
-                            {state.decisionPhase && state.decisionEndsAt && amInCave && (
-                                <TimerBar endsAt={state.decisionEndsAt} duration={state.decisionDuration} />
                             )}
 
                             {/* Cards path */}

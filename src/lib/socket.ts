@@ -1,6 +1,30 @@
 // src/lib/socket.ts
 import { io, Socket } from "socket.io-client";
 
+// ── Token cache ───────────────────────────────────────────────────────────────
+
+let cachedToken: string | null = null;
+let tokenFetchedAt = 0;
+const TOKEN_TTL_MS = 12 * 60 * 1000; // refresh 3 min before the 15 min server expiry
+
+async function getSocketToken(): Promise<string> {
+    const now = Date.now();
+    if (cachedToken && now - tokenFetchedAt < TOKEN_TTL_MS) return cachedToken;
+    try {
+        const res = await fetch('/api/auth/socket-token');
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        cachedToken = data.token as string;
+        tokenFetchedAt = now;
+        return cachedToken;
+    } catch (err) {
+        console.error('❌ socket-token fetch failed:', err);
+        return '';
+    }
+}
+
+// ── Socket factory ────────────────────────────────────────────────────────────
+
 let lobbySocket: Socket | null = null;
 let quizSocket: Socket | null = null;
 let unoSocket: Socket | null = null;
@@ -18,6 +42,9 @@ function createSocket(url: string, name: string): Socket {
         transports: ["websocket"],
         withCredentials: true,
         autoConnect: false,
+        auth: (cb) => {
+            getSocketToken().then((token) => cb({ token }));
+        },
     });
     socket.on("connect", () => console.log(`✅ ${name} connecté`, socket.id));
     socket.on("connect_error", (err) => console.error(`❌ ${name} error:`, err));
@@ -58,7 +85,6 @@ export function getSkyjowSocket(): Socket | null {
     if (!skyjowSocket.connected) skyjowSocket.connect();
     return skyjowSocket;
 }
-
 
 export function getYahtzeeSocket(): Socket | null {
     if (typeof window === "undefined") return null;

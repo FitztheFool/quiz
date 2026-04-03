@@ -57,6 +57,7 @@ export type GameState = {
     teammateHand: Card[] | null;
     teammateId: string | null;
     myTeam: 0 | 1 | null;
+    turnEndsAt: number | null;
 };
 
 export type LobbyState = {

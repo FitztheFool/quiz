@@ -47,7 +47,8 @@
       "/home/faros/dev-launcher/skyjow-server/src",
       "/home/faros/dev-launcher/battleship-server/src",
       "/home/faros/quiz/src/app/uno/[lobbyId]",
-      "/home/faros/quiz/src/app/impostor/[lobbyId]"
+      "/home/faros/quiz/src/app/impostor/[lobbyId]",
+      "/home/faros/dev-launcher/lobby-server/src"
     ]
   }
 }

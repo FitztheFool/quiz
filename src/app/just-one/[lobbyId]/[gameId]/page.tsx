@@ -8,7 +8,9 @@ import { useJustOne } from '@/hooks/useJustOne';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
-import TurnTimer from '@/components/TurnTimer';
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
 
 // ─── Composants ───────────────────────────────────────────────────────────────
 
@@ -140,7 +142,6 @@ export default function JustOnePage() {
                         <div className="text-4xl">👁️</div>
                         <p className="text-lg font-bold text-gray-900 dark:text-white">C'est ton tour de deviner !</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Choisis un numéro de 1 à 5.</p>
-                        {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                         <div className="flex justify-center gap-3 flex-wrap">
                             {[1, 2, 3, 4, 5].map(i => (
                                 <button key={i}
@@ -159,7 +160,6 @@ export default function JustOnePage() {
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                         <span className="font-semibold text-gray-900 dark:text-white">{guesserName}</span> choisit son mot…
                     </p>
-                    {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                     {card && (
                         <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 mt-2">
                             <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 uppercase tracking-wider">La carte</p>
@@ -186,7 +186,6 @@ export default function JustOnePage() {
                     <div className="text-center space-y-4">
                         <div className="text-4xl">🤫</div>
                         <p className="text-lg font-bold text-gray-900 dark:text-white">Les autres écrivent leurs indices…</p>
-                        {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                         <div className="flex flex-wrap gap-2 justify-center">
                             {players.filter(p => p.id !== guesserId).map(p => (
                                 <PlayerBadge key={p.id} name={p.name}
@@ -205,7 +204,6 @@ export default function JustOnePage() {
                             {card && currentWordIndex !== null ? card.words[currentWordIndex] : '???'}
                         </p>
                     </div>
-                    {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                     {!clueSubmitted ? (
                         <div className="space-y-3">
                             <input
@@ -279,7 +277,6 @@ export default function JustOnePage() {
                                 </div>
                             ))}
                         </div>
-                        {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                         <input
                             type="text"
                             value={myGuess}
@@ -319,7 +316,6 @@ export default function JustOnePage() {
                             </div>
                         ))}
                     </div>
-                    {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                 </div>
             );
         }
@@ -330,38 +326,20 @@ export default function JustOnePage() {
     return (
         <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
-            <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-                <div className="w-48 shrink-0">
-                    <span className="font-bold text-gray-900 dark:text-white">🔤 Just One</span>
-                </div>
-                <div className="flex-1 flex justify-center">
-                    <div className="text-center">
-                        {round > 0 && (
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white">Manche {round}/13</p>
-                        )}
-                        {guesserName && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {isGuesser ? 'Tu devines' : <>👁️ <span className="font-medium">{guesserName}</span> devine</>}
-                            </p>
-                        )}
-                    </div>
-                </div>
-                <div className="w-48 shrink-0 flex justify-end items-center gap-2">
+            <GamePageHeader
+                left={<span className="font-bold">🔤 Just One</span>}
+                center={<div className="text-center">
+                    {round > 0 && <p className="text-sm font-semibold text-gray-900 dark:text-white">Manche {round}/13</p>}
+                    {guesserName && <p className="text-xs text-gray-500 dark:text-gray-400">{isGuesser ? 'Tu devines' : <><span>👁️ </span><span className="font-medium">{guesserName}</span> devine</>}</p>}
+                </div>}
+                right={<>
                     <ScoreBadge score={score} />
-                    <button onClick={() => setShowHistory(h => !h)}
-                        className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all">
-                        📜 Historique
-                    </button>
-                    {roundState !== 'WAITING' && roundState !== 'END_GAME' && (
-                        <button
-                            onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
-                        >
-                            🏳️ Abandonner
-                        </button>
-                    )}
-                </div>
-            </header>
+                    <button onClick={() => setShowHistory(h => !h)} className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all">📜 Historique</button>
+                    {roundState !== 'WAITING' && roundState !== 'END_GAME' && <SurrenderButton onSurrender={surrender} />}
+                </>}
+            />
+
+            <TimerBar endsAt={timerEndsAt} duration={timerDuration} />
 
             <div className="shrink-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-2 flex flex-wrap gap-2">
                 {players.map(p => (

@@ -24,7 +24,7 @@ export interface GameState {
     scores: [number, number];
     turnStartedAt: number | null;
     turnDuration: number;
-    reason?: 'surrender' | null;
+    reason?: 'surrender' | 'afk' | null;
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────

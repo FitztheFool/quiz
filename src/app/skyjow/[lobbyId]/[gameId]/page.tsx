@@ -2,7 +2,8 @@
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
-import TurnTimer from '@/components/TurnTimer';
+import TimerBar from '@/components/TimerBar';
+import SurrenderButton from '@/components/SurrenderButton';
 import GameOverModal from '@/components/GameOverModal';
 import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 
@@ -342,26 +343,17 @@ export default function skyjowGamePage() {
                         ))}
                     </div>
                     {phase !== 'ended' && phase !== 'game_end' && !iSurrendered && (
-                        <button
-                            onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
-                        >
-                            🏳️ Abandonner
-                        </button>
+                        <SurrenderButton onSurrender={surrender} />
                     )}
                 </div>
             </header>
 
             {/* ── Timer header ── */}
-            {phase === 'flip2' && flip2EndsAt !== null && (
-                <div className="shrink-0 px-4 py-1 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-                    <TurnTimer endsAt={flip2EndsAt} duration={flip2Duration} label="Temps pour retourner vos cartes" />
-                </div>
+            {phase === 'flip2' && (
+                <TimerBar endsAt={flip2EndsAt} duration={flip2Duration} label="Temps pour retourner vos cartes" />
             )}
-            {turnStartedAt !== null && isPlayingPhase(phase) && (
-                <div className="shrink-0 px-4 py-1 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-                    <TurnTimer endsAt={turnStartedAt + turnDuration * 1000} duration={turnDuration} label="Temps restant" />
-                </div>
+            {isPlayingPhase(phase) && (
+                <TimerBar endsAt={turnStartedAt !== null ? turnStartedAt + turnDuration * 1000 : null} duration={turnDuration} label="Temps restant" />
             )}
 
             {/* ── Corps principal ── */}

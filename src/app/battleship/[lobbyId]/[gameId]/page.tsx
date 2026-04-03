@@ -12,10 +12,9 @@ import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
 import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 
-// ── Turn timer bar ────────────────────────────────────────────────────────────
-
-import TurnTimer from '@/components/TurnTimer';
-const TurnTimerBar = ({ endsAt, duration }: { endsAt: number; duration: number }) => <TurnTimer endsAt={endsAt} duration={duration} label="Temps restant" />;
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -101,41 +100,33 @@ export default function BattleshipPage() {
     return (
         <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
-            {/* Top bar */}
-            <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-                {/* Left: game icon + name */}
-                <div className="w-48 shrink-0 flex items-center gap-2">
-                    <span className="text-xl">⚓</span>
-                    <h1 className="text-sm font-bold tracking-tight">Bataille Navale</h1>
-                </div>
-
-                {/* Center: player vs player with turn indicator */}
-                <div className="flex-1 flex justify-center">
+            <GamePageHeader
+                left={<><span className="text-xl">⚓</span><h1 className="text-sm font-bold tracking-tight">Bataille Navale</h1></>}
+                center={
                     <div className="flex items-center gap-2 text-sm">
                         <span className={`${state.phase === 'playing' && isMyTurn ? 'font-bold text-gray-900 dark:text-white' : 'font-normal text-gray-500 dark:text-gray-400'}`}>
-                            {me?.username ?? 'Vous'}
-                            {state.phase === 'playing' && isMyTurn && ' ⚡'}
+                            {me?.username ?? 'Vous'}{state.phase === 'playing' && isMyTurn && ' ⚡'}
                         </span>
                         <span className="text-gray-400 dark:text-gray-600">vs</span>
                         <span className={`${state.phase === 'playing' && !isMyTurn ? 'font-bold text-gray-900 dark:text-white' : 'font-normal text-gray-500 dark:text-gray-400'}`}>
-                            {opponent?.username ?? 'Adversaire'}
-                            {state.phase === 'playing' && !isMyTurn && ' ⚡'}
+                            {opponent?.username ?? 'Adversaire'}{state.phase === 'playing' && !isMyTurn && ' ⚡'}
                         </span>
                     </div>
-                </div>
+                }
+                right={state.phase === 'playing' && <SurrenderButton onSurrender={surrender} />}
+            />
 
-                {/* Right: surrender */}
-                <div className="w-48 shrink-0 flex justify-end">
-                    {state.phase === 'playing' && (
-                        <button
-                            onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
-                        >
-                            🏳️ Abandonner
-                        </button>
-                    )}
-                </div>
-            </header>
+            {/* Timer bar */}
+            {state.phase === 'placement' && (
+                <TimerBar endsAt={state.placementEndsAt} duration={options.placementDuration ?? 60} label="⚓ Placez vos navires" />
+            )}
+            {state.phase === 'playing' && (
+                <TimerBar
+                    endsAt={state.turnEndsAt}
+                    duration={options.turnDuration ?? 30}
+                    label={isMyTurn ? '🎯 Votre tour' : `⏳ Tour de ${opponent?.username ?? 'l\'adversaire'}`}
+                />
+            )}
 
             {/* Error toast */}
             {state.error && (
@@ -165,19 +156,6 @@ export default function BattleshipPage() {
                     {/* Playing */}
                     {state.phase === 'playing' && (
                         <div className="flex flex-col items-center gap-4 w-full">
-                            {/* Turn info banner */}
-                            <div className={`bg-white dark:bg-gray-900 border rounded-xl px-4 py-2 text-center text-sm font-semibold ${isMyTurn ? 'border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300' : 'border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300'}`}>
-                                {isMyTurn ? '🎯 C\'est votre tour — Choisissez une case à tirer !' : `⏳ Tour de ${opponent?.username ?? 'l\'adversaire'}…`}
-                            </div>
-                            {/* Timer bar */}
-                            {state.turnEndsAt && (
-                                <div className="w-full max-w-[660px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3">
-                                    <TurnTimerBar
-                                        endsAt={state.turnEndsAt}
-                                        duration={options.turnDuration ?? 30}
-                                    />
-                                </div>
-                            )}
                             {/* Board */}
                             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
                                 <BattleshipBoard

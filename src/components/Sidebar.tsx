@@ -13,13 +13,10 @@ const QUIZ_NAV_ITEMS: { label: string; icon: string; href?: string }[] = [
     { label: 'Créer un quiz', icon: '➕', href: '/quiz/create' },
 ];
 
-const INACTIVE = 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white';
+const INACTIVE = 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200';
+const ACTIVE_STYLE = { item: 'text-gray-900 dark:text-white font-semibold', dot: 'bg-gray-900 dark:bg-white' };
 const ACTIVE: Record<string, { item: string; dot: string }> = {
-    blue: { item: 'bg-blue-50 text-blue-700', dot: 'bg-blue-500' },
-    green: { item: 'bg-green-50 text-green-700', dot: 'bg-green-500' },
-    yellow: { item: 'bg-yellow-50 text-yellow-700', dot: 'bg-yellow-500' },
-    red: { item: 'bg-red-50 text-red-700', dot: 'bg-red-500' },
-    gray: { item: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white', dot: 'bg-gray-500' },
+    blue: ACTIVE_STYLE, green: ACTIVE_STYLE, yellow: ACTIVE_STYLE, red: ACTIVE_STYLE, gray: ACTIVE_STYLE,
 };
 
 // ─── NavLink ──────────────────────────────────────────────────────────────────
@@ -53,7 +50,7 @@ function SubNavLink({ href, icon, label, isActive, color }: {
     const a = ACTIVE[color];
     return (
         <Link href={href}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${isActive ? a.item : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${isActive ? a.item : INACTIVE}`}
         >
             <span className="text-sm">{icon}</span>
             {label}

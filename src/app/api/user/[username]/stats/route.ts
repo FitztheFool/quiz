@@ -108,7 +108,7 @@ export async function GET(
         if (idx === -1) {
             existing.push({
                 username: a.user.username ?? 'Inconnu',
-                score: a.score,
+                score: a.gameType === 'PUISSANCE4' ? (a.score > 0 ? 1 : 0) : a.score,
                 placement: a.placement,
                 abandon: a.abandon,
                 afk: a.afk,
@@ -131,7 +131,9 @@ export async function GET(
             gameType: first.gameType,
             createdAt: first.createdAt,
             quiz: first.quiz ? { id: first.quiz.id, title: first.quiz.title } : null,
-            score: myEntry?.score ?? first.score,
+            score: first.gameType === 'PUISSANCE4'
+                ? ((myEntry?.score ?? first.score) > 0 ? 1 : 0)
+                : (myEntry?.score ?? first.score),
             placement: myEntry?.placement ?? first.placement,
             abandon: myEntry?.abandon ?? first.abandon,
             afk: myEntry?.afk ?? first.afk,

@@ -5,7 +5,9 @@ import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
 import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 
-import TurnTimer from '@/components/TurnTimer';
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
 import { useState } from 'react';
 import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
@@ -251,39 +253,14 @@ export default function YahtzeePage() {
           ))}
         </div>
       )}
-      {/* Header */}
-      <div className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-        {/* Left */}
-        <div className="w-48 shrink-0 flex items-center gap-2">
-          <span className="text-xl">🎲</span>
-          <div>
-            <span className="font-bold leading-none">Yahtzee</span>
-            <p className="text-xs text-gray-400 dark:text-gray-500 leading-none">Tour {game.turn} / 13</p>
-          </div>
-        </div>
-        {/* Center */}
-        <div className="flex-1 flex justify-center">
-          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isMyTurn ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' : 'text-gray-400 dark:text-gray-500'}`}>
-            {isMyTurn ? '🎯 À vous de jouer !' : `⏳ Tour de ${currentPlayer?.username}`}
-          </span>
-        </div>
-        {/* Right */}
-        <div className="w-48 shrink-0 flex justify-end items-center gap-2">
-          {game?.phase !== 'ended' && (
-            <button
-              onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-              className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
-            >
-              🏳️ Abandonner
-            </button>
-          )}
-        </div>
-      </div>
+      <GamePageHeader
+        left={<><span className="text-xl">🎲</span><div><span className="font-bold leading-none">Yahtzee</span><p className="text-xs text-gray-400 dark:text-gray-500 leading-none">Tour {game.turn} / 13</p></div></>}
+        center={<span className={`text-sm font-semibold px-3 py-1 rounded-full ${isMyTurn ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' : 'text-gray-400 dark:text-gray-500'}`}>{isMyTurn ? '🎯 À vous de jouer !' : `⏳ Tour de ${currentPlayer?.username}`}</span>}
+        right={game?.phase !== 'ended' && <SurrenderButton onSurrender={surrender} />}
+      />
 
-      {timerEndsAt && game?.phase !== 'ended' && (
-        <div className="shrink-0 px-4 py-1 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <TurnTimer endsAt={timerEndsAt} duration={120} label="Temps restant" />
-        </div>
+      {game?.phase !== 'ended' && (
+        <TimerBar endsAt={timerEndsAt} duration={120} label="Temps restant" />
       )}
       <div className="p-4">
         <div className="max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6">

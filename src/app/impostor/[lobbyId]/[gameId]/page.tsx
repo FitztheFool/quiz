@@ -7,7 +7,9 @@ import { useImpostor } from '@/hooks/useImpostor';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
-import TurnTimer from '@/components/TurnTimer';
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -143,35 +145,21 @@ export default function ImpostorPage() {
     };
 
     const header = (
-        <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-            <div className="w-48 shrink-0 font-bold">🎭 Imposteur</div>
-            <div className="flex-1 flex justify-center text-sm text-gray-600 dark:text-gray-400 gap-2 items-center">
-                {roundState !== 'WAITING' && (
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                        Round {currentRound}/{totalRounds}
-                    </span>
-                )}
+        <GamePageHeader
+            left={<span className="font-bold">🎭 Imposteur</span>}
+            center={<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                {roundState !== 'WAITING' && <span className="font-semibold text-gray-900 dark:text-white">Round {currentRound}/{totalRounds}</span>}
                 <span>{phaseLabel[roundState]}</span>
-            </div>
-            <div className="w-48 shrink-0 flex justify-end items-center gap-2">
+            </div>}
+            right={<>
                 {role && (
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold
-                        ${role === 'impostor'
-                            ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30'
-                            : 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30'}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${role === 'impostor' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30' : 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30'}`}>
                         {role === 'impostor' ? '🎭 Imposteur' : '🧑 Joueur'}
                     </span>
                 )}
-                {roundState !== 'WAITING' && roundState !== 'END' && (
-                    <button
-                        onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                        className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
-                    >
-                        🏳️ Abandonner
-                    </button>
-                )}
-            </div>
-        </header>
+                {roundState !== 'WAITING' && roundState !== 'END' && <SurrenderButton onSurrender={surrender} />}
+            </>}
+        />
     );
 
     // ─── Rôle banner ──────────────────────────────────────────────────────────
@@ -190,6 +178,8 @@ export default function ImpostorPage() {
         </div>
     );
 
+    const timerBar = <TimerBar endsAt={timerEndsAt} duration={timerDuration} />;
+
     // ─── Attente ──────────────────────────────────────────────────────────────
 
     if (roundState === 'WAITING') return (
@@ -207,6 +197,7 @@ export default function ImpostorPage() {
         return (
             <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
                 {header}
+                {timerBar}
                 <main className="p-4 flex flex-col items-center">
                     <div className="w-full max-w-lg space-y-4">
                         {roleBanner}
@@ -216,7 +207,6 @@ export default function ImpostorPage() {
                                 <h2 className="font-bold text-gray-900 dark:text-white">Round {currentRound}/{totalRounds}</h2>
                                 <span className="text-xs text-gray-400">{submittedCount}/{speakingOrder.length} joué</span>
                             </div>
-                            {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                             <div className="mt-4 text-center">
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">C'est au tour de</p>
                                 <p className={`text-xl font-bold ${isMyTurn ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
@@ -344,6 +334,7 @@ export default function ImpostorPage() {
         return (
             <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
                 {header}
+                {timerBar}
                 <main className="p-4 flex flex-col items-center">
                     <div className="w-full max-w-lg space-y-4">
                         {roleBanner}
@@ -352,7 +343,6 @@ export default function ImpostorPage() {
                                 <h2 className="font-bold text-gray-900 dark:text-white">Vote final</h2>
                                 <span className="text-xs text-gray-400">{votedCount}/{players.length}</span>
                             </div>
-                            {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 mb-4">Qui est l'imposteur ?</p>
                             <div className="flex flex-col gap-2">
                                 {players.filter(p => p.id !== me.userId).map(p => (
@@ -381,6 +371,7 @@ export default function ImpostorPage() {
         return (
             <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
                 {header}
+                {timerBar}
                 <main className="p-4 flex flex-col items-center">
                     <div className="w-full max-w-lg">
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center space-y-4">
@@ -391,7 +382,6 @@ export default function ImpostorPage() {
                             <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {isImpostor ? 'Connaissez-vous le mot secret ? Tentez votre chance !' : "L'imposteur tente de deviner le mot secret…"}
                             </p>
-                            {timerEndsAt && <TurnTimer endsAt={timerEndsAt} duration={timerDuration} />}
                             {isImpostor && !guessSubmitted && (
                                 <div className="flex gap-2">
                                     <input

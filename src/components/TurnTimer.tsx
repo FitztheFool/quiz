@@ -2,13 +2,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-type Props = { endsAt: number; duration: number; label?: string };
+type Props = { endsAt: number; duration: number; label?: string; };
 
 /**
  * Barre de timer horizontale réutilisable (mode timestamp).
  * <TurnTimer endsAt={state.turnEndsAt} duration={30} />
  */
-export default function TurnTimer({ endsAt, duration, label }: Props) {
+export default function TurnTimer({ endsAt, duration }: Props) {
     const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
 
     useEffect(() => {
@@ -25,27 +25,15 @@ export default function TurnTimer({ endsAt, duration, label }: Props) {
         : 'from-red-500 to-rose-500';
 
     return (
-        <div className="w-full space-y-1">
-            {label && (
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>{label}</span>
-                    <span className={`font-mono font-bold ${urgent ? 'text-red-500 dark:text-red-400 animate-pulse' : ''}`}>
-                        {remaining}s
-                    </span>
-                </div>
-            )}
-            <div className="flex items-center gap-3">
-                {!label && (
-                    <span className={`text-lg font-bold tabular-nums w-10 shrink-0 ${urgent ? 'text-red-500 animate-pulse' : 'text-gray-700 dark:text-gray-300'}`}>
-                        {remaining}s
-                    </span>
-                )}
-                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                        className={`h-full bg-gradient-to-r ${color} rounded-full transition-all duration-200`}
-                        style={{ width: `${pct}%` }}
-                    />
-                </div>
+        <div className="flex items-center gap-3 w-full">
+            <span className={`text-sm font-bold tabular-nums w-8 shrink-0 text-right ${urgent ? 'text-red-500 dark:text-red-400 animate-pulse' : 'text-gray-600 dark:text-gray-400'}`}>
+                {remaining}s
+            </span>
+            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                    className={`h-full bg-gradient-to-r ${color} rounded-full transition-all duration-200`}
+                    style={{ width: `${pct}%` }}
+                />
             </div>
         </div>
     );

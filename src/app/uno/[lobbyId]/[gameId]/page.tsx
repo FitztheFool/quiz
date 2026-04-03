@@ -3,6 +3,9 @@
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameOverModal from '@/components/GameOverModal';
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
 
 import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
@@ -250,63 +253,42 @@ export default function UnoPage() {
                 </div>
             )}
 
-            {/* Top bar */}
-            <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-                {/* Left slot */}
-                <div className="w-48 shrink-0 flex items-center gap-2">
+            <GamePageHeader
+                left={<>
                     <span className="font-bold">🃏 UNO</span>
-                    {is2v2 && myTeamColor && (
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${myTeamColor.badge}`}>
-                            {TEAM_NAMES[myTeam!]}
-                        </span>
-                    )}
-                    {gameState.spectator && (
-                        <span className="text-xs bg-purple-500/20 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-semibold">
-                            👁 Spectateur
-                        </span>
-                    )}
-                </div>
-
-                {/* Center slot — turn indicator */}
-                <div className="flex-1 flex justify-center items-center gap-2">
-                    {gameState.drawStack > 0 && (
-                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                            Stack +{gameState.drawStack}
-                        </span>
-                    )}
+                    {is2v2 && myTeamColor && <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${myTeamColor.badge}`}>{TEAM_NAMES[myTeam!]}</span>}
+                    {gameState.spectator && <span className="text-xs bg-purple-500/20 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-semibold">👁 Spectateur</span>}
+                </>}
+                center={<>
+                    {gameState.drawStack > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">Stack +{gameState.drawStack}</span>}
                     {!gameState.spectator && gameState.isMyTurn ? (
                         <span className={`text-sm font-bold ${isMeInactive ? 'text-orange-500 animate-pulse' : 'text-yellow-500 dark:text-yellow-400 animate-pulse'}`}>
-                            {isMeInactive
-                                ? `⚠️ Joue vite ! exclusion dans ${inactivitySeconds}s`
-                                : '✨ À toi de jouer !'}
+                            {isMeInactive ? `⚠️ Joue vite ! exclusion dans ${inactivitySeconds}s` : '✨ À toi de jouer !'}
                         </span>
                     ) : (
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             Tour de <span className="text-gray-900 dark:text-white font-bold">{currentPlayer?.username}</span>
                             {inactivityUserId === currentPlayer?.userId && inactivitySeconds !== null && (
-                                <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded
-                                    ${inactivitySeconds <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-500 text-white'}`}>
-                                    ⏰ {inactivitySeconds}s
-                                </span>
+                                <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded ${inactivitySeconds <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-500 text-white'}`}>⏰ {inactivitySeconds}s</span>
                             )}
                         </span>
                     )}
-                </div>
-
-                {/* Right slot — color dot + direction + abandon */}
-                <div className="w-48 shrink-0 flex justify-end items-center gap-2">
+                </>}
+                right={<>
                     <span className={`w-5 h-5 rounded-full ${COLOR_MAP[gameState.currentColor]} border-2 border-white dark:border-gray-800 shadow`} />
                     <span className="text-gray-500 dark:text-gray-400 text-lg">{gameState.direction === 1 ? '↻' : '↺'}</span>
-                    {!gameState.spectator && (
-                        <button
-                            onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
-                        >
-                            🏳️ Abandonner
-                        </button>
-                    )}
-                </div>
-            </header>
+                    {!gameState.spectator && <SurrenderButton onSurrender={surrender} />}
+                </>}
+            />
+
+            {/* Timer bar */}
+            {gameState.status === 'PLAYING' && (
+                <TimerBar
+                    endsAt={gameState.turnEndsAt}
+                    duration={60}
+                    label={gameState.isMyTurn ? '🎯 Votre tour' : `⏳ Tour de ${currentPlayer?.username ?? '…'}`}
+                />
+            )}
 
             {/* Players zone */}
             <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-2">

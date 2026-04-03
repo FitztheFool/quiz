@@ -9,7 +9,9 @@ import GameOverModal from '@/components/GameOverModal';
 import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
-import TurnTimer from '@/components/TurnTimer';
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -77,59 +79,42 @@ export default function Puissance4Page() {
         .col-hover { animation: pulse-glow 1.5s ease-in-out infinite; }
       `}</style>
 
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
                 {/* ── Header ── */}
-                <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-4">
-                    <div className="w-48 shrink-0 font-bold text-base">
-                        🔴 Puissance 4
-                    </div>
+                <GamePageHeader
+                    left={<span className="font-bold">🔴 Puissance 4</span>}
+                    center={
+                        <div className="flex items-center gap-2 text-sm">
+                            {players.length === 2 && player0 && player1 ? (
+                                <>
+                                    <span className={`flex items-center gap-1 transition-all ${gameState.status === 'playing' && gameState.currentTurn === 0 ? 'font-bold' : 'font-normal opacity-60'}`}>
+                                        {PLAYER_COLORS[0].emoji} {player0.username}
+                                    </span>
+                                    <span className="text-gray-400 dark:text-gray-600">vs</span>
+                                    <span className={`flex items-center gap-1 transition-all ${gameState.status === 'playing' && gameState.currentTurn === 1 ? 'font-bold' : 'font-normal opacity-60'}`}>
+                                        {player1.username} {PLAYER_COLORS[1].emoji}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-gray-400 dark:text-gray-500 text-xs">En attente de joueurs…</span>
+                            )}
+                        </div>
+                    }
+                    right={gameState.status === 'playing' && <SurrenderButton onSurrender={surrender} />}
+                />
 
-                    <div className="flex-1 flex justify-center items-center gap-2 text-sm">
-                        {players.length === 2 && player0 && player1 ? (
-                            <>
-                                <span className={`flex items-center gap-1 transition-all ${gameState.status === 'playing' && gameState.currentTurn === 0 ? 'font-bold' : 'font-normal opacity-60'}`}>
-                                    {PLAYER_COLORS[0].emoji} {player0.username}
-                                </span>
-                                <span className="text-gray-400 dark:text-gray-600">vs</span>
-                                <span className={`flex items-center gap-1 transition-all ${gameState.status === 'playing' && gameState.currentTurn === 1 ? 'font-bold' : 'font-normal opacity-60'}`}>
-                                    {player1.username} {PLAYER_COLORS[1].emoji}
-                                </span>
-                            </>
-                        ) : (
-                            <span className="text-gray-400 dark:text-gray-500 text-xs">En attente de joueurs…</span>
-                        )}
-                    </div>
-
-                    <div className="w-48 shrink-0 flex justify-end items-center gap-2 text-sm font-medium">
-                        {gameState.status === 'playing' && (
-                            <button
-                                onClick={() => { if (confirm('Abandonner la partie ?')) surrender(); }}
-                                className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
-                            >
-                                🏳️ Abandonner
-                            </button>
-                        )}
-                    </div>
-                </header>
+                {/* ── Timer bar ── */}
+                {gameState.status === 'playing' && (
+                    <TimerBar
+                        endsAt={gameState.turnStartedAt ? gameState.turnStartedAt + gameState.turnDuration * 1000 : null}
+                        duration={gameState.turnDuration}
+                        label={isMyTurn ? '🎯 Votre tour' : `⏳ Tour de ${players.find(p => p.colorIndex === gameState.currentTurn)?.username ?? '…'}`}
+                    />
+                )}
 
                 {/* ── Main ── */}
                 <main className="flex-1 flex flex-col items-center justify-center p-4 gap-6">
-
-                    {gameState.status === 'playing' && (
-                        <div className="flex flex-col items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            {isMyTurn
-                                ? <span className="font-bold text-gray-900 dark:text-white animate-pulse">🎯 C'est votre tour !</span>
-                                : <span>⏳ Tour de <strong className="text-gray-900 dark:text-white">{players.find(p => p.colorIndex === gameState.currentTurn)?.username}</strong>…</span>
-                            }
-                            {gameState.turnStartedAt && (
-                                <TurnTimer
-                                    endsAt={gameState.turnStartedAt + gameState.turnDuration * 1000}
-                                    duration={gameState.turnDuration}
-                                />
-                            )}
-                        </div>
-                    )}
 
                     <div className="relative select-none" onMouseLeave={() => setHoverCol(null)}>
                         {isMyTurn && hoverCol !== null && gameState.grid[0][hoverCol] === null && (
@@ -145,9 +130,9 @@ export default function Puissance4Page() {
                         <div
                             className="rounded-2xl p-3 gap-2 grid"
                             style={{
-                                background: 'rgba(255,255,255,0.05)',
+                                background: 'rgba(15,30,80,0.95)',
                                 backdropFilter: 'blur(12px)',
-                                border: '1px solid rgba(255,255,255,0.08)',
+                                border: '2px solid rgba(30,60,140,0.8)',
                                 gridTemplateColumns: `repeat(${COLS}, 56px)`,
                                 gridTemplateRows: `repeat(${ROWS}, 56px)`,
                             }}
@@ -163,7 +148,7 @@ export default function Puissance4Page() {
                                             key={`${row}-${col}`}
                                             className={`relative rounded-full transition-all duration-150
                                                 ${isMyTurn && !colFull ? 'cursor-pointer' : 'cursor-default'}
-                                                ${colHovered && isMyTurn && !colFull ? 'col-hover bg-white/5' : 'bg-black/30'}
+                                                ${colHovered && isMyTurn && !colFull ? 'col-hover bg-white/10' : 'bg-black/60'}
                                             `}
                                             onClick={() => drop(col)}
                                             onMouseEnter={() => isMyTurn && setHoverCol(col)}
@@ -204,8 +189,8 @@ export default function Puissance4Page() {
                                     : `${winnerPlayer?.username ?? 'Adversaire'} gagne !`
                         }
                         subtitle={
-                            gameState.reason === 'surrender'
-                                ? 'Abandon'
+                            gameState.reason === 'surrender' ? 'Abandon'
+                                : gameState.reason === 'afk' ? 'AFK'
                                 : winnerPlayer && gameState.winner !== 'draw'
                                     ? `${PLAYER_COLORS[winnerPlayer.colorIndex].emoji} 4 en ligne !`
                                     : undefined
@@ -222,12 +207,13 @@ export default function Puissance4Page() {
                             ).map((p) => {
                                 const isWinner = p!.userId === winnerPlayer?.userId;
                                 const isLoserBySurrender = !isWinner && gameState.reason === 'surrender';
+                                const isLoserByAfk = !isWinner && gameState.reason === 'afk';
                                 return {
                                     userId: p!.userId,
                                     username: p!.username,
                                     score: `${gameState.scores[p!.colorIndex] ?? 0} victoire${(gameState.scores[p!.colorIndex] ?? 0) !== 1 ? 's' : ''}`,
-                                    badges: isLoserBySurrender ? ['Abandon'] : undefined,
-                                    disqualified: isLoserBySurrender,
+                                    badges: isLoserBySurrender ? ['Abandon'] : isLoserByAfk ? ['AFK'] : undefined,
+                                    disqualified: isLoserBySurrender || isLoserByAfk,
                                 };
                             })}
                         />
