@@ -2,7 +2,8 @@
 'use client';
 
 import Link from 'next/link';
-import { GAME_EMOJI_MAP, GAME_LABEL_MAP, GAME_COLOR } from '@/lib/gameConfig';
+import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
+import { GAME_COLOR } from '@/lib/gameColor';
 import PlayerButton from '@/components/PlayerButton';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

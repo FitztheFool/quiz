@@ -223,7 +223,7 @@ export async function GET(req: NextRequest) {
             const usedPlacements = new Set(game.players.map(p => p.placement).filter(p => p != null));
             let botPlacement = 1;
             while (usedPlacements.has(botPlacement)) botPlacement++;
-            game.players.push({ username: '🤖 Ordinateur', score: 0, placement: botPlacement, abandon: false, afk: false, isBot: true });
+            game.players.push({ username: '🤖 Bot 1', score: 0, placement: botPlacement, abandon: false, afk: false, isBot: true });
         }
     }
 

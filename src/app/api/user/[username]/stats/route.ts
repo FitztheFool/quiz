@@ -138,7 +138,7 @@ export async function GET(
             const usedPlacements = new Set(humans.map(p => p.placement).filter(p => p != null));
             let botPlacement = 1;
             while (usedPlacements.has(botPlacement)) botPlacement++;
-            humans.push({ username: '🤖 Ordinateur', score: 0, placement: botPlacement, abandon: false, afk: false, isBot: true });
+            humans.push({ username: '🤖 Bot 1', score: 0, placement: botPlacement, abandon: false, afk: false, isBot: true });
         }
     }
 

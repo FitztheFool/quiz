@@ -14,7 +14,6 @@ import {
     GAME_OPTIONS,
     MAX_PLAYERS_BY_GAME,
     MIN_PLAYERS,
-    EXACT_PLAYERS,
     NO_OPTIONS_GAMES,
     GAME_ROUTES,
     type GameType,
@@ -386,11 +385,10 @@ export default function LobbyCodePage() {
             const count = (state.players?.length ?? 0) + (state.bots ?? 0);
             const g = state.gameType;
             const hasQuiz = g === 'quiz' ? !!state.quizId : true;
-            const exact = EXACT_PLAYERS[g];
             const min = MIN_PLAYERS[g] ?? 2;
             const maxList = MAX_PLAYERS_BY_GAME[g];
             const maxOk = maxList ? count <= Math.max(...maxList) : true;
-            const countOk = exact ? count === exact : count >= min && maxOk;
+            const countOk = count >= min && maxOk;
             // Taboo / UNO 2v2: both teams must have >= 2 players
             const teams = state.teams ? Object.values(state.teams) : [];
             const unoIs2v2 = g === 'uno' && (state.unoOptions?.teamMode ?? 'none') === '2v2';
@@ -563,7 +561,7 @@ export default function LobbyCodePage() {
                             <div className="flex items-center gap-2 mb-3">
                                 <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Jeu</label>
                                 {(() => {
-                                    const minP = EXACT_PLAYERS[gameType] ?? (MIN_PLAYERS[gameType] ?? 2);
+                                    const minP = MIN_PLAYERS[gameType] ?? 2;
                                     const missing = minP - players.length - botCount;
                                     return missing > 0 ? (
                                         <span className="text-xs text-orange-500 dark:text-orange-400">

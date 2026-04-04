@@ -1,7 +1,8 @@
 // src/components/GameStatCards.tsx
 'use client';
 import { useState } from 'react';
-import { GAME_EMOJI_MAP, GAME_LABEL_MAP, GAME_COLOR } from '@/lib/gameConfig';
+import { GAME_EMOJI_MAP, GAME_LABEL_MAP } from '@/lib/gameConfig';
+import { GAME_COLOR } from '@/lib/gameColor';
 
 interface GameStat {
     count: number;
@@ -84,8 +85,8 @@ export default function GameStatCards({ gameStats, ranks = {} }: Props) {
 
     return (
         <div className="space-y-3">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {visible.map(([type, stat]) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {visible.map(([type, stat]) => {
                     const c = GAME_COLOR[type]?.card ?? {
                         border: 'border-gray-200 dark:border-gray-700',
                         bg: 'bg-gray-50 dark:bg-gray-800/50',
@@ -145,25 +146,25 @@ export default function GameStatCards({ gameStats, ranks = {} }: Props) {
                         </div>
                     );
                 })}
-        </div>
-        <div className="flex gap-4">
-            {visibleCount < sorted.length && (
-                <button
-                    onClick={() => setVisibleCount(v => v + PAGE)}
-                    className="text-xs text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                >
-                    Afficher plus ({visibleCount}/{sorted.length}) ↓
-                </button>
-            )}
-            {visibleCount > PAGE && (
-                <button
-                    onClick={() => setVisibleCount(v => v - PAGE)}
-                    className="text-xs text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                >
-                    Afficher moins ↑
-                </button>
-            )}
-        </div>
+            </div>
+            <div className="flex gap-4">
+                {visibleCount < sorted.length && (
+                    <button
+                        onClick={() => setVisibleCount(v => v + PAGE)}
+                        className="text-xs text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                        Afficher plus ({visibleCount}/{sorted.length}) ↓
+                    </button>
+                )}
+                {visibleCount > PAGE && (
+                    <button
+                        onClick={() => setVisibleCount(v => v - PAGE)}
+                        className="text-xs text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                        Afficher moins ↑
+                    </button>
+                )}
+            </div>
         </div>
     );
 }
