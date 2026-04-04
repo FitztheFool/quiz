@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -74,25 +74,25 @@ model VerificationToken {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String?
-  username     String?  @unique
-  email        String   @unique
+  id            String    @id @default(cuid())
+  name          String?
+  username      String?   @unique
+  email         String    @unique
   emailVerified DateTime?
-  image        String?
-  passwordHash String?
-  role         Role     @default(USER)
-  lastSeen     DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  deactivatedAt  DateTime?
-  bannedAt       DateTime?
-  deletedAt  DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(USER)
+  lastSeen      DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deactivatedAt DateTime?
+  bannedAt      DateTime?
+  deletedAt     DateTime?
 
   createdQuizzes Quiz[]
   attempts       Attempt[]
-  accounts Account[]
-  sessions Session[]
+  accounts       Account[]
+  sessions       Session[]
 
   @@map("users")
 }
@@ -109,15 +109,15 @@ model OauthPending {
 }
 
 model Quiz {
-  id                 String    @id @default(cuid())
+  id                 String   @id @default(cuid())
   title              String
-  description        String?   @db.Text
-  randomizeQuestions Boolean   @default(false)
-  isPublic           Boolean   @default(true)
+  description        String?  @db.Text
+  randomizeQuestions Boolean  @default(false)
+  isPublic           Boolean  @default(true)
   categoryId         String
-  category           Category  @relation(fields: [categoryId], references: [id])
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  category           Category @relation(fields: [categoryId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   creatorId String
   creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
@@ -174,20 +174,20 @@ model Category {
 }
 
 model Attempt {
-  id         String   @id @default(cuid())
-  score      Int
-  trapScore  Int      @default(0)   // mots piégés (taboo:fail) — 0 pour les autres jeux
-  rounds     Int      @default(0)   // nombre de manches jouées (Taboo), 0 pour les autres jeux
-  correctAnswers Int @default(0)
-  totalAnswers   Int @default(0)
-  gameType   GameType @default(QUIZ)
-  gameId     String
-  placement  Int?
-  abandon    Boolean  @default(false)  // joueur a abandonné volontairement
-  afk        Boolean  @default(false)  // joueur exclu pour inactivité
-  vsBot      Boolean  @default(false)  // partie jouée contre au moins un bot
-  botScores  Json?                     // [{username, score, placement}] pour les bots participants
-  createdAt  DateTime @default(now())
+  id             String   @id @default(cuid())
+  score          Int
+  trapScore      Int      @default(0)
+  rounds         Int      @default(0)
+  correctAnswers Int      @default(0)
+  totalAnswers   Int      @default(0)
+  gameType       GameType @default(QUIZ)
+  gameId         String
+  placement      Int?
+  abandon        Boolean  @default(false)
+  afk            Boolean  @default(false)
+  vsBot          Boolean  @default(false)
+  botScores      Json?
+  createdAt      DateTime @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -202,8 +202,8 @@ model Attempt {
 }
 
 model Word {
-  id        String   @id @default(cuid())
-  word      String   @unique
-  description  String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  word        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
 }
