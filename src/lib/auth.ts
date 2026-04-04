@@ -9,7 +9,7 @@ import prisma from './prisma';
 import { createPending, getPending, deletePending } from './oauthPendingStore';
 
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma),
+    adapter: PrismaAdapter(prisma as any),
     session: { strategy: 'jwt' },
     pages: { signIn: '/login', signOut: '/login', error: '/login' },
     providers: [

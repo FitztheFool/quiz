@@ -14,14 +14,12 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
-import { GAME_EMOJI_MAP, GAME_LABEL_MAP, GAME_COLOR } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal';
 import GameFilterPills, { type GameFilter } from '@/components/GameFilterPills';
 import GameStatCards from '@/components/GameStatCards';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { plural } from '@/lib/utils';
 import StatChip from '@/components/StatChip';
-import LoadingOverlay from '@/components/LoadingOverlay';
 import ActivityTable, { type ActivityRow } from '@/components/ActivityTable';
 
 interface AdminUser {

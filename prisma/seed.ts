@@ -149,7 +149,7 @@ async function main() {
         select: { id: true, questions: { select: { points: true } } }
     });
 
-    const getMaxScore = (quiz: typeof allQuizzes[0]) => quiz.questions.reduce((sum, q) => sum + q.points, 0);
+    const getMaxScore = (quiz: typeof allQuizzes[0]) => quiz.questions.reduce((sum: number, q: { points: number }) => sum + q.points, 0)
     const getRandScore = (max: number) => Math.floor(Math.random() * (max + 1));
     const getDaysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
