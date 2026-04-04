@@ -4,12 +4,14 @@ dotenv.config();
 
 import crypto from 'node:crypto';
 
-import { PrismaClient, QuestionType } from '@prisma/client';
+import { PrismaClient } from '../src/generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 import bcrypt from 'bcrypt';
 import { seedQuizzes } from './seed-quiz';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
     console.log('1 - entrée dans main');

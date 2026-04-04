@@ -4,7 +4,9 @@ dotenv.config();
 
 import crypto from 'node:crypto';
 
-import { PrismaClient, QuestionType } from '@prisma/client';
+import { PrismaClient } from '../src/generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+
 import { seedQuizzes } from './seed-quiz';
 import bcrypt from 'bcrypt';
 
@@ -22,7 +24,8 @@ function computeUnoScore(rank: number) {
     return 0;
 }
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
     console.log('1 - entrée dans main');
