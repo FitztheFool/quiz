@@ -7,7 +7,7 @@ const PROTECTED_PREFIXES = ['/dashboard', '/lobby', '/game'];
 // Matches /[game]/[lobbyId] only when lobbyId looks like a UUID or cuid (not a filename)
 const GAME_LOBBYID_RE = new RegExp(`^/(${GAME_URL_SLUGS.join('|')})/([a-zA-Z0-9_-]{8,})$`);
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     const token = await getToken({ req });
     const { pathname } = req.nextUrl;
 

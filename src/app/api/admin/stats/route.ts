@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
         gameId: true,
         abandon: true,
         afk: true,
+        vsBot: true,
         quiz: { select: { id: true, title: true } },
         user: { select: { username: true } },
     } as const;
@@ -163,12 +164,17 @@ export async function GET(req: NextRequest) {
     }
 
 
+    const vsBotByGame = new Map<string, boolean>();
+    for (const a of allPlayersForPage) {
+        if (a.vsBot) vsBotByGame.set(a.gameId ?? '', true);
+    }
+
     const gameMap = new Map<string, {
         createdAt: Date;
         gameType: string;
         gameId: string;
         quiz: { id: string; title: string } | null;
-        players: { username: string; score: number; placement: number | null; abandon?: boolean; afk?: boolean }[];
+        players: { username: string; score: number; placement: number | null; abandon?: boolean; afk?: boolean; isBot?: boolean }[];
     }>();
 
     for (const gameId of pageGameIds) {
@@ -192,11 +198,24 @@ export async function GET(req: NextRequest) {
         }
     }
 
+    // Ajouter les entrées bots synthétiques
+    for (const [gameId, isVsBot] of vsBotByGame) {
+        if (!isVsBot) continue;
+        const game = gameMap.get(gameId);
+        if (!game) continue;
+        const usedPlacements = new Set(game.players.map(p => p.placement).filter(p => p != null));
+        let botPlacement = 1;
+        while (usedPlacements.has(botPlacement)) botPlacement++;
+        const botScore = botPlacement === 1 ? 1 : 0;
+        game.players.push({ username: '🤖 Ordinateur', score: botScore, placement: botPlacement, abandon: false, afk: false, isBot: true });
+    }
+
     const groupedActivity = [...gameMap.values()].map(g => ({
         createdAt: g.createdAt,
         gameType: g.gameType,
         gameId: g.gameId,
         quiz: g.quiz,
+        vsBot: vsBotByGame.get(g.gameId) ?? false,
         playerCount: g.players.length,
         players: g.players.sort((a, b) => {
             if (a.placement != null && b.placement != null) return a.placement - b.placement;

@@ -34,7 +34,16 @@
       "Bash(grep -n \"h-screen.*overflow-hidden\\\\|h-\\\\[calc\" /home/faros/quiz/src/app/uno/[lobbyId]/page.tsx /home/faros/quiz/src/app/yahtzee/[lobbyId]/page.tsx /home/faros/quiz/src/app/puissance4/[lobbyId]/page.tsx /home/faros/quiz/src/app/impostor/[lobbyId]/page.tsx /home/faros/quiz/src/app/just-one/[lobbyId]/page.tsx /home/faros/quiz/src/app/taboo/[lobbyId]/page.tsx)",
       "Bash(grep -n \"h-screen\\\\|flex-1 overflow-auto\\\\|flex-1 overflow-y\" /home/faros/quiz/src/app/uno/[lobbyId]/page.tsx /home/faros/quiz/src/app/impostor/[lobbyId]/page.tsx /home/faros/quiz/src/app/just-one/[lobbyId]/page.tsx /home/faros/quiz/src/app/puissance4/[lobbyId]/page.tsx /home/faros/quiz/src/app/diamant/[lobbyId]/page.tsx)",
       "Bash(grep -n \"flex-1 overflow-auto\\\\|flex-1 overflow-y\" /home/faros/quiz/src/app/puissance4/[lobbyId]/page.tsx /home/faros/quiz/src/app/diamant/[lobbyId]/page.tsx)",
-      "Bash(grep -n \"IMPOSTOR_GUESS\\\\|guessPhase\\\\|impostorGuessName\\\\|guessInput\\\\|guessSubmitted\" /home/faros/quiz/src/app/impostor/[lobbyId]/page.tsx)"
+      "Bash(grep -n \"IMPOSTOR_GUESS\\\\|guessPhase\\\\|impostorGuessName\\\\|guessInput\\\\|guessSubmitted\" /home/faros/quiz/src/app/impostor/[lobbyId]/page.tsx)",
+      "Bash(git -C /home/faros/quiz show 1bc3d7a --stat)",
+      "Bash(git -C /home/faros/quiz show 1bc3d7a -- src/app/lobby/create/\\\\[code\\\\]/page.tsx)",
+      "Bash(git -C /home/faros/quiz diff src/lib/socket.ts)",
+      "Bash(git -C /home/faros/quiz diff HEAD src/lib/socket.ts)",
+      "Bash(git -C /home/faros/quiz status --short)",
+      "Bash(git -C /home/faros/quiz show HEAD:src/middleware.ts)",
+      "Bash(git -C /home/faros/quiz diff HEAD -- src/lib/gameConfig.ts src/app/lobby/create/\\\\[code\\\\]/page.tsx)",
+      "Bash(git -C /home/faros/quiz diff HEAD -- src/app/login/page.tsx)",
+      "Bash(git -C /home/faros/quiz diff HEAD -- package.json tsconfig.json)"
     ],
     "additionalDirectories": [
       "/home/faros/dev-launcher/impostor-server/src",

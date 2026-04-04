@@ -21,6 +21,7 @@ interface AttemptPayload {
     gameType: string;
     gameId: string;
     quizId?: string;
+    vsBot?: boolean;
     scores: ScoreEntry[];
 }
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body: AttemptPayload = await req.json();
-        const { gameType, gameId, quizId, scores } = body;
+        const { gameType, gameId, quizId, vsBot, scores } = body;
 
         if (!gameType || !gameId || !Array.isArray(scores) || scores.length === 0) {
             return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
                         totalAnswers: s.totalAnswers ?? 0,
                         abandon: s.abandon ?? false,
                         afk: s.afk ?? false,
+                        vsBot: vsBot ?? false,
                     },
                     create: {
                         userId: s.userId,
@@ -79,6 +81,7 @@ export async function POST(req: NextRequest) {
                         totalAnswers: s.totalAnswers ?? 0,
                         abandon: s.abandon ?? false,
                         afk: s.afk ?? false,
+                        vsBot: vsBot ?? false,
                     },
                 })
             )

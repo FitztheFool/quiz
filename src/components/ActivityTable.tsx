@@ -17,6 +17,7 @@ export interface ActivityPlayer {
     placement: number | null;
     abandon?: boolean;
     afk?: boolean;
+    isBot?: boolean;
 }
 
 export interface ActivityRow {
@@ -34,6 +35,7 @@ export interface ActivityRow {
     abandon?: boolean;
     /** Only present in UserStats context */
     afk?: boolean;
+    vsBot?: boolean;
 }
 
 interface ActivityTableProps {

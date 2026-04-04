@@ -1,10 +1,7 @@
-// src/hooks/useYahtzee.ts
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getYahtzeeSocket } from '@/lib/socket';
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ScoreCard = {
     ones: number | null; twos: number | null; threes: number | null;
@@ -29,26 +26,20 @@ export type GameState = {
 };
 
 export type ResultEntry = {
-    userId: string;
-    username: string;
-    total: number;
-    afk?: boolean;
-    abandon?: boolean;
-    scoreCard?: ScoreCard;
+    userId: string; username: string; total: number;
+    afk?: boolean; abandon?: boolean; scoreCard?: ScoreCard;
 };
 
 export type EliminatedEntry = {
-    userId: string;
-    username: string;
-    total: number;
-    scoreCard: ScoreCard;
-    abandon?: boolean;
-    afk?: boolean;
+    userId: string; username: string; total: number;
+    scoreCard: ScoreCard; abandon?: boolean; afk?: boolean;
 };
 
 export type Toast = { id: number; message: string; type: 'warning' | 'kick' };
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
+export function isBot(player: Pick<PlayerState, 'userId'> | Pick<ResultEntry, 'userId'> | null | undefined): boolean {
+    return !!player?.userId?.startsWith('bot-');
+}
 
 export function useYahtzee({
     lobbyId,
@@ -71,6 +62,11 @@ export function useYahtzee({
     const [rolling, setRolling] = useState(false);
     const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
     const [toasts, setToasts] = useState<Toast[]>([]);
+
+    const vsBot = useMemo(
+        () => (game?.players ?? []).some(p => isBot(p) && p.userId !== userId),
+        [game?.players, userId],
+    );
 
     useEffect(() => {
         if (!socket || !lobbyId || !userId) return;
@@ -131,8 +127,6 @@ export function useYahtzee({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket, lobbyId, userId]);
 
-    // ── Actions ───────────────────────────────────────────────────────────────
-
     const roll = useCallback(() => {
         setRolling(true);
         socket?.emit('yahtzee:roll', { lobbyId, userId });
@@ -155,16 +149,9 @@ export function useYahtzee({
     }, [socket, lobbyId]);
 
     return {
-        game,
-        results,
-        eliminatedPlayers,
-        rolling,
-        timerEndsAt,
-        toasts,
-        roll,
-        toggleHold,
-        scoreCategory,
-        forceScore,
-        surrender,
+        game, results, eliminatedPlayers,
+        rolling, timerEndsAt, toasts,
+        vsBot,
+        roll, toggleHold, scoreCategory, forceScore, surrender,
     };
 }

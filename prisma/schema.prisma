@@ -185,6 +185,7 @@ model Attempt {
   placement  Int?
   abandon    Boolean  @default(false)  // joueur a abandonné volontairement
   afk        Boolean  @default(false)  // joueur exclu pour inactivité
+  vsBot      Boolean  @default(false)  // partie jouée contre au moins un bot
   createdAt  DateTime @default(now())
 
   userId String

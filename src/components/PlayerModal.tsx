@@ -12,6 +12,7 @@ interface Player {
     placement: number | null;
     abandon?: boolean;
     afk?: boolean;
+    isBot?: boolean;
 }
 
 interface PlayerModalProps {
@@ -50,13 +51,17 @@ export default function PlayerModal({ gameId, players, onClose }: PlayerModalPro
                                 <span className="text-base">
                                     {p.abandon ? '🚫' : p.afk ? '⏳' : p.placement != null ? (PLACEMENT_EMOJI[p.placement] ?? `#${p.placement}`) : ''}
                                 </span>
-                                <Link
-                                    href={session?.user?.username === p.username ? '/dashboard' : `/user/${p.username}`}
-                                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                                    onClick={onClose}
-                                >
-                                    {p.username}
-                                </Link>
+                                {p.isBot ? (
+                                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{p.username}</span>
+                                ) : (
+                                    <Link
+                                        href={session?.user?.username === p.username ? '/dashboard' : `/user/${p.username}`}
+                                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                        onClick={onClose}
+                                    >
+                                        {p.username}
+                                    </Link>
+                                )}
                             </div>
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
                                 {p.score} <span className="text-xs text-gray-400 font-normal">pts</span>

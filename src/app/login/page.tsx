@@ -21,7 +21,7 @@ function LoginForm() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState(() => {
         const e = searchParams.get('error');
-        if (e === 'OAuthAccountConflict') return 'Un compte existe déjà avec cet email ou ce pseudo. Connectez-vous avec votre mot de passe.';
+        if (e === 'OAuthAccountConflict') return 'Un compte existe déjà avec cet email. Connectez-vous avec votre mot de passe ou utilisez la récupération de mot de passe.';
         if (e === 'AccountBanned') return 'Votre compte a été banni.';
         if (e === 'SessionExpired') return 'Session expirée, veuillez vous reconnecter avec Discord.';
         return '';

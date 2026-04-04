@@ -1,10 +1,7 @@
-// src/hooks/usePuissance4.ts
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getPuissance4Socket } from '@/lib/socket';
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type Cell = 0 | 1 | null;
 export type Grid = Cell[][];
@@ -27,7 +24,9 @@ export interface GameState {
     reason?: 'surrender' | 'afk' | null;
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
+export function isBot(player: Pick<PlayerInfo, 'userId'> | null | undefined): boolean {
+    return !!player?.userId?.startsWith('bot-');
+}
 
 export function usePuissance4({
     lobbyId,
@@ -52,6 +51,7 @@ export function usePuissance4({
     const myPlayer = players.find(p => p.userId === userId);
     const myColorIndex = myPlayer?.colorIndex ?? null;
     const isMyTurn = gameState?.status === 'playing' && gameState.currentTurn === myColorIndex;
+    const vsBot = players.some(p => isBot(p) && p.userId !== userId);
 
     const winSet = useMemo(() => {
         if (!gameState?.winCells) return new Set<string>();
@@ -107,6 +107,7 @@ export function usePuissance4({
         dropping,
         myColorIndex,
         isMyTurn,
+        vsBot,
         winSet,
         drop,
         surrender,

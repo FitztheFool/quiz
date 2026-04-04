@@ -136,12 +136,12 @@ export const GAME_OPTIONS = Object.entries(GAME_CONFIG).map(([key, g]) => ({
 }));
 
 export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
-    quiz: Array.from({ length: 29 }, (_, i) => i + 2),
+    quiz: Array.from({ length: 30 }, (_, i) => i + 1),
     uno: [2, 3, 4, 5, 6, 7, 8],
     taboo: [4, 5, 6, 7, 8, 10, 12],
     skyjow: [2, 3, 4, 5, 6, 7, 8],
     yahtzee: [2, 3, 4, 5, 6, 7, 8],
-    puissance4: [2],
+    puissance4: [1, 2],
     just_one: [3, 4, 5, 6, 7],
     battleship: [2],
     diamant: [2, 3, 4, 5, 6, 7, 8],
@@ -149,6 +149,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
+    quiz: 1,
     puissance4: 2,
     taboo: 4,
     just_one: 3,
@@ -158,21 +159,22 @@ export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
 };
 
 export const EXACT_PLAYERS: Partial<Record<GameType, number>> = {
-    puissance4: 2,
     battleship: 2,
 };
 
 export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
     yahtzee: `${GAME_CONFIG.yahtzee.icon} Yahtzee — 2 à 8 joueurs`,
-    puissance4: `${GAME_CONFIG.puissance4.icon} Puissance 4 — exactement 2 joueurs.`,
+    puissance4: `${GAME_CONFIG.puissance4.icon} Puissance 4 — solo (vs bot) ou 2 joueurs.`,
     just_one: `${GAME_CONFIG.just_one.icon} Just One — 3 à 7 joueurs.`,
     diamant: `${GAME_CONFIG.diamant.icon} Diamant — 2 à 8 joueurs.`,
 };
 
+export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee',]);
+
 export const SOLO_GAMES: Record<string, string> = {
-    //yahtzee: '#854F0B',
+    yahtzee: '#A32D2D',
     quiz: '#A32D2D',
-    //puissance4: '#A32D2D',
+    puissance4: '#A32D2D',
     //battleship: '#185FA5',
     //diamant: '#534AB7',
     //uno: '#A32D2D',

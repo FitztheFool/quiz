@@ -1,10 +1,9 @@
-// src/app/puissance4/[lobbyId]/page.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
-import { usePuissance4, PlayerInfo, Cell } from '@/hooks/usePuissance4';
+import { usePuissance4, isBot, PlayerInfo, Cell } from '@/hooks/usePuissance4';
 import GameOverModal from '@/components/GameOverModal';
 import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -13,8 +12,6 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
-
 const ROWS = 6;
 const COLS = 7;
 
@@ -22,8 +19,6 @@ const PLAYER_COLORS: Record<0 | 1, { ring: string; bg: string; text: string; glo
     0: { ring: 'ring-red-500', bg: 'bg-red-500', text: 'text-red-500', glow: 'shadow-red-500/60', emoji: '🔴' },
     1: { ring: 'ring-yellow-400', bg: 'bg-yellow-400', text: 'text-yellow-400', glow: 'shadow-yellow-400/60', emoji: '🟡' },
 };
-
-// ─── Composant cellule ────────────────────────────────────────────────────────
 
 function CellPiece({ value, isWin }: { value: Cell; isWin: boolean }) {
     if (value === null) return null;
@@ -36,12 +31,29 @@ function CellPiece({ value, isWin }: { value: Cell; isWin: boolean }) {
     );
 }
 
-// ─── Page principale ──────────────────────────────────────────────────────────
+function BotBadge() {
+    return (
+        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 leading-none">
+            BOT
+        </span>
+    );
+}
+
+function PlayerLabel({ player, active, vsBot: _vsBot }: { player: PlayerInfo; active: boolean; vsBot: boolean }) {
+    const bot = isBot(player);
+    return (
+        <span className={`flex items-center gap-1.5 transition-all ${active ? 'font-bold' : 'font-normal opacity-60'}`}>
+            {PLAYER_COLORS[player.colorIndex].emoji}
+            {bot ? '🤖' : ''} {player.username}
+            {bot && <BotBadge />}
+        </span>
+    );
+}
 
 export default function Puissance4Page() {
     const { status, router, me, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
 
-    const { players, gameState, myColorIndex, isMyTurn, winSet, drop, surrender } = usePuissance4({
+    const { players, gameState, myColorIndex, isMyTurn, vsBot, winSet, drop, surrender } = usePuissance4({
         lobbyId,
         userId: me.userId,
         username: me.username ?? '',
@@ -65,6 +77,9 @@ export default function Puissance4Page() {
     const player0 = players.find(p => p.colorIndex === 0);
     const player1 = players.find(p => p.colorIndex === 1);
 
+    // En mode solo vs bot, le surrender n'a pas de sens (on peut juste quitter)
+    const showSurrender = gameState.status === 'playing' && !vsBot;
+
     return (
         <>
             <style>{`
@@ -81,41 +96,39 @@ export default function Puissance4Page() {
 
             <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
-                {/* ── Header ── */}
                 <GamePageHeader
-                    left={<span className="font-bold">🔴 Puissance 4</span>}
+                    left={<span className="font-bold">🔴 Puissance 4{vsBot && <span className="ml-2 text-xs font-normal text-indigo-400">vs Bot</span>}</span>}
                     center={
                         <div className="flex items-center gap-2 text-sm">
                             {players.length === 2 && player0 && player1 ? (
                                 <>
-                                    <span className={`flex items-center gap-1 transition-all ${gameState.status === 'playing' && gameState.currentTurn === 0 ? 'font-bold' : 'font-normal opacity-60'}`}>
-                                        {PLAYER_COLORS[0].emoji} {player0.username}
-                                    </span>
+                                    <PlayerLabel player={player0} active={gameState.status === 'playing' && gameState.currentTurn === 0} vsBot={vsBot} />
                                     <span className="text-gray-400 dark:text-gray-600">vs</span>
-                                    <span className={`flex items-center gap-1 transition-all ${gameState.status === 'playing' && gameState.currentTurn === 1 ? 'font-bold' : 'font-normal opacity-60'}`}>
-                                        {player1.username} {PLAYER_COLORS[1].emoji}
-                                    </span>
+                                    <PlayerLabel player={player1} active={gameState.status === 'playing' && gameState.currentTurn === 1} vsBot={vsBot} />
                                 </>
                             ) : (
                                 <span className="text-gray-400 dark:text-gray-500 text-xs">En attente de joueurs…</span>
                             )}
                         </div>
                     }
-                    right={gameState.status === 'playing' && <SurrenderButton onSurrender={surrender} />}
+                    right={showSurrender && <SurrenderButton onSurrender={surrender} />}
                 />
 
-                {/* ── Timer bar ── */}
                 {gameState.status === 'playing' && (
                     <TimerBar
                         endsAt={gameState.turnStartedAt ? gameState.turnStartedAt + gameState.turnDuration * 1000 : null}
                         duration={gameState.turnDuration}
-                        label={isMyTurn ? '🎯 Votre tour' : `⏳ Tour de ${players.find(p => p.colorIndex === gameState.currentTurn)?.username ?? '…'}`}
+                        label={
+                            isMyTurn
+                                ? '🎯 Votre tour'
+                                : vsBot && isBot(players.find(p => p.colorIndex === gameState.currentTurn))
+                                    ? '🤖 Le bot réfléchit…'
+                                    : `⏳ Tour de ${players.find(p => p.colorIndex === gameState.currentTurn)?.username ?? '…'}`
+                        }
                     />
                 )}
 
-                {/* ── Main ── */}
                 <main className="flex-1 flex flex-col items-center justify-center p-4 gap-6">
-
                     <div className="relative select-none" onMouseLeave={() => setHoverCol(null)}>
                         {isMyTurn && hoverCol !== null && gameState.grid[0][hoverCol] === null && (
                             <div
@@ -177,23 +190,24 @@ export default function Puissance4Page() {
                     </div>
                 </main>
 
-                {/* ── Overlay fin de partie ── */}
                 {gameState.status === 'finished' && !modalDismissed && (
                     <GameOverModal
-                        emoji={gameState.winner === 'draw' ? '🤝' : winnerPlayer?.userId === me.userId ? '🏆' : '😔'}
+                        emoji={gameState.winner === 'draw' ? '🤝' : winnerPlayer?.userId === me.userId ? '🏆' : isBot(winnerPlayer) ? '🤖' : '😔'}
                         title={
                             gameState.winner === 'draw'
                                 ? 'Match nul !'
                                 : winnerPlayer?.userId === me.userId
                                     ? 'Vous avez gagné !'
-                                    : `${winnerPlayer?.username ?? 'Adversaire'} gagne !`
+                                    : isBot(winnerPlayer)
+                                        ? 'Le bot gagne !'
+                                        : `${winnerPlayer?.username ?? 'Adversaire'} gagne !`
                         }
                         subtitle={
                             gameState.reason === 'surrender' ? 'Abandon'
                                 : gameState.reason === 'afk' ? 'AFK'
-                                : winnerPlayer && gameState.winner !== 'draw'
-                                    ? `${PLAYER_COLORS[winnerPlayer.colorIndex].emoji} 4 en ligne !`
-                                    : undefined
+                                    : winnerPlayer && gameState.winner !== 'draw'
+                                        ? `${PLAYER_COLORS[winnerPlayer.colorIndex].emoji} 4 en ligne !`
+                                        : undefined
                         }
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                         onLeave={() => router.push('/')}
@@ -208,11 +222,16 @@ export default function Puissance4Page() {
                                 const isWinner = p!.userId === winnerPlayer?.userId;
                                 const isLoserBySurrender = !isWinner && gameState.reason === 'surrender';
                                 const isLoserByAfk = !isWinner && gameState.reason === 'afk';
+                                const bot = isBot(p);
                                 return {
                                     userId: p!.userId,
-                                    username: p!.username,
+                                    username: bot ? `🤖 ${p!.username}` : p!.username,
                                     score: `${gameState.scores[p!.colorIndex] ?? 0} victoire${(gameState.scores[p!.colorIndex] ?? 0) !== 1 ? 's' : ''}`,
-                                    badges: isLoserBySurrender ? ['Abandon'] : isLoserByAfk ? ['AFK'] : undefined,
+                                    badges: [
+                                        ...(bot ? ['Bot'] : []),
+                                        ...(isLoserBySurrender ? ['Abandon'] : []),
+                                        ...(isLoserByAfk ? ['AFK'] : []),
+                                    ],
                                     disqualified: isLoserBySurrender || isLoserByAfk,
                                 };
                             })}

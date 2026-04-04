@@ -15,17 +15,32 @@ import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 const DANGER_LABELS: Record<string, string> = {
     spider: 'Araignée géante',
     snake: 'Serpent',
-    lava: 'Puits de lave',
-    boulder: 'Boule de pierre',
-    ram: 'Bélier de bois',
+    fireball: 'Boule de feu',
+    mummy: 'Momie',
+    landslide: 'Éboulement',
 };
 
-const DANGER_EMOJI: Record<string, string> = {
-    spider: '🕷️',
-    snake: '🐍',
-    lava: '🌋',
-    boulder: '🪨',
-    ram: '🐏',
+const DANGER_IMG: Record<string, string> = {
+    spider: '/diamant/cards/spider.png',
+    snake: '/diamant/cards/snake.png',
+    fireball: '/diamant/cards/fireball.png',
+    mummy: '/diamant/cards/mummy.png',
+    landslide: '/diamant/cards/landslide.png',
+};
+
+const TREASURE_IMG: Record<number, string> = {
+    1: '/diamant/cards/1.png',
+    2: '/diamant/cards/2.png',
+    3: '/diamant/cards/3.png',
+    4: '/diamant/cards/4.png',
+    5: '/diamant/cards/5a.png',
+    7: '/diamant/cards/7a.png',
+    9: '/diamant/cards/9.png',
+    11: '/diamant/cards/11a.png',
+    13: '/diamant/cards/13.png',
+    14: '/diamant/cards/14.png',
+    15: '/diamant/cards/15.png',
+    17: '/diamant/cards/17.png',
 };
 
 import TimerBar from '@/components/TimerBar';
@@ -34,18 +49,35 @@ import SurrenderButton from '@/components/SurrenderButton';
 
 // ── Card component ────────────────────────────────────────────────────────────
 
+const TREASURE_VARIANT: Record<string, string> = {
+    'treasure-4': '/diamant/cards/5b.png',
+    'treasure-6': '/diamant/cards/7b.png',
+    'treasure-10': '/diamant/cards/11b.png',
+};
+
+function getTreasureImg(card: Card): string {
+    return TREASURE_VARIANT[card.id] ?? TREASURE_IMG[card.value!] ?? '/diamant/cards/1.png';
+}
+
+function getRelicImg(relicsExited: number): string {
+    const n = Math.min(Math.max(relicsExited, 1), 5);
+    return `/diamant/cards/relic_${n}.png`;
+}
+
 function ExpeditionCard({
     card,
     index,
     rubisOnCard,
     isLast,
     isRelic,
+    relicsExited,
 }: {
     card: Card;
     index: number;
     rubisOnCard: number;
     isLast: boolean;
     isRelic: boolean;
+    relicsExited: number;
 }) {
     const isTreasure = card.type === 'treasure';
     const isDanger = card.type === 'danger';
@@ -53,50 +85,36 @@ function ExpeditionCard({
 
     return (
         <div
-            className={`relative flex-shrink-0 w-28 rounded-2xl border-2 transition-all duration-300
+            className={`relative flex-shrink-0 w-20 rounded-xl border-2 transition-all duration-300
                 ${isLast ? 'scale-110 shadow-2xl z-10' : 'opacity-75'}
-                ${isTreasure ? 'border-amber-500 bg-amber-100 dark:bg-amber-950/60' : ''}
-                ${isDanger ? 'border-red-500 bg-red-100 dark:bg-red-950/60' : ''}
-                ${isRelicCard ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-950/60' : ''}
+                ${isTreasure ? 'border-amber-500' : ''}
+                ${isDanger ? 'border-red-500' : ''}
+                ${isRelicCard ? 'border-emerald-500' : ''}
             `}
-            style={{ minHeight: '130px' }}
         >
-            <div className="flex flex-col items-center justify-center gap-1.5 p-3 h-full">
-                {isTreasure && (
-                    <>
-                        <span className="text-4xl">💎</span>
-                        <span className="text-amber-800 dark:text-amber-300 font-black text-2xl leading-none">{card.value}</span>
-                        <span className="text-amber-700 dark:text-amber-400 text-xs font-semibold">rubis</span>
-                        {rubisOnCard > 0 && (
-                            <div className="absolute -top-2.5 -right-2.5 bg-amber-500 text-black text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow">
-                                {rubisOnCard}
-                            </div>
-                        )}
-                    </>
-                )}
-                {isDanger && (
-                    <>
-                        <span className="text-4xl">{DANGER_EMOJI[card.danger!] ?? '⚠️'}</span>
-                        <span className="text-red-800 dark:text-red-300 text-xs text-center leading-tight font-semibold">
-                            {DANGER_LABELS[card.danger!] ?? card.danger}
-                        </span>
-                    </>
-                )}
-                {isRelicCard && (
-                    <>
-                        <span className="text-4xl">🏺</span>
-                        <span className="text-emerald-800 dark:text-emerald-300 text-xs text-center leading-tight font-semibold">
-                            Relique
-                        </span>
-                        {isRelic && (
-                            <div className="absolute -top-2.5 -right-2.5 bg-emerald-500 text-black text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow">
-                                ✓
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
-            {/* Index */}
+            {isTreasure && (
+                <>
+                    <img src={getTreasureImg(card)} alt={`${card.value} rubis`} className="w-full rounded-xl" />
+                    {rubisOnCard > 0 && (
+                        <div className="absolute -top-2.5 -right-2.5 bg-amber-500 text-black text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow">
+                            {rubisOnCard}
+                        </div>
+                    )}
+                </>
+            )}
+            {isDanger && (
+                <img src={DANGER_IMG[card.danger!] ?? ''} alt={DANGER_LABELS[card.danger!] ?? card.danger} className="w-full rounded-xl" />
+            )}
+            {isRelicCard && (
+                <>
+                    <img src={getRelicImg(relicsExited)} alt="Relique" className="w-full rounded-xl" />
+                    {isRelic && (
+                        <div className="absolute -top-2.5 -right-2.5 bg-emerald-500 text-black text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow">
+                            ✓
+                        </div>
+                    )}
+                </>
+            )}
             <div className="absolute bottom-1.5 left-0 right-0 text-center text-[10px] text-gray-400 dark:text-gray-500 font-mono">
                 #{index + 1}
             </div>
@@ -237,7 +255,7 @@ export default function DiamantPage() {
                             {/* Double danger banner */}
                             {state.doubleDanger && (
                                 <div className="px-4 py-3 bg-red-50/80 dark:bg-red-950/80 border border-red-300 dark:border-red-700 rounded-xl text-center animate-pulse">
-                                    <span className="text-2xl mr-2">{DANGER_EMOJI[state.doubleDanger]}</span>
+                                    <img src={DANGER_IMG[state.doubleDanger]} alt="" className="inline w-8 h-8 mr-2 object-contain" />
                                     <span className="text-red-700 dark:text-red-300 font-black">
                                         Double {DANGER_LABELS[state.doubleDanger]} ! Tout le monde sort les mains vides…
                                     </span>
@@ -284,6 +302,7 @@ export default function DiamantPage() {
                                                     rubisOnCard={state.rubisOnCards[i] ?? 0}
                                                     isLast={i === state.revealedCards.length - 1}
                                                     isRelic={state.relicsInCave.includes(card.id)}
+                                                    relicsExited={state.relicsExited}
                                                 />
                                             ))}
                                         </div>
@@ -308,7 +327,8 @@ export default function DiamantPage() {
                                     )}
                                     {state.lastCard.type === 'danger' && (
                                         <span>
-                                            {DANGER_EMOJI[state.lastCard.danger!]} Premier {DANGER_LABELS[state.lastCard.danger!]} — prudence !
+                                            <img src={DANGER_IMG[state.lastCard.danger!]} alt="" className="inline w-5 h-5 mr-1 object-contain" />
+                                            Premier {DANGER_LABELS[state.lastCard.danger!]} — prudence !
                                         </span>
                                     )}
                                     {state.lastCard.type === 'relic' && (
@@ -321,39 +341,27 @@ export default function DiamantPage() {
                             {/* Decision buttons */}
                             {amInCave && (
                                 <div className="grid grid-cols-2 gap-4">
+                                    {/* Continuer */}
                                     <button
                                         onClick={() => decide('continue')}
                                         disabled={state.myDecision !== null || !state.decisionPhase}
-                                        className={`py-5 rounded-2xl border-2 font-black text-base transition-all
-                                            ${state.myDecision === 'continue'
-                                                ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300 scale-105'
-                                                : state.myDecision !== null || !state.decisionPhase
-                                                    ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-600 opacity-40'
-                                                    : 'border-amber-400 dark:border-amber-700 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-950/60 hover:scale-105 active:scale-100'
-                                            }`}
+                                        className={`relative overflow-hidden rounded-2xl border-2 transition-all h-36
+                                            ${state.myDecision === 'continue' ? 'border-amber-500 scale-105 shadow-2xl' : ''}
+                                            ${state.myDecision === 'leave' || !state.decisionPhase ? 'opacity-40 border-gray-700' : 'border-amber-700 hover:scale-105 hover:border-amber-500 active:scale-100'}
+                                        `}
                                     >
-                                        <div className="flex flex-col items-center gap-1">
-                                            <span className="text-3xl">⚡</span>
-                                            <span>Continuer</span>
-                                            <span className="text-xs font-normal opacity-70">S'enfoncer dans la grotte</span>
-                                        </div>
+                                        <img src="/diamant/cards/explorer.png" alt="Continuer" className="absolute inset-0 w-full h-full object-cover" />
                                     </button>
+                                    {/* Sortir */}
                                     <button
                                         onClick={() => decide('leave')}
                                         disabled={state.myDecision !== null || !state.decisionPhase}
-                                        className={`py-5 rounded-2xl border-2 font-black text-base transition-all
-                                            ${state.myDecision === 'leave'
-                                                ? 'border-gray-500 bg-gray-200/60 dark:bg-gray-700/40 text-gray-700 dark:text-gray-200 scale-105'
-                                                : state.myDecision !== null || !state.decisionPhase
-                                                    ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-600 opacity-40'
-                                                    : 'border-gray-300 dark:border-gray-600 bg-gray-100/60 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:border-gray-400 hover:bg-gray-200/60 dark:hover:bg-gray-800/60 hover:scale-105 active:scale-100'
-                                            }`}
+                                        className={`relative overflow-hidden rounded-2xl border-2 transition-all h-36
+                                            ${state.myDecision === 'leave' ? 'border-gray-400 scale-105 shadow-2xl' : ''}
+                                            ${state.myDecision === 'continue' || !state.decisionPhase ? 'opacity-40 border-gray-700' : 'border-gray-600 hover:scale-105 hover:border-gray-400 active:scale-100'}
+                                        `}
                                     >
-                                        <div className="flex flex-col items-center gap-1">
-                                            <span className="text-3xl">🏕️</span>
-                                            <span>Sortir</span>
-                                            <span className="text-xs font-normal opacity-70">Sécuriser ses rubis</span>
-                                        </div>
+                                        <img src="/diamant/cards/back.png" alt="Sortir" className="absolute inset-0 w-full h-full object-cover" />
                                     </button>
                                 </div>
                             )}

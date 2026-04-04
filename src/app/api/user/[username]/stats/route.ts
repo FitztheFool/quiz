@@ -100,9 +100,11 @@ export async function GET(
         orderBy: { createdAt: 'desc' },
     });
 
-    const playersByGame = new Map<string, { username: string; score: number; placement: number | null; abandon: boolean; afk: boolean }[]>();
+    const playersByGame = new Map<string, { username: string; score: number; placement: number | null; abandon: boolean; afk: boolean; isBot?: boolean }[]>();
+    const vsBotByGame = new Map<string, boolean>();
     for (const a of allPlayersInGames) {
         if (!playersByGame.has(a.gameId)) playersByGame.set(a.gameId, []);
+        if (a.vsBot) vsBotByGame.set(a.gameId, true);
         const existing = playersByGame.get(a.gameId)!;
         const idx = existing.findIndex(p => p.username === a.user.username);
         if (idx === -1) {
@@ -114,6 +116,17 @@ export async function GET(
                 afk: a.afk,
             });
         }
+    }
+    // Ajouter les entrées bots synthétiques
+    for (const [gameId, isVsBot] of vsBotByGame) {
+        if (!isVsBot) continue;
+        const humans = playersByGame.get(gameId) ?? [];
+        const usedPlacements = new Set(humans.map(p => p.placement).filter(p => p != null));
+        // Trouver la première place libre en partant de 1
+        let botPlacement = 1;
+        while (usedPlacements.has(botPlacement)) botPlacement++;
+        const botScore = botPlacement === 1 ? 1 : 0;
+        humans.push({ username: '🤖 Ordinateur', score: botScore, placement: botPlacement, abandon: false, afk: false, isBot: true });
     }
 
     const byGame = new Map<string, typeof recentAttempts>();
@@ -137,6 +150,7 @@ export async function GET(
             placement: myEntry?.placement ?? first.placement,
             abandon: myEntry?.abandon ?? first.abandon,
             afk: myEntry?.afk ?? first.afk,
+            vsBot: vsBotByGame.get(gameId) ?? false,
             players: (playersByGame.get(gameId) ?? []).sort((a, b) => {
                 if (a.placement != null && b.placement != null) return a.placement - b.placement;
                 if (a.placement != null) return -1;

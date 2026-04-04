@@ -1,9 +1,10 @@
 // src/app/lobby/create/[code]/page.tsx
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { SOLO_GAMES, BOT_SUPPORTED_GAMES } from '@/lib/gameConfig';
 import { getLobbySocket } from '@/lib/socket';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useChat } from '@/context/ChatContext';
@@ -56,6 +57,7 @@ type LobbyState = {
     quizId?: string | null;
     gameId?: string | null;
     teams?: Record<string, 0 | 1> | null;
+    bots?: number;
 };
 
 function useDebounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number): T {
@@ -266,7 +268,7 @@ export default function LobbyCodePage() {
     const [tabooTrapWordCount, setTabooTrapWordCount] = useState(5);
     const [tabooMaxAttempts, setTabooMaxAttempts] = useState(10);
     const [tabooTrapDuration, setTabooTrapDuration] = useState(60);
-    const [quizTimeMode, setQuizTimeMode] = useState<'quiz:per_question' | 'total' | 'none'>('quiz:per_question');
+    const [quizTimeMode, setQuizTimeMode] = useState<'quiz:per_question' | 'total' | 'none'>('none');
     const [quizTimePerQuestion, setQuizTimePerQuestion] = useState(15);
     const [skyjowEliminateRows, setSkyjowEliminateRows] = useState(false);
     const [teams, setTeams] = useState<Record<string, 0 | 1> | null>(null);
@@ -275,6 +277,7 @@ export default function LobbyCodePage() {
     const [autoPlace, setAutoPlace] = useState(true);
     const [impostorRounds, setImpostorRounds] = useState(1);
     const [impostorTime, setImpostorTime] = useState(60);
+    const [botCount, setBotCount] = useState(0);
     const { setLobbyId } = useChat();
 
     useEffect(() => {
@@ -367,6 +370,7 @@ export default function LobbyCodePage() {
                 setTurnTime(state.battleshipOptions.turnTime ?? 30);
             }
             if (state.impostorOptions) { setImpostorRounds(state.impostorOptions.rounds ?? 1); setImpostorTime(state.impostorOptions.timePerRound ?? 60); }
+            setBotCount(state.bots ?? 0);
 
             // ── Partie en cours : afficher un bandeau, ne pas auto-rediriger ─
             if (state.status === 'PLAYING') {
@@ -379,7 +383,7 @@ export default function LobbyCodePage() {
             }
 
             // ── canStart via GAME_CONFIG ──────────────────────────────────
-            const count = state.players?.length ?? 0;
+            const count = (state.players?.length ?? 0) + (state.bots ?? 0);
             const g = state.gameType;
             const hasQuiz = g === 'quiz' ? !!state.quizId : true;
             const exact = EXACT_PLAYERS[g];
@@ -412,14 +416,16 @@ export default function LobbyCodePage() {
             setIsLaunching(true);
             setActiveGameId(null);
             setActiveGameType(null);
-            if (payload.gameType === 'quiz') {
-                sessionStorage.setItem(`lobby_timeMode_${lobbyId}`, payload.timeMode ?? 'none');
-                sessionStorage.setItem(`lobby_timePerQuestion_${lobbyId}`, String(payload.timePerQuestion ?? 15));
-                router.push(`/quiz/${lobbyId}/${payload.quizId}`);
-            } else {
-                const routeFn = GAME_ROUTES[payload.gameType];
-                if (routeFn) router.push(routeFn(lobbyId, payload.gameId));
-            }
+            startTransition(() => {
+                if (payload.gameType === 'quiz') {
+                    sessionStorage.setItem(`lobby_timeMode_${lobbyId}`, payload.timeMode ?? 'none');
+                    sessionStorage.setItem(`lobby_timePerQuestion_${lobbyId}`, String(payload.timePerQuestion ?? 15));
+                    router.push(`/quiz/${lobbyId}/${payload.quizId}`);
+                } else {
+                    const routeFn = GAME_ROUTES[payload.gameType];
+                    if (routeFn) router.push(routeFn(lobbyId, payload.gameId));
+                }
+            });
         });
 
         if (!joinedRef.current) {
@@ -558,7 +564,7 @@ export default function LobbyCodePage() {
                                 <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Jeu</label>
                                 {(() => {
                                     const minP = EXACT_PLAYERS[gameType] ?? (MIN_PLAYERS[gameType] ?? 2);
-                                    const missing = minP - players.length;
+                                    const missing = minP - players.length - botCount;
                                     return missing > 0 ? (
                                         <span className="text-xs text-orange-500 dark:text-orange-400">
                                             (En attente de {missing} participant{missing > 1 ? 's' : ''})
@@ -584,21 +590,21 @@ export default function LobbyCodePage() {
                                         <button key={g.value}
                                             onClick={() => isHost && !tooManyPlayers && handleGameTypeChange(g.value)}
                                             title={title}
-                                            className={`relative overflow-hidden flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
+                                            className={`relative flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 font-semibold text-[11px] transition-all
                                                 ${gameType === g.value
                                                     ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300 shadow-sm'
                                                     : disabled
                                                         ? 'border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 text-gray-300 dark:text-slate-700 cursor-not-allowed'
                                                         : 'border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-800/40 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'}`}>
+                                            <span className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+                                                {SOLO_GAMES[g.value] && <SoloBadge color={SOLO_GAMES[g.value]} />}
+                                            </span>
                                             <span className="text-2xl">{g.icon}</span>
                                             <span className="leading-tight text-center">{g.label}</span>
                                             {notEnoughPlayers && (
                                                 <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-amber-400 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
                                                     !
                                                 </span>
-                                            )}
-                                            {g.value === 'yahtzee' && (
-                                                <img src="/game/solo.svg" alt="Solo" className="absolute inset-0 w-full h-full pointer-events-none" />
                                             )}
                                         </button>
                                     );
@@ -829,15 +835,24 @@ export default function LobbyCodePage() {
                         <div className="bg-white dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl p-5">
                             <div className="flex items-center justify-between mb-3">
                                 <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Participants</h2>
-                                <span className="text-xs font-semibold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800 rounded-full px-2 py-0.5">
-                                    {players.length}{maxPlayers ? `/${maxPlayers}` : ''}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    {isHost && BOT_SUPPORTED_GAMES.has(gameType) && players.length + botCount < maxPlayers && (
+                                        <button
+                                            onClick={() => socket?.emit('lobby:addBot')}
+                                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors px-2 py-0.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 whitespace-nowrap">
+                                            🤖 Ajouter un bot
+                                        </button>
+                                    )}
+                                    <span className="text-xs font-semibold text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800 rounded-full px-2 py-0.5">
+                                        {players.length + botCount}{maxPlayers ? `/${maxPlayers}` : ''}
+                                    </span>
+                                </div>
                             </div>
 
                             {maxPlayers > 0 && (
                                 <div className="mb-3 w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5">
                                     <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
-                                        style={{ width: `${Math.min((players.length / maxPlayers) * 100, 100)}%` }} />
+                                        style={{ width: `${Math.min(((players.length + botCount) / maxPlayers) * 100, 100)}%` }} />
                                 </div>
                             )}
 
@@ -868,7 +883,19 @@ export default function LobbyCodePage() {
                                         )}
                                     </div>
                                 ))}
-                                {players.length === 0 && (
+                                {Array.from({ length: botCount }).map((_, i) => (
+                                    <div key={`bot-${i}`} className="flex items-center gap-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/40 rounded-xl px-3 py-2">
+                                        <span className="w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0" />
+                                        <span className="text-sm text-gray-500 dark:text-slate-400 font-medium flex-1 truncate">🤖 Bot {i + 1}</span>
+                                        {isHost && (
+                                            <button onClick={() => socket?.emit('lobby:removeBot')} title="Retirer le bot"
+                                                className="text-xs px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-500 dark:text-red-400 hover:bg-red-500/20 transition-colors flex-shrink-0">
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                {players.length === 0 && botCount === 0 && (
                                     <div className="text-center py-6 text-gray-400 dark:text-slate-500 text-sm">En attente de joueurs…</div>
                                 )}
                             </div>
