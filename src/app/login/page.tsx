@@ -19,6 +19,10 @@ function LoginForm() {
 
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
+    const [guestModal, setGuestModal] = useState(false);
+    const [guestUsername, setGuestUsername] = useState('');
+    const [guestLoading, setGuestLoading] = useState(false);
+    const [guestError, setGuestError] = useState('');
     const [error, setError] = useState(() => {
         const e = searchParams.get('error');
         if (e === 'OAuthAccountConflict') return 'Un compte existe déjà avec cet email. Connectez-vous avec votre mot de passe ou utilisez la récupération de mot de passe.';
@@ -36,6 +40,29 @@ function LoginForm() {
     }, [status, router, callbackUrl]);
 
     if (status === 'loading' || status === 'authenticated') return null;
+
+    const handleGuest = async () => {
+        setGuestLoading(true);
+        setGuestError('');
+        try {
+            const res = await fetch('/api/auth/guest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: guestUsername.trim() || undefined }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                setGuestError(data.error ?? 'Erreur lors de la création du compte invité');
+                return;
+            }
+            // Rechargement complet pour que NextAuth lise le nouveau cookie de session
+            window.location.href = callbackUrl;
+        } catch {
+            setGuestError('Une erreur est survenue');
+        } finally {
+            setGuestLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -143,17 +170,31 @@ function LoginForm() {
                         </div>
                     </div>
 
-                    <div className="mt-6 text-center">
+                    <div className="mt-6 text-center space-y-3">
                         <p className="text-gray-600 dark:text-gray-300">
                             Pas encore de compte ?{' '}
                             <Link
-                                href={`/register${callbackUrl !== '/dashboard' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''
-                                    }`}
+                                href={`/register${callbackUrl !== '/dashboard' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
                                 className="text-primary-600 hover:text-primary-700 font-semibold"
                             >
                                 S&apos;inscrire
                             </Link>
                         </p>
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">ou</span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => { setGuestModal(true); setGuestError(''); }}
+                            className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-all text-sm"
+                        >
+                            🎮 Jouer sans compte
+                        </button>
                     </div>
                 </div>
 
@@ -162,6 +203,51 @@ function LoginForm() {
                         ← Retour à l'accueil
                     </Link>
                 </div>
+
+                {/* Modal invité */}
+                {guestModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Jouer sans compte</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Vos scores seront sauvegardés. Vous pourrez finaliser votre inscription plus tard.
+                            </p>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Pseudo
+                            </label>
+                            <input
+                                type="text"
+                                value={guestUsername}
+                                onChange={e => setGuestUsername(e.target.value)}
+                                placeholder="BraveFox1234"
+                                maxLength={30}
+                                className="input-field mb-3"
+                                onKeyDown={e => e.key === 'Enter' && handleGuest()}
+                                autoFocus
+                            />
+                            {guestError && (
+                                <p className="text-sm text-red-500 mb-3">{guestError}</p>
+                            )}
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setGuestModal(false)}
+                                    className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-all"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleGuest}
+                                    disabled={guestLoading}
+                                    className="flex-1 btn-primary py-2 text-sm"
+                                >
+                                    {guestLoading ? 'Création...' : "C'est parti !"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireRegistered } from '@/lib/authGuard';
 
 export async function GET(request: Request) {
   try {
@@ -66,11 +67,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { session, error } = await requireRegistered();
+    if (error) return error;
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
 
     const body = await request.json();
     if (!Array.isArray(body.questions) || body.questions.length > 15) {

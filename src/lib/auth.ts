@@ -141,13 +141,14 @@ export const authOptions: NextAuthOptions = {
             if (token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
-                    select: { role: true, username: true, image: true, email: true },
+                    select: { role: true, username: true, image: true, email: true, isAnonymous: true },
                 });
                 if (dbUser) {
                     token.role = dbUser.role;
                     if (dbUser.username) token.username = dbUser.username;
                     if (dbUser.image) token.image = dbUser.image;
                     if (dbUser.email) token.email = dbUser.email;
+                    token.isAnonymous = dbUser.isAnonymous;
                 }
             }
             return token;
@@ -159,6 +160,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.username = token.username as string;
                 session.user.image = (token.image as string) ?? null;
                 session.user.email = (token.email as string) ?? null;
+                session.user.isAnonymous = (token.isAnonymous as boolean) ?? false;
             }
             return session;
         },

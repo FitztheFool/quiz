@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { groqClient, GROQ_MODEL } from '@/lib/openai';
 import { buildPrompt } from '@/lib/prompt';
+import { requireRegistered } from '@/lib/authGuard';
 
 function validateQuizJSON(json: any): string | null {
     if (!json.title || typeof json.title !== 'string') return 'Champ "title" manquant';
@@ -27,6 +28,9 @@ function validateQuizJSON(json: any): string | null {
 }
 
 export async function POST(req: NextRequest) {
+    const { session, error } = await requireRegistered();
+    if (error) return error;
+
     const { subject, questionCount = 5, difficulty = 'normal' } = await req.json();
 
     if (questionCount > 15) {

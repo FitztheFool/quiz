@@ -8,6 +8,92 @@ import Link from 'next/link';
 import QuizCard from '@/components/Quiz/QuizCard';
 import Pagination from '@/components/Pagination';
 import UserStats from '@/components/UserStats';
+import { MembersOnlyBanner } from '@/components/MembersOnlyBanner';
+
+// ── Bloc finaliser le compte ───────────────────────────────────────────────────
+
+function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
+    const { update } = useSession();
+    const router = useRouter();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [username, setUsername] = useState(currentUsername);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [done, setDone] = useState(false);
+
+    const handleClaim = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/auth/guest/claim', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, username }),
+            });
+            const data = await res.json();
+            if (!res.ok) { setError(data.error ?? 'Erreur'); return; }
+            setDone(true);
+            await update();
+            router.refresh();
+        } catch {
+            setError('Une erreur est survenue');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (done) return (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-2xl px-5 py-4 text-green-700 dark:text-green-300 font-medium text-sm">
+            ✅ Compte finalisé ! Vous pouvez maintenant vous connecter avec votre email.
+        </div>
+    );
+
+    return (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/60 rounded-2xl px-5 py-4">
+            <h2 className="text-sm font-bold text-amber-800 dark:text-amber-200 mb-1">Finaliser votre inscription</h2>
+            <p className="text-xs text-amber-700 dark:text-amber-300 mb-4">
+                Vos parties sont déjà sauvegardées. Ajoutez un email et un mot de passe pour ne pas perdre votre compte.
+            </p>
+            <form onSubmit={handleClaim} className="flex flex-col sm:flex-row gap-2">
+                <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Pseudo"
+                    maxLength={30}
+                    className="input-field text-sm flex-1"
+                />
+                <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="Email"
+                    required
+                    className="input-field text-sm flex-1"
+                />
+                <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Mot de passe (6 car. min.)"
+                    required
+                    minLength={6}
+                    className="input-field text-sm flex-1"
+                />
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-primary text-sm px-4 py-2 whitespace-nowrap"
+                >
+                    {loading ? 'Enregistrement...' : 'Valider'}
+                </button>
+            </form>
+            {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
+        </div>
+    );
+}
 
 const PAGE_SIZE = 6;
 
@@ -105,6 +191,14 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
             <div className="max-w-5xl mx-auto px-4 py-5 space-y-4">
 
+                {/* ── Bloc finaliser le compte (invité) ── */}
+                {isOwnProfile && session?.user?.isAnonymous && (
+                    <ClaimAccountBlock currentUsername={username} />
+                )}
+
+                {/* ── Bannière members only ── */}
+                {isOwnProfile && <MembersOnlyBanner />}
+
                 {/* ── Header compact ── */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -135,11 +229,10 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${
-                                        activeTab === tab
-                                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                    }`}
+                                    className={`px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${activeTab === tab
+                                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                        }`}
                                 >
                                     {tab === 'stats' ? '📊 Stats' : '📝 Quiz'}
                                 </button>

@@ -157,6 +157,7 @@ export const SOLO_GAMES: Record<string, string> = {
     diamant: '#A32D2D',
     battleship: '#A32D2D',
     uno: '#A32D2D',
+    skyjow: '#A32D2D',
     //uno: '#185FA5',
 };
 

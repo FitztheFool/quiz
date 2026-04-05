@@ -1,0 +1,27 @@
+// lib/authGuards.ts
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export async function requireRegistered() {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+        return {
+            session: null,
+            error: NextResponse.json({ error: 'Unauthenticated' }, { status: 401 }),
+        };
+    }
+
+    if (session.user.isAnonymous) {
+        return {
+            session: null,
+            error: NextResponse.json(
+                { error: 'ANONYMOUS_FORBIDDEN' },
+                { status: 403 }
+            ),
+        };
+    }
+
+    return { session, error: null };
+}
