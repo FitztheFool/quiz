@@ -34,10 +34,7 @@ export function MembersOnlyBanner() {
         >
             <span className="text-lg">🔒</span>
             <p className="text-sm font-medium">
-                Seuls les membres inscrits peuvent créer un quiz ou un lobby.{' '}
-                <a href="/register" className="underline font-semibold hover:text-amber-900">
-                    Créer un compte
-                </a>
+                Seuls les membres inscrits peuvent créer ou générer un quiz.
             </p>
             <button
                 onClick={() => setVisible(false)}

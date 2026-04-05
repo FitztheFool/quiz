@@ -2,22 +2,39 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import QuizForm from '@/components/Quiz/QuizForm';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function NewQuizPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const [initialData, setInitialData] = useState<any>(undefined);
     const [ready, setReady] = useState(false);
 
     useEffect(() => {
+        if (status === 'loading') return;
+        if (status === 'unauthenticated') {
+            router.push(`/login?callbackUrl=${encodeURIComponent('/quiz/create')}`);
+            return;
+        }
+        if (session?.user?.isAnonymous) {
+            router.replace('/dashboard?error=members_only');
+            return;
+        }
+
         const stored = sessionStorage.getItem('generatedQuizData');
         if (stored) {
             sessionStorage.removeItem('generatedQuizData');
             setInitialData(JSON.parse(stored));
         }
         setReady(true);
-    }, []);
+    }, [status, session, router]);
 
-    if (!ready) return null;
+    if (status === 'loading' || status === 'unauthenticated' || session?.user?.isAnonymous || !ready) {
+        return <LoadingSpinner fullScreen={false} />;
+    }
 
     return (
         <>

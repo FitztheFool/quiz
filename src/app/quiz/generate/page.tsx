@@ -18,7 +18,6 @@ const DIFFICULTIES = [
 ];
 
 export default function GenerateQuizPage() {
-    const { status } = useSession();
     const router = useRouter();
     const [subject, setSubject] = useState('');
     const [questionCount, setQuestionCount] = useState(5);
@@ -30,14 +29,20 @@ export default function GenerateQuizPage() {
     const [error, setError] = useState<string | null>(null);
     const [subjectError, setSubjectError] = useState('');
     const [categoryError, setCategoryError] = useState('');
+    const { data: session, status } = useSession();
 
     const isLoadingRef = useRef(false);
 
     useEffect(() => {
+        if (status === 'loading') return;
         if (status === 'unauthenticated') {
             router.push(`/login?callbackUrl=${encodeURIComponent('/quiz/generate')}`);
+            return;
         }
-    }, [status, router]);
+        if (session?.user?.isAnonymous) {
+            router.replace('/dashboard?error=members_only');
+        }
+    }, [status, session, router]);
 
     useEffect(() => {
         fetch('/api/categories')
@@ -46,10 +51,8 @@ export default function GenerateQuizPage() {
             .catch(() => { });
     }, []);
 
-    if (status === 'loading' || status === 'unauthenticated') {
-        return (
-            <LoadingSpinner fullScreen={false} />
-        );
+    if (status === 'loading' || status === 'unauthenticated' || session?.user?.isAnonymous) {
+        return <LoadingSpinner fullScreen={false} />;
     }
 
     const setLoadingState = (value: 'play' | 'edit' | null) => {

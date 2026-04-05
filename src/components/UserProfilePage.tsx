@@ -190,14 +190,13 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
             <div className="max-w-5xl mx-auto px-4 py-5 space-y-4">
+                {/* ── Bannière members only ── */}
+                {isOwnProfile && <MembersOnlyBanner />}
 
                 {/* ── Bloc finaliser le compte (invité) ── */}
                 {isOwnProfile && session?.user?.isAnonymous && (
                     <ClaimAccountBlock currentUsername={username} />
                 )}
-
-                {/* ── Bannière members only ── */}
-                {isOwnProfile && <MembersOnlyBanner />}
 
                 {/* ── Header compact ── */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-4 py-3">
