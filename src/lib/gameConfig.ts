@@ -148,7 +148,7 @@ export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
     diamant: `${GAME_CONFIG.diamant.icon} Diamant — 2 à 8 joueurs.`,
 };
 
-export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee', 'diamant', 'battleship']);
+export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee', 'diamant', 'battleship', 'uno']);
 
 export const SOLO_GAMES: Record<string, string> = {
     yahtzee: '#A32D2D',
@@ -156,6 +156,7 @@ export const SOLO_GAMES: Record<string, string> = {
     puissance4: '#A32D2D',
     diamant: '#A32D2D',
     battleship: '#A32D2D',
+    uno: '#A32D2D',
     //uno: '#185FA5',
 };
 
