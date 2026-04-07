@@ -4,7 +4,7 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import AdminPanel from '@/components/AdminPanel';
+import AdminPanel from '@/components/Admin/AdminPanel';
 
 export default function AdminPage() {
     const { data: session, status } = useSession();

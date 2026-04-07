@@ -78,8 +78,8 @@ export async function GET(req: NextRequest) {
         totalQuizzes,
         gameStatsByType,
         distinctGamesByType,
-        // rounds Taboo : 1 attempt par partie (dédupliqué par gameId) pour ne pas multiplier par le nb de joueurs
         tabooRoundsPerGame,
+        justOneStatsPerGame,
         topQuizzesAllTime,
         totalPointsAllTime,
         allPlayersForPage,
@@ -88,25 +88,37 @@ export async function GET(req: NextRequest) {
         prisma.user.count(),
         prisma.quiz.count(),
         prisma.$queryRaw<{ gameType: string; total_score: number; total_correct: number; total_answers: number }[]>`
-                SELECT
-                    "gameType",
-                    SUM(score)::int as total_score,
-                    SUM("correctAnswers")::int as total_correct,
-                    SUM("totalAnswers")::int as total_answers
-                FROM attempts
-                GROUP BY "gameType"
-            `,
+            SELECT
+                "gameType",
+                SUM(score)::int as total_score,
+                SUM("correctAnswers")::int as total_correct,
+                SUM("totalAnswers")::int as total_answers
+            FROM attempts
+            GROUP BY "gameType"
+        `,
         prisma.attempt.findMany({
             select: { gameType: true, gameId: true },
             distinct: ['gameId', 'gameType'],
         }),
-        // 1 ligne par partie Taboo — raw SQL pour garantir la déduplication
+        // Taboo : 1 ligne par partie pour ne pas multiplier par le nb de joueurs
         prisma.$queryRaw<{ total_rounds: number }[]>`
             SELECT SUM(rounds)::int as total_rounds
             FROM (
                 SELECT DISTINCT "gameId", rounds
                 FROM attempts
                 WHERE "gameType" = 'TABOO'
+            ) sub
+        `,
+        // Just One : dédupliqué par gameId pour ne pas multiplier par le nb de joueurs
+        prisma.$queryRaw<{ total_correct: number; total_answers: number }[]>`
+            SELECT
+                SUM("correctAnswers")::int as total_correct,
+                SUM("totalAnswers")::int as total_answers
+            FROM (
+                SELECT DISTINCT ON ("gameId") "correctAnswers", "totalAnswers"
+                FROM attempts
+                WHERE "gameType" = 'JUST_ONE'
+                ORDER BY "gameId", "createdAt" ASC
             ) sub
         `,
         prisma.quiz.findMany({
@@ -133,8 +145,9 @@ export async function GET(req: NextRequest) {
         }),
     ]);
 
-    // Somme des rounds Taboo dédupliqués par partie
     const totalTabooRounds = tabooRoundsPerGame[0]?.total_rounds ?? 0;
+    const totalJustOneCorrect = justOneStatsPerGame[0]?.total_correct ?? 0;
+    const totalJustOneAnswers = justOneStatsPerGame[0]?.total_answers ?? 0;
 
     const filteredGameIndex = new Map<string, {
         createdAt: Date;
@@ -149,14 +162,12 @@ export async function GET(req: NextRequest) {
         if (existing) {
             existing.createdAt = a.createdAt;
             existing.gameType = a.gameType;
-            // Garder le quiz de allPlayersForPage s'il existe déjà
             if (!existing.quiz && a.quiz) {
                 existing.quiz = { id: a.quiz.id, title: a.quiz.title };
             }
         }
     }
 
-    // D'abord, indexer TOUS les joueurs pour avoir le quiz
     for (const a of allPlayersForPage) {
         const key = a.gameId ?? `solo-${a.user.username}-${a.createdAt.getTime()}`;
         if (!filteredGameIndex.has(key)) {
@@ -168,7 +179,6 @@ export async function GET(req: NextRequest) {
             });
         }
     }
-
 
     const vsBotByGame = new Map<string, boolean>();
     for (const a of allPlayersForPage) {
@@ -204,7 +214,6 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    // Ajouter les entrées bots depuis botScores stocké sur les tentatives
     const botScoresByGame = new Map<string, { username: string; score: number; placement: number }[]>();
     for (const a of allPlayersForPage) {
         if (!a.vsBot || !a.botScores || !a.gameId) continue;
@@ -224,7 +233,6 @@ export async function GET(req: NextRequest) {
                 game.players.push({ username: bot.username, score: bot.score, placement: bot.placement, abandon: false, afk: false, isBot: true });
             }
         } else {
-            // Fallback pour les anciennes parties sans botScores
             const usedPlacements = new Set(game.players.map(p => p.placement).filter(p => p != null));
             let botPlacement = 1;
             while (usedPlacements.has(botPlacement)) botPlacement++;
@@ -247,7 +255,6 @@ export async function GET(req: NextRequest) {
         }),
     }));
 
-
     const gameStats: Record<string, { count: number; points: number; rounds: number; correctAnswers: number; totalAnswers: number }> = {};
 
     for (const g of Object.values(GAME_CONFIG)) {
@@ -255,15 +262,24 @@ export async function GET(req: NextRequest) {
     }
 
     for (const row of gameStatsByType) {
-        gameStats[row.gameType] = {
-            count: 0,
-            points: Number(row.total_score) ?? 0,
-            rounds: row.gameType === 'TABOO' ? totalTabooRounds : 0,
-            correctAnswers: Number(row.total_correct) ?? 0,
-            totalAnswers: Number(row.total_answers) ?? 0,
-        };
+        if (!gameStats[row.gameType]) continue;
+        gameStats[row.gameType].points = Number(row.total_score) ?? 0;
+        gameStats[row.gameType].rounds = row.gameType === 'TABOO' ? totalTabooRounds : 0;
+        // Just One : on écrase après avec les valeurs dédupliquées
+        if (row.gameType !== 'JUST_ONE') {
+            gameStats[row.gameType].correctAnswers = Number(row.total_correct) ?? 0;
+            gameStats[row.gameType].totalAnswers = Number(row.total_answers) ?? 0;
+        }
     }
 
+    // Just One : valeurs dédupliquées par gameId
+    gameStats['JUST_ONE'].correctAnswers = totalJustOneCorrect;
+    gameStats['JUST_ONE'].totalAnswers = totalJustOneAnswers;
+
+    // Taboo : rounds dédupliqués par gameId
+    if (gameStats['TABOO']) gameStats['TABOO'].rounds = totalTabooRounds;
+
+    // ← boucle unique, plus de doublon
     for (const g of distinctGamesByType) {
         if (!gameStats[g.gameType]) gameStats[g.gameType] = { count: 0, points: 0, rounds: 0, correctAnswers: 0, totalAnswers: 0 };
         gameStats[g.gameType].count++;

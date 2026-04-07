@@ -38,8 +38,11 @@ function getSecondaryStat(type: string, stat: GameStat, hideWinRate = false): { 
         case 'YAHTZEE':
         case 'DIAMANT':
             return { value: fmt(avg), label: 'moy/partie' };
-        case 'JUST_ONE':
-            return { value: `${avg}/13`, label: 'moy/partie' };
+        case 'JUST_ONE': {
+            const { correctAnswers = 0, count } = stat;
+            const avg = count > 0 ? (correctAnswers / count).toFixed(1) : '0';
+            return { value: `${avg}/13`, label: 'moy. bonnes rép.' };
+        }
         case 'PUISSANCE4':
         case 'BATTLESHIP':
             if (hideWinRate) return { value: '', label: '' };

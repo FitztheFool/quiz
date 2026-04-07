@@ -7,7 +7,15 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  DEACTIVATED
+  BANNED
+}
+
 enum Role {
+  GUEST
   USER
   RANDOM
   ADMIN
@@ -16,6 +24,7 @@ enum Role {
 enum QuestionType {
   TRUE_FALSE
   MCQ
+  MCQ_UNIQUE
   TEXT
   MULTI_TEXT
 }
@@ -86,6 +95,8 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   isAnonymous   Boolean   @default(false)
+  status        UserStatus @default(PENDING)
+  activatedAt   DateTime?
   deactivatedAt DateTime?
   bannedAt      DateTime?
   deletedAt     DateTime?

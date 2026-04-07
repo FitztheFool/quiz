@@ -273,19 +273,27 @@ export async function seedJustOneAttempts(prisma: PrismaClient, players: UserLik
         const gameId = crypto.randomUUID();
         const playerCount = Math.min(Math.floor(Math.random() * 5) + 3, players.length);
         const participants = shufflePlayers(players).slice(0, playerCount);
-        const score = Math.floor(Math.random() * 10) + 3;
+        const totalRounds = 13;
+        const correctRounds = Math.floor(Math.random() * (totalRounds + 1));
+        const score = correctRounds - (totalRounds - correctRounds); // bonnes - mauvaises
 
         for (let p = 0; p < participants.length; p++) {
             await prisma.attempt.create({
                 data: {
-                    userId: participants[p].id, score,
-                    gameType: 'JUST_ONE', placement: null,
-                    gameId, quizId: null, trapScore: 0,
+                    userId: participants[p].id,
+                    score,
+                    correctAnswers: correctRounds,
+                    totalAnswers: totalRounds,
+                    gameType: 'JUST_ONE',
+                    placement: null,
+                    gameId,
+                    quizId: null,
+                    trapScore: 0,
                     createdAt: daysAgo(Math.floor((g / total) * 60), Math.floor(Math.random() * 24)),
                 },
             });
         }
-        console.log(`  ✅ Just One ${g + 1}/${total} — ${participants.length} joueurs — score:${score}/13`);
+        console.log(`  ✅ Just One ${g + 1}/${total} — ${participants.length} joueurs — ${correctRounds}/${totalRounds}`);
     }
     console.log(`✅ ${total} parties Just One créées`);
 }

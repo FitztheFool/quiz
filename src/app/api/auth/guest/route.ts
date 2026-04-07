@@ -1,4 +1,3 @@
-// /api/auth/guest
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
@@ -17,9 +16,15 @@ export async function POST(req: NextRequest) {
     let userId: string;
     let finalUsername: string;
 
-    const existing = await prisma.user.findFirst({ where: { username } });
+    const existing = await prisma.user.findFirst({
+        where: { username },
+        select: { id: true, username: true, isAnonymous: true, status: true },
+    });
 
     if (existing?.isAnonymous) {
+        if (existing.status === 'BANNED') {
+            return NextResponse.json({ error: 'Votre compte a été banni.' }, { status: 403 });
+        }
         userId = existing.id;
         finalUsername = existing.username!;
     } else {
@@ -28,13 +33,12 @@ export async function POST(req: NextRequest) {
         }
         const email = `guest_${randomUUID()}@guest.internal`;
         const user = await prisma.user.create({
-            data: { username, email, isAnonymous: true },
+            data: { username, email, isAnonymous: true, role: 'GUEST' },
             select: { id: true, username: true },
         });
         userId = user.id;
         finalUsername = user.username!;
     }
 
-    // Renvoie juste le userId, le signIn se fait côté client
     return NextResponse.json({ ok: true, userId, username: finalUsername });
 }

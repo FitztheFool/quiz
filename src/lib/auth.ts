@@ -1,4 +1,3 @@
-// src/lib/auth.ts
 import { NextAuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -21,7 +20,6 @@ export const authOptions: NextAuthOptions = {
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
-        // Finalise la connexion OAuth après sélection du pseudo
         CredentialsProvider({
             id: 'oauth-completion',
             name: 'oauth-completion',
@@ -53,9 +51,10 @@ export const authOptions: NextAuthOptions = {
                 if (!credentials?.userId) return null;
                 const user = await prisma.user.findUnique({
                     where: { id: credentials.userId },
-                    select: { id: true, email: true, username: true, role: true, image: true, isAnonymous: true },
+                    select: { id: true, email: true, username: true, role: true, image: true, isAnonymous: true, status: true },
                 });
                 if (!user) return null;
+                if (user.status === 'BANNED') throw new Error('AccountBanned');
                 return {
                     id: user.id,
                     email: user.email ?? '',
@@ -85,11 +84,11 @@ export const authOptions: NextAuthOptions = {
                     },
                 });
                 if (!user || !user.passwordHash) throw new Error('Aucun utilisateur trouvé');
-                if (user.bannedAt) throw new Error('deactivated');
+                if (user.status === 'BANNED') throw new Error('AccountBanned');
                 const isPasswordValid = await compare(credentials.password, user.passwordHash);
                 if (!isPasswordValid) throw new Error('Mot de passe incorrect');
-                if (user.deactivatedAt) {
-                    await prisma.user.update({ where: { id: user.id }, data: { deactivatedAt: null } });
+                if (user.status === 'DEACTIVATED') {
+                    await prisma.user.update({ where: { id: user.id }, data: { status: 'ACTIVE', deactivatedAt: null } });
                 }
                 return { id: user.id, email: user.email ?? '', username: user.username ?? '', role: user.role, image: user.image ?? null };
             },
@@ -106,12 +105,11 @@ export const authOptions: NextAuthOptions = {
                             ...(user.email ? [{ email: user.email }] : []),
                         ],
                     },
-                    select: { id: true, deactivatedAt: true, passwordHash: true, bannedAt: true },
+                    select: { id: true, status: true, passwordHash: true, deactivatedAt: true },
                 });
-                if (dbUser?.bannedAt) return '/login?error=AccountBanned';
+                if (dbUser?.status === 'BANNED') return '/login?error=AccountBanned';
                 if (dbUser?.passwordHash) return '/login?error=OAuthAccountConflict';
 
-                // Conflit pseudo : nouvel utilisateur Discord dont le pseudo est déjà pris
                 if (!dbUser && user.name) {
                     const conflict = await prisma.user.findFirst({
                         where: { username: user.name, passwordHash: { not: null } },
@@ -144,8 +142,8 @@ export const authOptions: NextAuthOptions = {
                     }
                 }
 
-                if (dbUser?.deactivatedAt) {
-                    await prisma.user.update({ where: { id: dbUser.id }, data: { deactivatedAt: null } });
+                if (dbUser?.status === 'DEACTIVATED') {
+                    await prisma.user.update({ where: { id: dbUser.id }, data: { status: 'ACTIVE', deactivatedAt: null } });
                 }
             }
             return true;
@@ -188,7 +186,6 @@ export const authOptions: NextAuthOptions = {
     },
     events: {
         createUser: async ({ user }) => {
-            // Nouvel utilisateur OAuth sans conflit : assigne le pseudo Discord
             const base = user.name || `user_${user.id.slice(-8)}`;
             let username = base;
             const taken = await prisma.user.findFirst({ where: { username: base, NOT: { id: user.id } } });
