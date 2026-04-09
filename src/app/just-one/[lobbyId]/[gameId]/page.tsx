@@ -324,7 +324,7 @@ export default function JustOnePage() {
     };
 
     return (
-        <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
             <GamePageHeader
                 left={<span className="font-bold">🔤 Just One</span>}

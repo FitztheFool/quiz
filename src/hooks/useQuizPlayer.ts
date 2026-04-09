@@ -59,10 +59,13 @@ export interface UseQuizPlayerOptions {
 
 const EMPTY_QUIZ: Quiz = { id: '', title: '', questions: [] };
 
-export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode, timePerQuestion = 10 }: UseQuizPlayerOptions) {
+export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode: timeModeProp, timePerQuestion: timePerQuestionProp = 10 }: UseQuizPlayerOptions) {
     const router = useRouter();
     const { data: session, status } = useSession();
     const socket = useMemo(() => (lobbyId ? getQuizSocket() : null), [lobbyId]);
+
+    const [timeMode, setTimeMode] = useState<string | undefined>(timeModeProp);
+    const [timePerQuestion, setTimePerQuestion] = useState<number>(timePerQuestionProp);
 
     // Quiz data
     const [quizData, setQuizData] = useState<Quiz>(EMPTY_QUIZ);
@@ -106,6 +109,7 @@ export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode, timePerQue
     const [isValidating, setIsValidating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
+    const [timerDuration, setTimerDuration] = useState<number>(0);
 
     const earnedPointsRef = useRef(0);
     const answersRef = useRef<UserAnswer[]>([]);
@@ -116,30 +120,55 @@ export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode, timePerQue
         || freeTextAnswer.trim() !== ''
         || multiTextAnswers.some(t => t.trim() !== '');
 
-    // Timer via socket
+    // Refs for timer config — updated immediately from quiz:sessionInfo, no state lag
+    const timeModeRef = useRef<string | undefined>(undefined);
+    const timePerQuestionRef = useRef<number>(0);
+
+    // Receive session config from server
     useEffect(() => {
         if (!socket) return;
-
-        const onTimeLeft = ({ timeLeft: t }: { timeLeft: number }) => {
-            if (timeMode === 'total') setTimerEndsAt(Date.now() + t * 1000);
+        const onSessionInfo = ({ timeMode: tm, timePerQuestion: tpq }: { timeMode?: string; timePerQuestion?: number }) => {
+            // Normalize: server may send "per_question" or "quiz:per_question"
+            const normalizedTm = tm === 'per_question' ? 'quiz:per_question' : tm;
+            if (normalizedTm && normalizedTm !== 'none') {
+                setTimeMode(normalizedTm);
+                timeModeRef.current = normalizedTm;
+            }
+            if (tpq && tpq > 0) {
+                setTimePerQuestion(tpq);
+                timePerQuestionRef.current = tpq;
+                // Set duration for both modes from sessionInfo (reliable source)
+                setTimerDuration(tpq);
+            }
+            // Start per-question timer immediately for question 1
+            if (normalizedTm === 'quiz:per_question' && tpq && tpq > 0) {
+                setTimerEndsAt(Date.now() + tpq * 1000);
+            }
         };
-        const onPerQuestionTimeLeft = ({ timeLeft: t }: { timeLeft: number }) => {
-            if (timeMode === 'quiz:per_question') setTimerEndsAt(Date.now() + t * 1000);
-        };
+        socket.on('quiz:sessionInfo', onSessionInfo);
+        return () => { socket.off('quiz:sessionInfo', onSessionInfo); };
+    }, [socket]);
 
-        socket.on('game:timeLeft', onTimeLeft);
-        socket.on('game:perQuestionTimeLeft', onPerQuestionTimeLeft);
-
-        return () => {
-            socket.off('game:timeLeft', onTimeLeft);
-            socket.off('game:perQuestionTimeLeft', onPerQuestionTimeLeft);
-        };
-    }, [socket, timeMode]);
-
-    // Reset timer on question change (per_question mode)
+    // Socket timer: total mode — game:timeLeft updates endsAt (duration already set from sessionInfo)
     useEffect(() => {
-        if (timeMode === 'quiz:per_question') setTimerEndsAt(null);
-    }, [currentQuestionIndex, timeMode]);
+        if (!socket) return;
+        const onTimeLeft = ({ timeLeft: t }: { timeLeft: number }) => {
+            if (timeModeRef.current !== 'total') return;
+            setTimerEndsAt(Date.now() + t * 1000);
+        };
+        socket.on('game:timeLeft', onTimeLeft);
+        return () => { socket.off('game:timeLeft', onTimeLeft); };
+    }, [socket]);
+
+    // Per-question mode: restart local countdown on each question change
+    useEffect(() => {
+        const tpq = timePerQuestionRef.current;
+        const tm = timeModeRef.current;
+        if (tm !== 'quiz:per_question' || !tpq) return;
+        setTimerDuration(tpq);
+        setTimerEndsAt(Date.now() + tpq * 1000);
+    }, [currentQuestionIndex]);
+
 
     // Socket: join + progress
     useEffect(() => {
@@ -280,6 +309,44 @@ export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode, timePerQue
         setCurrentQuestionIndex(prev => prev + 1);
     }, [isLastQuestion, submitQuiz]);
 
+    // Auto-advance / submit on timer expiry
+    const handleTimerExpireRef = useRef<() => void>(() => {});
+
+    const handleTimerExpire = useCallback(() => {
+        if (!feedback && currentQuestion) {
+            const hasAnswer = selectedAnswer !== null
+                || selectedAnswers.length > 0
+                || freeTextAnswer.trim() !== ''
+                || multiTextAnswers.some(t => t.trim() !== '');
+            if (hasAnswer) {
+                const ua: UserAnswer = {
+                    questionId: currentQuestion.id,
+                    answerIds: selectedAnswers.length > 0 ? selectedAnswers : (selectedAnswer ?? ''),
+                };
+                if (currentQuestion.type === 'TEXT') ua.text = freeTextAnswer;
+                if (currentQuestion.type === 'MULTI_TEXT') ua.text = multiTextAnswers.join('||');
+                answersRef.current = [
+                    ...answersRef.current.filter(a => a.questionId !== currentQuestion.id),
+                    ua,
+                ];
+            }
+        }
+        if (timeMode === 'quiz:per_question') {
+            handleNextQuestion();
+        } else if (timeMode === 'total') {
+            submitQuiz(answersRef.current);
+        }
+    }, [feedback, currentQuestion, selectedAnswer, selectedAnswers, freeTextAnswer, multiTextAnswers, timeMode, handleNextQuestion, submitQuiz]);
+
+    useEffect(() => { handleTimerExpireRef.current = handleTimerExpire; }, [handleTimerExpire]);
+
+    useEffect(() => {
+        if (!timerEndsAt || !timeMode) return;
+        const delay = Math.max(0, timerEndsAt - Date.now());
+        const id = setTimeout(() => handleTimerExpireRef.current(), delay);
+        return () => clearTimeout(id);
+    }, [timerEndsAt, timeMode]);
+
     return {
         quizData, isLoadingQuiz,
         currentQuestion, currentQuestionIndex, isLastQuestion, progress,
@@ -291,7 +358,7 @@ export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode, timePerQue
         isValidating, isSubmitting, canProceed,
         handleValidateAnswer, handleNextQuestion,
         session, status,
-        timerEndsAt,
+        timerEndsAt, timerDuration, timeMode, timePerQuestion,
     };
 }
 

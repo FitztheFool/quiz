@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest) {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
-    if (!session.user.isAnonymous) {
+    if (session.user.role !== 'GUEST') {
         return NextResponse.json({ error: 'Compte déjà finalisé' }, { status: 400 });
     }
 

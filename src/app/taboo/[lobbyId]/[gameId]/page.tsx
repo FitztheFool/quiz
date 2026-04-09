@@ -164,7 +164,7 @@ export default function TabooGamePage() {
     // ── Phase trap ────────────────────────────────────────────────────────────
     if (game.phase === 'trap') {
         return (
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 <style>{FONTS}</style>
                 <TopBar
@@ -219,7 +219,7 @@ export default function TabooGamePage() {
         const trapsUsed = teamWhoJustPlayed === 0 ? game.team1Traps : game.team0Traps;
 
         return (
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 <style>{FONTS}</style>
                 <TopBar
@@ -296,7 +296,7 @@ export default function TabooGamePage() {
         const myTeamPlayers = game.players.filter(p => p.team === myTeam);
 
         return (
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 <style>{FONTS}</style>
                 <TopBar
@@ -428,7 +428,7 @@ export default function TabooGamePage() {
         : '?';
 
     return (
-        <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
+        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
             style={{ fontFamily: "'DM Sans', sans-serif" }}>
             <style>{FONTS}</style>
 

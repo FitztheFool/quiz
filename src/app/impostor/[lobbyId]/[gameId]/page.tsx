@@ -195,7 +195,7 @@ export default function ImpostorPage() {
         const currentSpeakerName = players.find(p => p.id === currentSpeakerId)?.name ?? '…';
 
         return (
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
                 {header}
                 {timerBar}
                 <main className="p-4 flex flex-col items-center">
@@ -303,7 +303,7 @@ export default function ImpostorPage() {
 
     if (roundState === 'REVEAL') {
         return (
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
                 {header}
                 <main className="p-4 flex flex-col items-center">
                     <div className="w-full max-w-lg space-y-4">
@@ -332,7 +332,7 @@ export default function ImpostorPage() {
 
     if (roundState === 'VOTING') {
         return (
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
                 {header}
                 {timerBar}
                 <main className="p-4 flex flex-col items-center">
@@ -369,7 +369,7 @@ export default function ImpostorPage() {
     if (roundState === 'IMPOSTOR_GUESS') {
         const isImpostor = role === 'impostor';
         return (
-            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
                 {header}
                 {timerBar}
                 <main className="p-4 flex flex-col items-center">

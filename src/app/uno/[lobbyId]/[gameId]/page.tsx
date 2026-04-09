@@ -207,14 +207,14 @@ export default function UnoPage() {
     };
 
     if (status === 'loading') {
-        return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Chargement...</div>;
+        return <div className="flex-1 bg-gray-900 flex items-center justify-center text-white">Chargement...</div>;
     }
 
     // ── Fin de partie ──────────────────────────────────────────────────────────
     if (gameState?.status === 'FINISHED') {
         const scores = gameState.finalScores ?? [];
         return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+            <div className="flex-1 bg-gray-900 flex items-center justify-center p-4">
                 <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md text-white text-center">
                     <div className="text-6xl mb-2">🏆</div>
                     <h1 className="text-2xl font-bold mb-1">{gameState.winner?.username} a gagné !</h1>
@@ -281,7 +281,7 @@ export default function UnoPage() {
     if (!gameState || gameState.status === 'WAITING') {
         const joined = lobbyState?.players.length ?? 0;
         return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+            <div className="flex-1 bg-gray-900 flex items-center justify-center p-4">
                 <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md text-white text-center">
                     <div className="text-5xl mb-4 animate-pulse">🃏</div>
                     <h1 className="text-xl font-bold mb-1">Démarrage de la partie…</h1>
@@ -318,7 +318,7 @@ export default function UnoPage() {
     const isMeInactive = inactivityUserId === me.userId;
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex flex-col select-none">
+        <div className="flex-1 bg-gray-900 text-white flex flex-col select-none">
 
             {showColorPicker && !gameState.spectator && (
                 <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">

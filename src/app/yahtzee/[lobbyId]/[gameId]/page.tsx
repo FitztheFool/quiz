@@ -251,7 +251,7 @@ export default function YahtzeePage() {
     };
 
     return (
-        <div className="flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
             {toasts.length > 0 && (
                 <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
                     {toasts.map(t => (

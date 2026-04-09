@@ -323,7 +323,7 @@ export async function seedQuizzes(
                 { content: "Comment s'appelle le héros qui a tué la Méduse ?", type: "TEXT", points: 2, answers: [{ content: "persee", isCorrect: true }] },
                 { content: "Quel dieu grec est associé à la mer ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Arès", isCorrect: false }, { content: "Hermès", isCorrect: false }, { content: "Poséidon", isCorrect: true }, { content: "Héphaïstos", isCorrect: false }] },
                 { content: "Hercule est le héros le plus célèbre de la mythologie grecque", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
-                { content: "Quel est le nom du cheval ailé de la mythologie grecque ?", type: "TEXT", points: 2, answers: [{ content: "pegase", isCorrect: true }] },
+                { content: "Quel est le nom du cheval ailé de la mythologie grecque ?", type: "TEXT", points: 2, answers: [{ content: "Pégase", isCorrect: true }] },
             ]
         },
         {
@@ -331,7 +331,7 @@ export async function seedQuizzes(
             questions: [
                 { content: "Qui a inventé l'ampoule électrique ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Nikola Tesla", isCorrect: false }, { content: "Thomas Edison", isCorrect: true }, { content: "Alexander Graham Bell", isCorrect: false }, { content: "Benjamin Franklin", isCorrect: false }] },
                 { content: "Alexander Fleming a découvert la pénicilline", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
-                { content: "Qui a découvert la gravité en observant une pomme tomber ?", type: "TEXT", points: 1, answers: [{ content: "newton", isCorrect: true }] },
+                { content: "Qui a découvert la gravité en observant une pomme tomber ?", type: "TEXT", points: 1, answers: [{ content: "Newton", isCorrect: true }] },
                 { content: "Marie Curie a découvert la radioactivité", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
                 { content: "En quelle année l'homme a-t-il marché sur la Lune pour la première fois ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "1965", isCorrect: false }, { content: "1967", isCorrect: false }, { content: "1969", isCorrect: true }, { content: "1971", isCorrect: false }] },
             ]

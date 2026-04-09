@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import TurnTimer from '@/components/TurnTimer';
+import TimerBar from '@/components/TimerBar';
 import { useQuizPlayer, type Question, type Feedback } from '@/hooks/useQuizPlayer';
 import { normalizeAnswer } from '@/lib/utils';
 
@@ -230,7 +230,7 @@ function FeedbackBanner({ feedback }: { feedback: Feedback }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUrl, timeMode, timePerQuestion }: QuizPlayerProps) {
+export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUrl, timeMode: timeModeProp, timePerQuestion: timePerQuestionProp }: QuizPlayerProps) {
     const {
         quizData, isLoadingQuiz,
         currentQuestion, currentQuestionIndex, isLastQuestion, progress,
@@ -241,8 +241,8 @@ export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUr
         feedback, showFeedback,
         isValidating, isSubmitting, canProceed,
         handleValidateAnswer, handleNextQuestion,
-        status, timerEndsAt,
-    } = useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode, timePerQuestion });
+        status, timerEndsAt, timerDuration,
+    } = useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode: timeModeProp, timePerQuestion: timePerQuestionProp });
 
     if (isLoadingQuiz) return <LoadingSpinner message="Chargement du quiz..." />;
 
@@ -256,12 +256,10 @@ export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUr
                 points={currentQuestion?.points ?? 0}
             />
 
+            <TimerBar endsAt={timerEndsAt} duration={timerDuration} label="Temps restant" />
+
             <main className="flex-1 flex flex-col items-center px-4 py-8">
                 <div className="max-w-2xl w-full flex flex-col gap-5">
-
-                    {timerEndsAt !== null && timePerQuestion && (
-                        <TurnTimer endsAt={timerEndsAt} duration={timePerQuestion} />
-                    )}
 
                     {status === 'unauthenticated' && (
                         <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-xl px-4 py-3">

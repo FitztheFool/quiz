@@ -312,7 +312,7 @@ export default function skyjowGamePage() {
     // ── Interface principale ───────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col lg:h-screen lg:overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
 
             {/* ── Notification ── */}
             {notification && (

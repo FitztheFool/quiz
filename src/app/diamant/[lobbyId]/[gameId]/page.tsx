@@ -205,7 +205,7 @@ export default function DiamantPage() {
     );
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
             <GamePageHeader
                 left={<><span className="text-xl">💎</span><h1 className="text-base font-black tracking-tight text-amber-800 dark:text-amber-100">Diamant</h1></>}
                 center={<>

@@ -43,7 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+        <div className="flex-1 min-h-0 bg-gray-50 dark:bg-gray-950 flex">
 
             {/* Overlay mobile */}
             {sidebarOpen && (
@@ -80,7 +80,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </button>
                 </div>
 
-                <main className="flex-1">
+                <main className="flex-1 flex flex-col">
                     {children}
                 </main>
             </div>

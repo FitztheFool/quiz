@@ -3,7 +3,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 
 import Link from 'next/link';
 import { notFound as nextNotFound } from 'next/navigation';
-import { useRef, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import QuizResults from '@/components/Quiz/QuizResults';
 import { useRouter } from 'next/navigation';
 import { useQuizResult, LeaderboardEntry } from '@/hooks/useQuizResult';
@@ -67,7 +67,6 @@ export default function QuizResultPage() {
         playerProgress,
         totalPlayers,
         allFinished,
-        timeLeft,
         handleRestart,
     } = useQuizResult();
 
@@ -100,7 +99,6 @@ export default function QuizResultPage() {
                 playerProgress={playerProgress}
                 totalPlayers={totalPlayers}
                 currentUserId={session?.user?.id}
-                timeLeft={timeLeft}
             />
         );
     }
@@ -225,7 +223,6 @@ function LobbyWaitingRoom({
     playerProgress,
     totalPlayers,
     currentUserId,
-    timeLeft,
 }: {
     score: number;
     totalPoints: number;
@@ -233,24 +230,12 @@ function LobbyWaitingRoom({
     playerProgress: PlayerProgress[];
     totalPlayers: number;
     currentUserId?: string;
-    timeLeft: number | null;
 }) {
-    const finishedPlayersCount = leaderboard.length;
-
-    const maxTimeLeftRef = useRef<number>(timeLeft ?? 0);
-    useEffect(() => {
-        if (timeLeft !== null && timeLeft > maxTimeLeftRef.current) {
-            maxTimeLeftRef.current = timeLeft;
-        }
-    }, [timeLeft]);
-
-    const timerPct =
-        maxTimeLeftRef.current > 0 && timeLeft !== null
-            ? (timeLeft / maxTimeLeftRef.current) * 100
-            : 0;
+    const finishedCount = leaderboard.length;
+    const finishedPct = totalPlayers > 0 ? (finishedCount / totalPlayers) * 100 : 0;
 
     const inProgressPlayers = useMemo(
-        () => playerProgress.filter((p) => !leaderboard.find((l) => l.userId === p.userId)),
+        () => playerProgress.filter(p => !leaderboard.find(l => l.userId === p.userId)),
         [playerProgress, leaderboard]
     );
 
@@ -277,98 +262,44 @@ function LobbyWaitingRoom({
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-bold text-gray-800 dark:text-gray-100">Joueurs</h2>
                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {finishedPlayersCount} / {totalPlayers ?? '?'} terminé
-                            {finishedPlayersCount > 1 ? 's' : ''}
+                            {finishedCount} / {totalPlayers || '?'} terminé{finishedCount > 1 ? 's' : ''}
                         </span>
                     </div>
 
-                    {timeLeft !== null && timeLeft > 0 && (
-                        <div className="mb-4 flex items-center justify-between text-sm">
-                            <span className="text-gray-500 dark:text-gray-400">⏱ Temps max restant</span>
-                            <span
-                                className={`font-bold tabular-nums ${timeLeft <= 10
-                                    ? 'text-red-500 dark:text-red-400'
-                                    : 'text-blue-600 dark:text-blue-400'
-                                    }`}
-                            >
-                                {timeLeft >= 60
-                                    ? `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`
-                                    : `${timeLeft}s`}
-                            </span>
-                        </div>
-                    )}
-
-                    <div
-                        className="mb-5 h-2 w-full rounded-full bg-gray-100 dark:bg-gray-700"
-                        role="progressbar"
-                        aria-valuenow={Math.round(timerPct)}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-label="Temps restant"
-                    >
+                    <div className="mb-5 h-2 w-full rounded-full bg-gray-100 dark:bg-gray-700">
                         <div
-                            className={`h-2 rounded-full transition-all duration-500 ${timerPct > 60 ? 'bg-green-500' : timerPct > 30 ? 'bg-orange-400' : 'bg-red-500'
-                                }`}
-                            style={{ width: `${timerPct}%` }}
+                            className="h-2 rounded-full bg-green-500 transition-all duration-700"
+                            style={{ width: `${finishedPct}%` }}
                         />
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {leaderboard.map((entry) => (
                             <div key={entry.userId} className="flex items-center gap-3">
-                                <span className="w-6 text-center text-lg text-green-500 dark:text-green-400">
-                                    ✓
+                                <span className="w-6 shrink-0 text-center text-lg text-green-500 dark:text-green-400">✓</span>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    {entry.username}
+                                    {entry.userId === currentUserId && <MeTag />}
                                 </span>
-                                <div className="flex-1">
-                                    <div className="mb-1 flex items-center justify-between">
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                            {entry.username}
-                                            {entry.userId === currentUserId && <MeTag />}
-                                        </span>
-                                        <span className="text-sm font-bold text-green-600 dark:text-green-400">
-                                            {entry.totalScore}/{totalPoints} pts
-                                        </span>
-                                    </div>
-                                    <div
-                                        className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700"
-                                        role="progressbar"
-                                        aria-valuenow={100}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                        aria-label={`Progression de ${entry.username}`}
-                                    >
-                                        <div className="h-1.5 w-full rounded-full bg-green-400 dark:bg-green-500" />
-                                    </div>
-                                </div>
                             </div>
                         ))}
-
                         {inProgressPlayers.map((player) => {
-                            const pct =
-                                player.totalQuestions > 0
-                                    ? (player.currentQuestion / player.totalQuestions) * 100
-                                    : 0;
-
+                            const pct = player.totalQuestions > 0
+                                ? (player.currentQuestion / player.totalQuestions) * 100
+                                : 0;
                             return (
                                 <div key={player.userId} className="flex items-center gap-3">
                                     <LoadingSpinner fullScreen={false} />
                                     <div className="flex-1">
                                         <div className="mb-1 flex items-center justify-between">
-                                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                                                 {player.username}
                                             </span>
                                             <span className="text-xs text-gray-400 dark:text-gray-500">
                                                 {player.currentQuestion}/{player.totalQuestions}
                                             </span>
                                         </div>
-                                        <div
-                                            className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700"
-                                            role="progressbar"
-                                            aria-valuenow={Math.round(pct)}
-                                            aria-valuemin={0}
-                                            aria-valuemax={100}
-                                            aria-label={`Progression de ${player.username}`}
-                                        >
+                                        <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700">
                                             <div
                                                 className="h-1.5 rounded-full bg-blue-400 transition-all duration-500 dark:bg-blue-500"
                                                 style={{ width: `${pct}%` }}

@@ -94,7 +94,7 @@ export default function Puissance4Page() {
         .col-hover { animation: pulse-glow 1.5s ease-in-out infinite; }
       `}</style>
 
-            <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
                 <GamePageHeader
                     left={<span className="font-bold">🔴 Puissance 4{vsBot && <span className="ml-2 text-xs font-normal text-indigo-400">vs Bot</span>}</span>}

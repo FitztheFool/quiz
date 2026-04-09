@@ -8,9 +8,6 @@ function QuizSearch({ isHost, onSelect, selectedId }: { isHost: boolean; onSelec
     const [open, setOpen] = useState(false);
     const searchTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const [selectedQuizId, setSelectedQuizId] = useState<string | undefined>();
-    const [selectedQuizTitle, setSelectedQuizTitle] = useState('');
-
     const search = (q: string) => {
         setQuery(q);
         setOpen(true);

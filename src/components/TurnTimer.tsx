@@ -24,10 +24,14 @@ export default function TurnTimer({ endsAt, duration }: Props) {
         : pct > 25 ? 'from-yellow-500 to-orange-500'
         : 'from-red-500 to-rose-500';
 
+    const display = remaining >= 60
+        ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`
+        : `${remaining}s`;
+
     return (
         <div className="flex items-center gap-3 w-full">
-            <span className={`text-sm font-bold tabular-nums w-8 shrink-0 text-right ${urgent ? 'text-red-500 dark:text-red-400 animate-pulse' : 'text-gray-600 dark:text-gray-400'}`}>
-                {remaining}s
+            <span className={`text-sm font-bold tabular-nums w-12 shrink-0 text-right ${urgent ? 'text-red-500 dark:text-red-400 animate-pulse' : 'text-gray-600 dark:text-gray-400'}`}>
+                {display}
             </span>
             <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
