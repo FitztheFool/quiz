@@ -90,8 +90,8 @@ function UnoCard({ card, playable, selected, onClick }: {
 export default function UnoPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const params = useParams<{ code: string }>();
-    const lobbyId = params?.code ?? '';
+    const params = useParams<{ lobbyId: string; gameId: string }>();
+    const lobbyId = params?.lobbyId ?? '';
 
     const joinedRef = useRef(false);
     const socket = useMemo(() => getUnoSocket(), []);
@@ -156,7 +156,13 @@ export default function UnoPage() {
 
         if (!joinedRef.current) {
             joinedRef.current = true;
-            socket.emit('uno:join', { lobbyId, userId: me.userId, username: me.username });
+            if (socket.connected) {
+                socket.emit('uno:join', { lobbyId, userId: me.userId, username: me.username });
+            } else {
+                socket.once('connect', () => {
+                    socket.emit('uno:join', { lobbyId, userId: me.userId, username: me.username });
+                });
+            }
         }
 
         return () => {

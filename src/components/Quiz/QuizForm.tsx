@@ -104,7 +104,8 @@ function normalizeQuestion(q: QuestionForm): QuestionForm {
                 : defaultMcqAnswers();
 
     if (q.type === 'MCQ_UNIQUE') {
-        const one = a.map((x, i) => ({ ...x, isCorrect: i === 0 }));
+        const hasCorrect = a.some(x => x.isCorrect);
+        const one = a.map((x, i) => ({ ...x, isCorrect: hasCorrect ? x.isCorrect : i === 0 }));
         return { ...q, answers: one };
     }
 

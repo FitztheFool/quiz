@@ -1,58 +1,47 @@
 // src/app/quiz/[id]/edit/page.tsx
-// app/quiz/[id]/edit/page.tsx
-'use client';
-import LoadingSpinner from '@/components/LoadingSpinner';
-
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import QuizForm from '@/components/Quiz/QuizForm';
+import prisma from '@/lib/prisma';
+import { notFound } from 'next/navigation';
 
-export default function EditQuizPage() {
-  const params = useParams();
-  const quizId = params?.id as string;
-  const [initialData, setInitialData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface Props {
+    params: Promise<{ id: string }>;
+}
 
-  useEffect(() => {
-    if (!quizId) return;
-    fetch(`/api/quiz/${quizId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Quiz introuvable');
-        return res.json();
-      })
-      .then((data) => {
-        // Normalise les réponses : l'API retourne `text` dans answer.text
-        const normalized = {
-          ...data,
-          categoryId: data.category?.id ?? '',
-          questions: data.questions.map((q: any) => ({
-            ...q,
-            answers: q.answers?.map((a: any) => ({
-              ...a,
-              text: a.text ?? a.content ?? '',
+export default async function EditQuizPage({ params }: Props) {
+    const { id } = await params;
+
+    const data = await prisma.quiz.findUnique({
+        where: { id },
+        include: {
+            category: true,
+            questions: {
+                include: { answers: true }
+            }
+        }
+    });
+
+    if (!data) notFound();
+
+    const initialData = {
+        id: data.id,
+        title: data.title,
+        description: data.description ?? '',
+        isPublic: data.isPublic,
+        randomizeQuestions: data.randomizeQuestions ?? true,
+        categoryId: data.category?.id ?? '',
+        questions: data.questions.map(q => ({
+            id: q.id,
+            text: q.content,           // QuestionForm uses `text`, not `content`
+            type: q.type,
+            points: q.points,
+            strictOrder: q.strictOrder ?? false,
+            answers: q.answers.map(a => ({
+                id: a.id,
+                text: a.content ?? '', // AnswerForm uses `text`, not `content`
+                isCorrect: a.isCorrect,
             })),
-          })),
-        };
-        setInitialData(normalized);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [quizId]);
+        })),
+    };
 
-  if (loading) {
-    return (
-      <LoadingSpinner />
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-600">
-        ⚠️ {error}
-      </div>
-    );
-  }
-
-  return <QuizForm mode="edit" initialData={initialData!} />;
+    return <QuizForm mode="edit" initialData={initialData} />;
 }

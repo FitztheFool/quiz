@@ -38,9 +38,9 @@ export default function QuizzesTab({ quizzes, quizPage, quizTotalPages, onPageCh
                                         <Link href={session?.user?.username === quiz.creator.username ? '/dashboard' : `/user/${quiz.creator.username}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quiz.creator.username}</Link>
                                     </td>
                                     <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{quiz.category?.name ?? '—'}</td>
-                                    <td className="px-3 py-2 text-xs text-center text-gray-700 dark:text-gray-300 font-semibold">{quiz._count.questions}</td>
-                                    <td className="px-3 py-2 text-xs text-center text-gray-700 dark:text-gray-300 font-semibold">{quiz._count.attempts}</td>
-                                    <td className="px-3 py-2 text-center">
+                                    <td className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 font-semibold">{quiz._count.questions}</td>
+                                    <td className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 font-semibold">{quiz._count.attempts}</td>
+                                    <td className="px-3 py-2">
                                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${quiz.isPublic ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
                                             {quiz.isPublic ? 'Public' : 'Privé'}
                                         </span>

@@ -53,6 +53,7 @@ export async function PATCH(req: NextRequest) {
             email,
             passwordHash,
             isAnonymous: false,
+            role: 'USER',
             ...(username ? { username } : {}),
         },
     });

@@ -69,6 +69,7 @@ export default function UsersTab({
                 >
                     <option value="ALL">Tous les statuts</option>
                     <option value="ACTIVE">Actif</option>
+                    <option value="PENDING">En attente</option>
                     <option value="BANNED">Banni</option>
                     <option value="DEACTIVATED">Désactivé</option>
                 </select>
@@ -137,8 +138,10 @@ export default function UsersTab({
                                                 </span>
                                             ) : user.status === 'DEACTIVATED' ? (
                                                 <span className="text-[10px] font-semibold whitespace-nowrap text-orange-500 dark:text-orange-400">
-                                                    Désactivé {user.deactivatedAt ? `le ${new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}` : ''}
+                                                    Compte désactivé {user.deactivatedAt ? `le ${new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}` : ''}
                                                 </span>
+                                            ) : user.status === 'PENDING' ? (
+                                                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">En attente</span>
                                             ) : (
                                                 <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">Actif</span>
                                             )}

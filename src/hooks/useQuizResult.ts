@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getQuizSocket } from '@/lib/socket';
 import { QuestionResult } from '@/components/Quiz/QuizResults';
@@ -33,22 +33,31 @@ export interface PlayerProgress {
 
 export function useQuizResult() {
     const params = useParams();
-    const searchParams = useSearchParams();
+
     const router = useRouter();
     const { data: session, status } = useSession();
     // Support both /quiz/[id]/result (solo) and /quiz/[id]/[quizId]/result (multiplayer)
     // In solo: params.id = quizId. In multiplayer: params.id = lobbyId, params.quizId = quizId
-    const quizId = ((params?.quizId ?? params?.id) as string) ?? '';
-    const [isHost, setIsHost] = useState(false);
-    const lobbyCodeFromUrl = params?.quizId ? (params?.id as string) : searchParams.get('lobby');
+    const quizId =
+        typeof params.quizId === 'string'
+            ? params.quizId
+            : (params.id as string);
 
-    const [payload, setPayload] = useState<ResultPayload | null>(() => {
-        if (typeof window === 'undefined') return null;
+    const lobbyCode =
+        typeof params.quizId === 'string'
+            ? (params.id as string)
+            : null;
+    const [isHost, setIsHost] = useState(false);
+
+    const [payload, setPayload] = useState<ResultPayload | null>(null);
+
+    useEffect(() => {
+        if (!quizId) return;
         try {
             const raw = sessionStorage.getItem(`quiz_result_${quizId}`);
-            return raw ? JSON.parse(raw) : null;
-        } catch { return null; }
-    });
+            if (raw) setPayload(JSON.parse(raw));
+        } catch { }
+    }, [quizId]);
 
     // Ajouter ce useEffect (indépendant du lobbyCode)
     useEffect(() => {
@@ -82,13 +91,13 @@ export function useQuizResult() {
         return () => { sessionStorage.removeItem(`quiz_result_${quizId}`); };
     }, [quizId]);
 
-    const lobbyCode = lobbyCodeFromUrl ?? payload?.lobbyCode ?? null;
 
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [playerProgress, setPlayerProgress] = useState<PlayerProgress[]>([]);
     const [totalPlayers, setTotalPlayers] = useState(0);
     const [allFinished, setAllFinished] = useState(false);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
 
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const timeModeRef = useRef(timeMode);
@@ -122,7 +131,8 @@ export function useQuizResult() {
         }) => {
             setTotalPlayers(total);
             setLeaderboard(lb);
-            if (done) {
+            // totalPlayers === 0 means the server has no session → show results immediately
+            if (done || total === 0) {
                 setAllFinished(true);
                 setTimeLeft(null);
                 if (countdownRef.current) clearInterval(countdownRef.current);
@@ -192,7 +202,7 @@ export function useQuizResult() {
         session,
         authStatus: status,
         payload,
-        notFound: payload === null,
+        notFound: false,
         leaderboard,
         playerProgress,
         totalPlayers,

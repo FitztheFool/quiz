@@ -2,12 +2,12 @@
 'use client';
 
 import Link from 'next/link';
-import { plural } from '@/lib/utils';
+import { plural, normalizeAnswer } from '@/lib/utils';
 
 export interface QuestionResult {
     questionId: string;
     questionText: string;
-    type: 'TRUE_FALSE' | 'MCQ' | 'TEXT' | 'MULTI_TEXT';
+    type: 'TRUE_FALSE' | 'MCQ' | 'MCQ_UNIQUE' | 'TEXT' | 'MULTI_TEXT';
     points: number;
     earnedPoints: number;
     isCorrect: boolean;
@@ -35,6 +35,7 @@ export interface QuizResultsProps {
     extraActions?: { label: string; onClick: () => void; variant?: 'primary' | 'secondary' }[];
     leaderboard?: LeaderboardEntry[];
     currentUserId?: string;
+    currentUsername?: string;
     hideHeader?: boolean;
 }
 
@@ -50,6 +51,7 @@ export default function QuizResults({
     extraActions = [],
     leaderboard,
     currentUserId,
+    currentUsername,
     hideHeader = false,
 }: QuizResultsProps) {
     const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
@@ -128,181 +130,105 @@ export default function QuizResults({
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8">
                     <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">📋 Récapitulatif</h3>
                     <div className="space-y-4">
-                        {questionResults.map((result, index) => (
-                            <QuestionCard
-                                key={result.questionId}
-                                result={result}
-                                index={index}
-                                leaderboard={leaderboard}
-                                currentUserId={currentUserId}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    );
-}
-
-// ─── AnswerText ───────────────────────────────────────────────────────────────
-
-function AnswerText({ result }: { result: QuestionResult }) {
-    if (result.type === 'MULTI_TEXT') {
-        return (
-            <div className="mt-2">
-                <div className={`text-sm mb-2 ${result.isCorrect ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
-                    <span className="font-medium">Votre réponse : </span>
-                    {result.userAnswerText
-                        ? <span>{result.userAnswerText}</span>
-                        : <span className="italic opacity-70">Aucune réponse</span>}
-                </div>
-                <div className="border-2 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Réponses attendues :</p>
-                    <div className="space-y-1">
-                        {result.correctAnswerText.split(', ').map((c, i) => {
-                            const isGood = result.strictOrder
-                                ? result.userAnswerText.split(', ')[i]?.trim().toLowerCase() === c.trim().toLowerCase()
-                                : result.userAnswerText.split(', ').some(u => u.trim().toLowerCase() === c.trim().toLowerCase());
+                        {questionResults.map((result, index) => {
+                            const effectiveLeaderboard = leaderboard && leaderboard.length > 0
+                                ? leaderboard
+                                : currentUserId
+                                    ? [{ userId: currentUserId, username: currentUsername ?? 'Vous', totalScore: score, questionResults }]
+                                    : [{ userId: 'solo', username: currentUsername ?? 'Vous', totalScore: score, questionResults }];
                             return (
-                                <div key={i} className={`text-sm px-3 py-1.5 rounded-lg border font-medium ${isGood
-                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300'
-                                    : 'bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'
-                                    }`}>
-                                    {isGood ? '✓' : '•'} {c}
-                                </div>
+                                <QuestionCard
+                                    key={result.questionId}
+                                    result={result}
+                                    index={index}
+                                    leaderboard={effectiveLeaderboard}
+                                    currentUserId={currentUserId}
+                                />
                             );
                         })}
                     </div>
                 </div>
-            </div>
-        );
-    }
 
-    return (
-        <div>
-            <div className={`text-sm mb-2 ${result.isCorrect ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
-                <span className="font-medium">Votre réponse : </span>
-                {result.userAnswerText
-                    ? <span>{result.userAnswerText}</span>
-                    : <span className="italic opacity-70">Aucune réponse</span>}
             </div>
-            {!result.isCorrect && (
-                <div className="text-sm text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2">
-                    <span className="font-medium">✅ Réponse attendue : </span>
-                    <span>{result.correctAnswerText}</span>
-                </div>
-            )}
         </div>
     );
 }
 
 // ─── QuestionCard ─────────────────────────────────────────────────────────────
 
+const norm = normalizeAnswer;
+
 function QuestionCard({ result, index, leaderboard, currentUserId }: {
     result: QuestionResult;
     index: number;
-    leaderboard?: LeaderboardEntry[];
+    leaderboard: LeaderboardEntry[];
     currentUserId?: string;
 }) {
-    const isMultiplayer = leaderboard && leaderboard.length > 0;
-
     return (
-        <div className={
-            isMultiplayer
-                ? 'border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden'
-                : `p-5 rounded-xl border-2 ${result.isCorrect
-                    ? 'border-green-400 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
-                    : 'border-red-400 dark:border-red-700 bg-red-50 dark:bg-red-900/20'}`
-        }>
-            {isMultiplayer ? (
-                <div className="bg-gray-50 dark:bg-gray-800 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-gray-800 dark:text-gray-100">
-                            <span className="text-gray-400 dark:text-gray-500 font-normal mr-2">Q{index + 1}.</span>
-                            {result.questionText}
-                        </p>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 font-medium">{result.points} pts</span>
-                    </div>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        ✅ <span className="font-medium">{result.correctAnswerText}</span>
-                    </p>
-                </div>
-            ) : (
-                <div className="flex items-start justify-between gap-3 mb-3">
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
-                        <span className="text-gray-500 dark:text-gray-400 font-normal mr-2">Q{index + 1}.</span>
+        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 dark:bg-gray-800 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-gray-800 dark:text-gray-100">
+                        <span className="text-gray-400 dark:text-gray-500 font-normal mr-2">Q{index + 1}.</span>
                         {result.questionText}
                     </p>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xl ${result.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {result.isCorrect ? '✓' : '✗'}
-                        </span>
-                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${result.isCorrect
-                            ? 'bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-300'
-                            : 'bg-red-200 dark:bg-red-900/40 text-red-800 dark:text-red-300'
-                            }`}>
-                            {result.earnedPoints > 0 ? `+${result.earnedPoints} pts` : '0 pt'}
-                        </span>
-                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 font-medium">{result.points} pts</span>
                 </div>
-            )}
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    ✅ <span className="font-medium">{result.correctAnswerText}</span>
+                </p>
+            </div>
 
-            {isMultiplayer ? (
-                <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {leaderboard.map((entry) => {
-                        const playerResult = entry.questionResults?.find(r => r.questionId === result.questionId);
-                        const isMe = entry.userId === currentUserId;
-                        const gotPoints = playerResult ? (playerResult.earnedPoints > 0 || playerResult.isCorrect) : false;
-                        const correctAnswers = result.correctAnswerText.split(', ').map(c => c.trim().toLowerCase());
+            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                {leaderboard.map((entry) => {
+                    const playerResult = entry.questionResults?.find(r => r.questionId === result.questionId);
+                    const isMe = entry.userId === currentUserId;
+                    const gotPoints = playerResult ? (playerResult.earnedPoints > 0 || playerResult.isCorrect) : false;
+                    const correctAnswers = result.correctAnswerText.split(', ').map(c => norm(c));
 
-                        return (
-                            <div key={entry.userId} className={`flex items-center gap-3 px-5 py-3 ${isMe ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
-                                <span className={`text-lg w-5 text-center font-bold ${playerResult
-                                    ? (gotPoints ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400')
-                                    : 'text-gray-300 dark:text-gray-600'
-                                    }`}>
-                                    {playerResult ? (gotPoints ? '✓' : '✗') : '—'}
-                                </span>
-                                <span className="font-medium text-gray-700 dark:text-gray-200 text-sm w-24 shrink-0">
-                                    {entry.username}
-                                    {isMe && <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">(moi)</span>}
-                                </span>
+                    return (
+                        <div key={entry.userId} className={`flex items-center gap-3 px-5 py-3 ${isMe ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
+                            <span className={`text-lg w-5 text-center font-bold ${playerResult
+                                ? (gotPoints ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400')
+                                : 'text-gray-300 dark:text-gray-600'
+                                }`}>
+                                {playerResult ? (gotPoints ? '✓' : '✗') : '—'}
+                            </span>
+                            <span className="font-medium text-gray-700 dark:text-gray-200 text-sm w-24 shrink-0">
+                                {entry.username}
+                                {isMe && <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">(moi)</span>}
+                            </span>
 
-                                {/* Réponses colorées pour MULTI_TEXT, texte simple sinon */}
-                                {playerResult?.userAnswerText ? (
-                                    result.type === 'MULTI_TEXT' ? (
-                                        <span className="text-xs flex-1 flex flex-wrap gap-1">
-                                            {playerResult.userAnswerText.split(', ').map((ans, i) => {
-                                                const isGood = result.strictOrder
-                                                    ? ans.trim().toLowerCase() === correctAnswers[i]
-                                                    : correctAnswers.includes(ans.trim().toLowerCase());
-                                                return (
-                                                    <span key={i} className={`font-medium ${isGood ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                                                        {ans}{i < playerResult.userAnswerText.split(', ').length - 1 ? ',' : ''}
-                                                    </span>
-                                                );
-                                            })}
-                                        </span>
-                                    ) : (
-                                        <span className={`text-xs flex-1 ${gotPoints ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                            {playerResult.userAnswerText}
-                                        </span>
-                                    )
+                            {playerResult?.userAnswerText ? (
+                                result.type === 'MULTI_TEXT' ? (
+                                    <span className="text-xs flex-1 flex flex-wrap gap-1">
+                                        {playerResult.userAnswerText.split(', ').map((ans, i) => {
+                                            const isGood = result.strictOrder
+                                                ? norm(ans) === correctAnswers[i]
+                                                : correctAnswers.includes(norm(ans));
+                                            return (
+                                                <span key={i} className={`font-medium ${isGood ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                                    {ans}{i < playerResult.userAnswerText.split(', ').length - 1 ? ',' : ''}
+                                                </span>
+                                            );
+                                        })}
+                                    </span>
                                 ) : (
-                                    <span className="text-xs flex-1 text-gray-400 dark:text-gray-500 italic">Aucune réponse</span>
-                                )}
+                                    <span className={`text-xs flex-1 ${gotPoints ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {playerResult.userAnswerText}
+                                    </span>
+                                )
+                            ) : (
+                                <span className="text-xs flex-1 text-gray-400 dark:text-gray-500 italic">Aucune réponse</span>
+                            )}
 
-                                <span className={`text-xs font-bold shrink-0 ${gotPoints ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                                    {playerResult ? `${playerResult.earnedPoints}/${playerResult.points} pts` : '—'}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <AnswerText result={result} />
-            )}
+                            <span className={`text-xs font-bold shrink-0 ${gotPoints ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                                {playerResult ? `${playerResult.earnedPoints}/${playerResult.points} pts` : '—'}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }

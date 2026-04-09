@@ -31,7 +31,7 @@ export async function DELETE(
     if (type === 'soft') {
         await prisma.user.update({
             where: { id: session.user.id },
-            data: { deactivatedAt: new Date() },
+            data: { status: 'DEACTIVATED', deactivatedAt: new Date() },
         });
         return NextResponse.json({ success: true, type: 'soft' });
     }

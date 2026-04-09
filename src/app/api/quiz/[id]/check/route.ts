@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+import { normalizeAnswer as normalize } from '@/lib/utils';
+
 interface CheckBody {
     questionId: string;
     answerId?: string;
@@ -75,15 +77,15 @@ export async function POST(
         } else if (question.type === 'TEXT') {
             const correct = question.answers.find(a => a.isCorrect) ?? question.answers[0];
             correctAnswerText = correct?.content ?? '';
-            const userText = (freeText ?? '').trim().toLowerCase();
-            isCorrect = userText.length > 0 && userText === correctAnswerText.trim().toLowerCase();
+            const userText = normalize(freeText ?? '');
+            isCorrect = userText.length > 0 && userText === normalize(correctAnswerText);
             earnedPoints = isCorrect ? question.points : 0;
 
         } else if (question.type === 'MULTI_TEXT') {
             const correctTexts = question.answers.filter(a => a.isCorrect).map(a => a.content);
             correctAnswerText = correctTexts.join(', ');
-            const userTexts = (freeText ?? '').split('||').map(t => t.trim().toLowerCase());
-            const correctTextsLower = correctTexts.map(t => t.trim().toLowerCase());
+            const userTexts = (freeText ?? '').split('||').map(t => normalize(t));
+            const correctTextsLower = correctTexts.map(t => normalize(t));
             const strictOrder = (question as any).strictOrder ?? false;
 
             let correctCount = 0;
@@ -96,6 +98,13 @@ export async function POST(
             const pointsPerAnswer = correctTextsLower.length > 0 ? question.points / correctTextsLower.length : 0;
             earnedPoints = Math.round(correctCount * pointsPerAnswer);
             isCorrect = correctCount === correctTextsLower.length;
+        } else if (question.type === 'MCQ_UNIQUE') {
+            const correct = question.answers.find(a => a.isCorrect);
+            const selected = question.answers.find(a => a.id === answerId);
+
+            correctAnswerText = correct?.content ?? '';
+            isCorrect = selected?.isCorrect === true;
+            earnedPoints = isCorrect ? question.points : 0;
         }
 
         return NextResponse.json({ isCorrect, earnedPoints, correctAnswerText });
