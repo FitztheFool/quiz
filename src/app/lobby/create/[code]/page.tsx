@@ -515,9 +515,9 @@ export default function LobbyCodePage() {
                     <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl">
                         <div className="mb-4 flex items-center justify-center"><svg className="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg></div>
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Démarrage du serveur</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Le serveur de jeu se réveille…<br />Environ 30–45 secondes</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Le serveur de jeu se réveille…<br />Environ 45–90 secondes</p>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                            <div className="h-2 bg-blue-500 rounded-full animate-[warmup_40s_linear_forwards]" style={{ width: '0%', animation: 'warmup 40s linear forwards' }} />
+                            <div className="h-2 bg-blue-500 rounded-full" style={{ width: '0%', animation: 'warmup 90s linear forwards' }} />
                         </div>
                         <style>{`@keyframes warmup { from { width: 0% } to { width: 95% } }`}</style>
                     </div>
