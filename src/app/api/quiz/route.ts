@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const categoryId = searchParams.get('categoryId') || '';
     const creatorId = searchParams.get('creatorId') || '';
     const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '6');
+    const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get('pageSize') || '6')));
 
     const where = {
       AND: [
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
       totalPages: Math.ceil(total / pageSize),
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération des quiz:', error);
+    console.error('Erreur lors de la récupération des quiz:', error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -72,13 +72,33 @@ export async function POST(request: NextRequest) {
 
 
     const body = await request.json();
-    if (!Array.isArray(body.questions) || body.questions.length > 15) {
+    if (!Array.isArray(body.questions) || body.questions.length === 0 || body.questions.length > 15) {
       return NextResponse.json(
-        { error: 'Un quiz ne peut pas dépasser 15 questions.' },
+        { error: 'Un quiz doit contenir entre 1 et 15 questions.' },
         { status: 400 }
       );
     }
     const { title, description, isPublic, randomizeQuestions, categoryId, questions, creatorRole } = body;
+
+    if (!title || typeof title !== 'string' || title.trim().length === 0 || title.length > 200) {
+      return NextResponse.json({ error: 'Le titre est requis (200 caractères max).' }, { status: 400 });
+    }
+    if (description && (typeof description !== 'string' || description.length > 1000)) {
+      return NextResponse.json({ error: 'La description ne peut pas dépasser 1000 caractères.' }, { status: 400 });
+    }
+    for (const q of questions) {
+      if (!q.text || typeof q.text !== 'string' || q.text.trim().length === 0 || q.text.length > 500) {
+        return NextResponse.json({ error: 'Chaque question doit avoir un texte (500 caractères max).' }, { status: 400 });
+      }
+      if (!Array.isArray(q.answers) || q.answers.length === 0) {
+        return NextResponse.json({ error: 'Chaque question doit avoir au moins une réponse.' }, { status: 400 });
+      }
+      for (const a of q.answers) {
+        if (!a.content || typeof a.content !== 'string' || a.content.length > 300) {
+          return NextResponse.json({ error: 'Chaque réponse doit avoir un contenu (300 caractères max).' }, { status: 400 });
+        }
+      }
+    }
 
     if (!categoryId) {
       return NextResponse.json({ error: 'La catégorie est obligatoire.' }, { status: 400 });
@@ -127,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(quiz, { status: 201 });
   } catch (error) {
-    console.error('Erreur POST quiz:', error);
+    console.error('Erreur POST quiz:', error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

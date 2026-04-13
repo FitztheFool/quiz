@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { plural, normalizeAnswer } from '@/lib/utils';
-import { TrophyIcon, HandThumbUpIcon, BookOpenIcon, LockClosedIcon, ClipboardDocumentListIcon, CheckCircleIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, HandThumbUpIcon, BookOpenIcon, LockClosedIcon, ClipboardDocumentListIcon, CheckCircleIcon, CheckIcon, XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
 export interface QuestionResult {
     questionId: string;
@@ -67,8 +67,12 @@ export default function QuizResults({
                 {!hideHeader && (
                     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 mb-8">
                         <div className="text-center">
-                            <div className="text-6xl mb-4">
-                                {percentage >= 80 ? '🏆' : percentage >= 60 ? '👍' : '📚'}
+                            <div className="mb-4 flex justify-center">
+                                {percentage >= 80
+                                    ? <TrophyIcon className="w-16 h-16 text-amber-500" />
+                                    : percentage >= 60
+                                        ? <HandThumbUpIcon className="w-16 h-16 text-blue-500" />
+                                        : <BookOpenIcon className="w-16 h-16 text-indigo-400" />}
                             </div>
                             <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Quiz terminé !</h2>
                             <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">{quizTitle}</p>
@@ -84,7 +88,7 @@ export default function QuizResults({
 
                             {!isAuthenticated && (
                                 <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 rounded-xl px-5 py-4 mb-6 shadow-sm">
-                                    <span className="text-xl shrink-0">🔒</span>
+                                    <LockClosedIcon className="w-5 h-5 shrink-0" />
                                     <p className="text-sm">
                                         Vos scores ne sont enregistrés que lorsque vous êtes connecté.{' '}
                                         <Link
@@ -122,14 +126,14 @@ export default function QuizResults({
 
                 {isOwnQuiz && (
                     <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300 rounded-xl px-5 py-4 mb-6 shadow-sm">
-                        <span className="text-xl shrink-0">ℹ️</span>
+                        <InformationCircleIcon className="w-5 h-5 shrink-0 text-blue-500" />
                         <p className="text-sm">Ce quiz étant le vôtre, il ne vous rapporte pas de points au classement.</p>
                     </div>
                 )}
 
                 {/* ── Récapitulatif ── */}
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">📋 Récapitulatif</h3>
+                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2"><ClipboardDocumentListIcon className="w-6 h-6" />Récapitulatif</h3>
                     <div className="space-y-4">
                         {questionResults.map((result, index) => {
                             const effectiveLeaderboard = leaderboard && leaderboard.length > 0

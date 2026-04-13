@@ -2,8 +2,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { checkRateLimit, getIp } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+  const { allowed, retryAfter } = checkRateLimit(`register:${getIp(req)}`, 5, 15 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Trop de tentatives. Réessayez dans quelques minutes.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+    );
+  }
+
   try {
     const { username, email, password } = await req.json();
 
@@ -70,7 +79,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Erreur lors de la création du compte:', error);
+    console.error('Erreur lors de la création du compte:', error instanceof Error ? error.message : String(error));
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

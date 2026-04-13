@@ -83,10 +83,10 @@ export const authOptions: NextAuthOptions = {
                         ],
                     },
                 });
-                if (!user || !user.passwordHash) throw new Error('Aucun utilisateur trouvé');
+                if (!user || !user.passwordHash) throw new Error('Identifiants incorrects');
                 if (user.status === 'BANNED') throw new Error('AccountBanned');
                 const isPasswordValid = await compare(credentials.password, user.passwordHash);
-                if (!isPasswordValid) throw new Error('Mot de passe incorrect');
+                if (!isPasswordValid) throw new Error('Identifiants incorrects');
                 if (user.status === 'DEACTIVATED') {
                     await prisma.user.update({ where: { id: user.id }, data: { status: 'ACTIVE', deactivatedAt: null } });
                 }
