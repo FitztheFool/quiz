@@ -430,7 +430,10 @@ export default function LobbyCodePage() {
                     router.push(`/quiz/${lobbyId}/${payload.quizId}`);
                 } else {
                     const routeFn = GAME_ROUTES[payload.gameType];
-                    if (routeFn) router.push(routeFn(lobbyId, payload.gameId));
+                    if (routeFn) {
+                        sessionStorage.setItem(`lobby_players_${lobbyId}`, JSON.stringify(players));
+                        router.push(routeFn(lobbyId, payload.gameId));
+                    }
                 }
             });
         });

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Player {
@@ -18,6 +19,16 @@ interface GameWaitingScreenProps {
 
 export default function GameWaitingScreen({ icon, gameName, lobbyId, players, myUserId, hostId }: GameWaitingScreenProps) {
     const router = useRouter();
+    const [cachedPlayers, setCachedPlayers] = useState<Player[]>([]);
+
+    useEffect(() => {
+        const cached = sessionStorage.getItem(`lobby_players_${lobbyId}`);
+        if (cached) {
+            try { setCachedPlayers(JSON.parse(cached)); } catch { /* ignore */ }
+        }
+    }, [lobbyId]);
+
+    const displayPlayers = players.length > 0 ? players : cachedPlayers;
 
     return (
         <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
@@ -46,17 +57,17 @@ export default function GameWaitingScreen({ icon, gameName, lobbyId, players, my
                     <div className="text-center">
                         <h1 className="text-2xl font-bold tracking-tight">Démarrage…</h1>
                         <p className="text-gray-500 dark:text-white/50 text-sm mt-1">
-                            {players.length} joueur{players.length > 1 ? 's' : ''} connecté{players.length > 1 ? 's' : ''}
+                            {displayPlayers.length} joueur{displayPlayers.length > 1 ? 's' : ''} connecté{displayPlayers.length > 1 ? 's' : ''}
                         </p>
                     </div>
 
                     {/* Players list */}
-                    {players.length > 0 && (
+                    {displayPlayers.length > 0 && (
                         <div className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden">
-                            {players.map((p, i) => (
+                            {displayPlayers.map((p, i) => (
                                 <div
                                     key={p.userId}
-                                    className={`flex items-center gap-3 px-4 py-3 ${i < players.length - 1 ? 'border-b border-gray-100 dark:border-white/5' : ''}`}
+                                    className={`flex items-center gap-3 px-4 py-3 ${i < displayPlayers.length - 1 ? 'border-b border-gray-100 dark:border-white/5' : ''}`}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400 shrink-0" />
                                     <span className="flex-1 text-sm font-medium truncate">{p.username}</span>
