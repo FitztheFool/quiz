@@ -28,6 +28,12 @@ export default function GameWaitingScreen({ icon, gameName, lobbyId, players, my
         }
     }, [lobbyId]);
 
+    useEffect(() => {
+        if (players.length > 0) {
+            sessionStorage.removeItem(`lobby_players_${lobbyId}`);
+        }
+    }, [players.length, lobbyId]);
+
     const displayPlayers = players.length > 0 ? players : cachedPlayers;
 
     return (
