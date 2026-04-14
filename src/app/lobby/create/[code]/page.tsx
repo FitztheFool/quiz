@@ -301,28 +301,31 @@ export default function LobbyCodePage() {
     }, [gameType, maxPlayers, isPublic, meta]);
 
     // While waiting for a game server to wake up, poll the game server's /health directly
-    // from the browser (user's IP, not lobby-server IP) to avoid Render rate-limiting
+    // from the browser (user's IP, not lobby-server IP) to avoid Render rate-limiting.
+    // Once health returns ok, notify the lobby-server so it can immediately retry the
+    // socket connection (bypassing its rate-limited IP on Render).
     useEffect(() => {
         if (!isWarming) return;
         const lobbyUrl = process.env.NEXT_PUBLIC_LOBBY_SERVER_URL;
         if (!lobbyUrl) return;
         let gameServerUrl: string | null = null;
+        const notifyReady = () => socket.emit('lobby:gameServerReady', { gameType });
         const interval = setInterval(async () => {
             try {
                 if (!gameServerUrl) {
                     const res = await fetch(`${lobbyUrl}/warmup/${gameType}`);
                     const data = await res.json();
                     gameServerUrl = data.gameServerUrl ?? null;
-                    if (res.ok) { clearInterval(interval); return; }
+                    if (res.ok) { clearInterval(interval); notifyReady(); return; }
                 }
                 if (gameServerUrl) {
                     const res = await fetch(`${gameServerUrl}/health`);
-                    if (res.ok) clearInterval(interval);
+                    if (res.ok) { clearInterval(interval); notifyReady(); }
                 }
             } catch { /* ignore */ }
         }, 3_000);
         return () => clearInterval(interval);
-    }, [isWarming, gameType]);
+    }, [isWarming, gameType, socket]);
 
     useEffect(() => {
         if (!selectedQuizId || selectedQuizTitle) return;
