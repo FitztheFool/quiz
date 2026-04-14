@@ -300,16 +300,25 @@ export default function LobbyCodePage() {
         reconnectConfigRef.current = { gameType, maxPlayers, isPublic, meta };
     }, [gameType, maxPlayers, isPublic, meta]);
 
-    // While waiting for a game server to wake up, poll /warmup/:gameType from the browser
-    // so it's the user's IP (not the lobby-server IP) that hits the game server — avoids 429
+    // While waiting for a game server to wake up, poll the game server's /health directly
+    // from the browser (user's IP, not lobby-server IP) to avoid Render rate-limiting
     useEffect(() => {
         if (!isWarming) return;
         const lobbyUrl = process.env.NEXT_PUBLIC_LOBBY_SERVER_URL;
         if (!lobbyUrl) return;
+        let gameServerUrl: string | null = null;
         const interval = setInterval(async () => {
             try {
-                const res = await fetch(`${lobbyUrl}/warmup/${gameType}`);
-                if (res.ok) clearInterval(interval); // status 200 = ready, socket connect will complete soon
+                if (!gameServerUrl) {
+                    const res = await fetch(`${lobbyUrl}/warmup/${gameType}`);
+                    const data = await res.json();
+                    gameServerUrl = data.gameServerUrl ?? null;
+                    if (res.ok) { clearInterval(interval); return; }
+                }
+                if (gameServerUrl) {
+                    const res = await fetch(`${gameServerUrl}/health`);
+                    if (res.ok) clearInterval(interval);
+                }
             } catch { /* ignore */ }
         }, 3_000);
         return () => clearInterval(interval);
