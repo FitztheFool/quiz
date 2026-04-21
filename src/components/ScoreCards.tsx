@@ -43,7 +43,7 @@ function MedalBadge({ rank }: { rank: 1 | 2 | 3 }) {
     const styles = {
         1: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
         2: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300',
-        3: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+        3: 'bg-orange-200 dark:bg-orange-900/50 text-orange-800 dark:text-orange-400',
     };
     return (
         <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${styles[rank]}`}>

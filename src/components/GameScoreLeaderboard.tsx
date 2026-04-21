@@ -9,7 +9,7 @@ function RankBadge({ rank }: { rank: number }) {
         <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs font-bold">2</span>
     );
     if (rank === 2) return (
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold">3</span>
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-200 dark:bg-orange-900/50 text-orange-800 dark:text-orange-400 text-xs font-bold">3</span>
     );
     return <span className="inline-flex items-center justify-center w-7 h-7 text-xs font-semibold text-gray-400">{rank + 1}</span>;
 }

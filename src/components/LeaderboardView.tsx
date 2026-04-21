@@ -17,7 +17,7 @@ import { BookOpenIcon, ChartBarIcon, RectangleGroupIcon } from '@heroicons/react
 function RankBadge({ rank }: { rank: number }) {
     if (rank === 1) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold">1</span>;
     if (rank === 2) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs font-bold">2</span>;
-    if (rank === 3) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold">3</span>;
+    if (rank === 3) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-200 dark:bg-orange-900/50 text-orange-800 dark:text-orange-400 text-xs font-bold">3</span>;
     return <span className="text-sm text-gray-500 dark:text-gray-400 font-semibold">#{rank}</span>;
 }
 
