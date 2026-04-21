@@ -30,7 +30,8 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.discordapp.com https://lh3.googleusercontent.com",
               "font-src 'self'",
-              "connect-src 'self' wss: ws: https://*.onrender.com",
+              "connect-src 'self' wss: ws: https://*.onrender.com http://localhost:10000 ws://localhost:10000",
+
               "frame-ancestors 'none'",
             ].join('; '),
           },
