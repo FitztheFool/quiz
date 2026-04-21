@@ -110,6 +110,17 @@ export const authOptions: NextAuthOptions = {
                 if (dbUser?.status === 'BANNED') return '/login?error=AccountBanned';
                 if (dbUser?.passwordHash) return '/login?error=OAuthAccountConflict';
 
+                // ← ICI
+                if (dbUser && !dbUser.passwordHash) {
+                    const existingAccount = await prisma.account.findFirst({
+                        where: { userId: dbUser.id },
+                        select: { provider: true },
+                    });
+                    if (existingAccount && existingAccount.provider !== account?.provider) {
+                        return `/login?error=OAuthEmailConflict&provider=${existingAccount.provider}`;
+                    }
+                }
+
                 if (!dbUser && user.name) {
                     const conflict = await prisma.user.findFirst({
                         where: { username: user.name, passwordHash: { not: null } },
