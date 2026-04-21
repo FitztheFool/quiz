@@ -7,6 +7,11 @@ const nextConfig = {
   },
   images: {
     domains: [],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'cdn.discordapp.com' }, // Discord tant qu'on y est
+      { protocol: 'https', hostname: 'res.cloudinary.com' },  // Cloudinary si pas déjà là
+    ],
   },
   async headers() {
     return [
@@ -23,7 +28,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://res.cloudinary.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.discordapp.com https://lh3.googleusercontent.com",
               "font-src 'self'",
               "connect-src 'self' wss: ws: https://*.onrender.com",
               "frame-ancestors 'none'",
