@@ -9,9 +9,9 @@ import { PlayIcon, PlusIcon } from '@heroicons/react/24/outline';
 // ── Derived from GAME_CONFIG — single source of truth ────────────────────────
 
 const GAMES_BY_MODE = {
-    solo: Object.entries(GAME_CONFIG).filter(([, g]) => g.mode === 'solo'),
-    both: Object.entries(GAME_CONFIG).filter(([, g]) => g.mode === 'both'),
-    multi: Object.entries(GAME_CONFIG).filter(([, g]) => g.mode === 'multi'),
+    solo: Object.entries(GAME_CONFIG).filter(([, g]) => (g.mode as GameMode) === 'solo'),
+    both: Object.entries(GAME_CONFIG).filter(([, g]) => (g.mode as GameMode) === 'both'),
+    multi: Object.entries(GAME_CONFIG).filter(([, g]) => (g.mode as GameMode) === 'multi'),
 } satisfies Record<GameMode, [string, typeof GAME_CONFIG[keyof typeof GAME_CONFIG]][]>;
 
 // ── Sub-components ────────────────────────────────────────────────────────────

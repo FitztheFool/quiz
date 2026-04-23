@@ -159,19 +159,19 @@ export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee'
 // Badges par mode — chaque jeu n'apparaît que dans une seule catégorie
 export const SOLO_GAMES: Record<string, { text: string; color: string }> = Object.fromEntries(
     Object.entries(GAME_CONFIG)
-        .filter(([, g]) => g.mode === 'solo')
+        .filter(([, g]) => (g.mode as GameMode) === 'solo')
         .map(([key]) => [key, { text: 'SOLO', color: '#A32D2D' }])
 );
 
 export const BOTH_GAMES: Record<string, { text: string; color: string }> = Object.fromEntries(
     Object.entries(GAME_CONFIG)
-        .filter(([, g]) => g.mode === 'both')
+        .filter(([, g]) => (g.mode as GameMode) === 'both')
         .map(([key]) => [key, { text: 'MIXTE', color: '#7C3AED' }])
 );
 
 export const MULTI_GAMES: Record<string, { text: string; color: string }> = Object.fromEntries(
     Object.entries(GAME_CONFIG)
-        .filter(([, g]) => g.mode === 'multi')
+        .filter(([, g]) => (g.mode as GameMode) === 'multi')
         .map(([key]) => [key, { text: 'MULTI', color: '#1D4ED8' }])
 );
 
