@@ -14,15 +14,15 @@ export async function GET(
 
         const user = await prisma.user.findUnique({
             where: { username },
-            select: { id: true, deactivatedAt: true, deletedAt: true },
+            select: { id: true, deactivatedAt: true, deletedAt: true, role: true },
         });
 
-        if (!user || user.deactivatedAt || user.deletedAt) {
+        if (!user || user.deletedAt || (user.deactivatedAt && user.role !== 'ADMIN')) {
             return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
         }
 
         const eligibleUsers = await prisma.user.findMany({
-            where: { role: { notIn: ['ADMIN', 'RANDOM'] } },
+            where: { role: { notIn: ['RANDOM'] } },
             select: { id: true },
         });
         // Toujours inclure l'utilisateur demandeur pour qu'il ait un rang même s'il est admin
@@ -35,6 +35,23 @@ export async function GET(
                 FROM attempts
                 WHERE "userId" = ANY(${eligibleIds})
                   AND "gameType"::text = ANY(ARRAY['UNO','TABOO','YAHTZEE','DIAMANT','IMPOSTOR'])
+                GROUP BY "userId", "gameType"
+            ),
+            ranked AS (
+                SELECT "userId", "gameType",
+                    RANK() OVER (PARTITION BY "gameType" ORDER BY val DESC) AS rnk
+                FROM scores
+            )
+            SELECT "gameType", rnk::int FROM ranked WHERE "userId" = ${user.id}
+        `;
+
+        // ── 1b. Solo games ranked by best score (MAX) ────────────────────────────────
+        const snakeRanks = await prisma.$queryRaw<RankRow[]>`
+            WITH scores AS (
+                SELECT "userId", "gameType"::text, MAX(score) AS val
+                FROM attempts
+                WHERE "userId" = ANY(${eligibleIds})
+                  AND "gameType"::text = ANY(ARRAY['SNAKE','PACMAN'])
                 GROUP BY "userId", "gameType"
             ),
             ranked AS (
@@ -110,7 +127,7 @@ export async function GET(
         `;
 
         const ranks: Record<string, number> = {};
-        for (const row of [...sumRanks, ...avgRanks, ...winRanks, ...quizRanks]) {
+        for (const row of [...sumRanks, ...snakeRanks, ...avgRanks, ...winRanks, ...quizRanks]) {
             ranks[row.gameType] = Number(row.rnk);
         }
 

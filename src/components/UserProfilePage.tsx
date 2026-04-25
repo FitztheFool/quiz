@@ -21,7 +21,7 @@ function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
     const [username, setUsername] = useState(currentUsername);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [done, setDone] = useState(false);
+    const [pendingEmail, setPendingEmail] = useState('');
 
     const handleClaim = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,9 +35,7 @@ function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
             });
             const data = await res.json();
             if (!res.ok) { setError(data.error ?? 'Erreur'); return; }
-            setDone(true);
-            await update();
-            router.refresh();
+            setPendingEmail(email);
         } catch {
             setError('Une erreur est survenue');
         } finally {
@@ -45,9 +43,9 @@ function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
         }
     };
 
-    if (done) return (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-2xl px-5 py-4 text-green-700 dark:text-green-300 font-medium text-sm">
-            ✅ Compte finalisé ! Vous pouvez maintenant vous connecter avec votre email.
+    if (pendingEmail) return (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl px-5 py-4 text-blue-700 dark:text-blue-300 font-medium text-sm">
+            Un email de vérification a été envoyé à <strong>{pendingEmail}</strong>. Cliquez sur le lien pour activer votre compte.
         </div>
     );
 

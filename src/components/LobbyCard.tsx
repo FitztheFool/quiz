@@ -24,7 +24,7 @@ export default function LobbyCard({ lobby, onJoin, onPlayersClick }: LobbyCardPr
     const isWaiting = lobby.status === 'waiting';
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 hover:shadow-xl transition-all relative flex flex-col h-full">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-300 dark:border-gray-700 shadow-sm hover:border-blue-400 hover:shadow-xl transition-all relative flex flex-col h-full">
             <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">{lobby.title}</h3>
                 <span className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${

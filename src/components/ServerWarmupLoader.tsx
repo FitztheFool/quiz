@@ -1,4 +1,6 @@
 // src/components/ServerWarmupLoader.tsx
+import LoadingSpinner from '@/components/LoadingSpinner';
+
 export default function ServerWarmupLoader({ error }: { error?: boolean }) {
     if (error) return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
@@ -21,11 +23,8 @@ export default function ServerWarmupLoader({ error }: { error?: boolean }) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
             <div className="text-center max-w-sm w-full">
-                <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-gray-500 dark:text-white/60 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                <div className="mx-auto mb-4">
+                    <LoadingSpinner fullScreen={false} />
                 </div>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Démarrage du serveur…</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Environ 45–90 secondes</p>

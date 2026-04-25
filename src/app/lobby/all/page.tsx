@@ -2,12 +2,12 @@
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ServerWarmupLoader from '@/components/ServerWarmupLoader';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useLobbySocket } from '@/hooks/useSocket';
 import { useServerWarmup } from '@/hooks/useServerWarmup';
-import { GAME_CONFIG } from '@/lib/gameConfig';
+import { GAME_CONFIG, LOBBY_GAME_OPTIONS } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal';
 import LobbyCard from '@/components/LobbyCard';
 import GameIcon from '@/components/GameIcon';
@@ -25,17 +25,21 @@ interface Lobby {
     playerNames?: string[];
 }
 
-const gameTypes = ['all', ...Object.keys(GAME_CONFIG)];
+const gameTypes = ['all', ...LOBBY_GAME_OPTIONS.map(g => g.value)];
 
 
-export default function LobbiesPage() {
+function LobbiesPageInner() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { status: warmupStatus } = useServerWarmup(process.env.NEXT_PUBLIC_LOBBY_SERVER_URL);
     const { socket, connected } = useLobbySocket();
     const [lobbies, setLobbies] = useState<Lobby[]>([]);
 
     const [loading, setLoading] = useState(false); // No loading since we have mock data
-    const [selectedGameType, setSelectedGameType] = useState('all');
+    const [selectedGameType, setSelectedGameType] = useState(() => {
+        const g = searchParams.get('game');
+        return g && gameTypes.includes(g) ? g : 'all';
+    });
     const [showFull, setShowFull] = useState(false);
     const [showWaiting, setShowWaiting] = useState(true);
     const [sortBy, setSortBy] = useState('newest');
@@ -107,7 +111,6 @@ export default function LobbiesPage() {
             <div className="max-w-7xl mx-auto px-4 py-6 sm:py-12">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Voir les lobbies</h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-300">Rejoignez une partie et amusez-vous !</p>
                 </div>
 
                 {/* Filters */}
@@ -223,5 +226,13 @@ export default function LobbiesPage() {
                 )}
             </div>
         </main>
+    );
+}
+
+export default function LobbiesPage() {
+    return (
+        <Suspense>
+            <LobbiesPageInner />
+        </Suspense>
     );
 }

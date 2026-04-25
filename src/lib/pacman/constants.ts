@@ -1,0 +1,73 @@
+export const COLS = 19;
+export const ROWS = 21;
+export const CELL = 20;
+export const TICK = 200;
+
+// Tile types: 0=dot, 1=wall, 2=ghost-house (ghost only), 3=power pellet, 4=empty
+export type Tile = 0 | 1 | 2 | 3 | 4;
+
+export type Pos = { x: number; y: number };
+export type Dir = 'U' | 'D' | 'L' | 'R' | 'N';
+
+export const OPP: Record<Dir, Dir> = { U: 'D', D: 'U', L: 'R', R: 'L', N: 'N' };
+export const DELTA: Record<Dir, Pos> = {
+    U: { x: 0, y: -1 }, D: { x: 0, y: 1 },
+    L: { x: -1, y: 0 }, R: { x: 1, y: 0 },
+    N: { x: 0, y: 0 },
+};
+
+export const TUNNEL_ROW = 10;
+
+export const DOT_SCORE = 10;
+export const PELLET_SCORE = 50;
+export const GHOST_SCORE = 200;
+export const FRIGHTEN_TICKS = 30;
+export const LIVES = 3;
+
+// 19×21 maze: 0=dot, 1=wall, 2=ghost-house, 3=power pellet, 4=empty
+export const MAZE_TEMPLATE: Tile[][] = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,3,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,3,1],
+    [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+    [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
+    [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+    [1,1,1,1,0,1,1,1,4,1,4,1,1,1,0,1,1,1,1],
+    [1,1,1,1,0,1,4,4,4,4,4,4,4,1,0,1,1,1,1],
+    [1,1,1,1,0,1,4,2,2,2,2,2,4,1,0,1,1,1,1],
+    [4,4,4,4,0,1,1,2,4,4,4,2,1,1,0,4,4,4,4],
+    [1,1,1,1,0,1,4,2,2,2,2,2,4,1,0,1,1,1,1],
+    [1,1,1,1,0,1,4,4,4,4,4,4,4,1,0,1,1,1,1],
+    [1,1,1,1,0,1,4,1,1,1,1,1,4,1,0,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+    [1,3,0,1,0,0,0,0,0,4,0,0,0,0,0,1,0,3,1],
+    [1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1],
+    [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+export const PACMAN_START: Pos = { x: 9, y: 16 };
+export const GHOST_STARTS: Pos[] = [
+    { x: 8,  y: 10 },
+    { x: 10, y: 10 },
+];
+
+export const GHOST_COLORS = [
+    { body: '#ff4444', frightened: '#4444ff' },
+    { body: '#ffb8ff', frightened: '#4444ff' },
+];
+
+export const KEY_DIR: Record<string, Dir> = {
+    ArrowUp: 'U', z: 'U', Z: 'U',
+    ArrowDown: 'D', s: 'D', S: 'D',
+    ArrowLeft: 'L', q: 'L', Q: 'L',
+    ArrowRight: 'R', d: 'R', D: 'R',
+};
+
+export const STARTERS = new Set([
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+    'z', 'Z', 'q', 'Q', 's', 'S', 'd', 'D', ' ', 'Enter',
+]);

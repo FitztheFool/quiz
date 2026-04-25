@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const colors = require('tailwindcss/colors');
+
 module.exports = {
   darkMode: 'class',
   content: [
@@ -10,6 +12,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        gray: colors.stone,
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

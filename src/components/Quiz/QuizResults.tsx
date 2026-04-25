@@ -199,9 +199,9 @@ function QuestionCard({ result, index, leaderboard, currentUserId }: {
                                 }`}>
                                 {playerResult ? (gotPoints ? '✓' : '✗') : '—'}
                             </span>
-                            <span className="font-medium text-gray-700 dark:text-gray-200 text-sm w-24 shrink-0">
-                                {entry.username}
-                                {isMe && <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">(moi)</span>}
+                            <span className="font-medium text-gray-700 dark:text-gray-200 text-sm min-w-0 w-24 shrink-0 flex items-center gap-1">
+                                <span className="truncate">{entry.username}</span>
+                                {isMe && <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">(moi)</span>}
                             </span>
 
                             {playerResult?.userAnswerText ? (

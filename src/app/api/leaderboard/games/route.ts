@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
         const config = GAME_CONFIG[game];
 
         const eligibleUsers = await prisma.user.findMany({
-            where: { role: { notIn: ['ADMIN', 'RANDOM'] } },
+            where: { role: { notIn: ['RANDOM'] } },
             select: { id: true, username: true },
         });
         const eligibleUserIds = eligibleUsers.map(u => u.id);
@@ -116,6 +116,7 @@ export async function GET(req: NextRequest) {
                 const draws = data.draws;
                 const score = game === 'skyjow' || game === 'just_one' ? avgScore
                     : game === 'puissance4' || game === 'battleship' ? wins
+                    : (game === 'snake' || game === 'pacman') ? Math.max(...data.scores)
                         : totalScore;
                 const totalRounds = roundsByUser.get(userId) ?? 0;
 
@@ -142,6 +143,11 @@ export async function GET(req: NextRequest) {
                     case 'impostor':
                         detail = `${totalScore} pt${totalScore > 1 ? 's' : ''} · ${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
+                    case 'snake':
+                    case 'pacman': {
+                        detail = `${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
+                        break;
+                    }
                     default:
                         detail = `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                 }

@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { hash } from 'bcryptjs';
+import { randomBytes } from 'crypto';
+import { sendVerificationEmail } from '@/lib/mail';
 
 export async function PATCH(req: NextRequest) {
     const session = await getServerSession(authOptions);
@@ -50,16 +52,30 @@ export async function PATCH(req: NextRequest) {
 
     const passwordHash = await hash(password, 10);
 
+    // Enregistrer email + mot de passe sans promouvoir le compte — la vérification email le fera
     await prisma.user.update({
         where: { id: session.user.id },
         data: {
             email,
             passwordHash,
-            isAnonymous: false,
-            role: 'USER',
+            status: 'PENDING',
             ...(username ? { username } : {}),
         },
     });
 
-    return NextResponse.json({ ok: true });
+    // Créer le token de vérification et envoyer l'email
+    const token = randomBytes(32).toString('hex');
+    await prisma.verificationToken.create({
+        data: {
+            identifier: email,
+            token,
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+    });
+
+    await sendVerificationEmail(email, token).catch(err =>
+        console.error('Erreur envoi email de vérification (claim):', err)
+    );
+
+    return NextResponse.json({ ok: true, pendingVerification: true });
 }

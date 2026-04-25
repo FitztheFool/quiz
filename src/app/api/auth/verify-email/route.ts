@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     await Promise.all([
         prisma.user.updateMany({
             where: { email: record.identifier, status: 'PENDING' },
-            data: { status: 'ACTIVE' },
+            data: { status: 'ACTIVE', role: 'USER', isAnonymous: false },
         }),
         prisma.verificationToken.delete({ where: { token } }),
     ]);

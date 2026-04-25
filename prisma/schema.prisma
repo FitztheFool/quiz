@@ -40,6 +40,8 @@ enum GameType {
   BATTLESHIP
   DIAMANT
   IMPOSTOR
+  SNAKE
+  PACMAN
 }
 
 model Account {

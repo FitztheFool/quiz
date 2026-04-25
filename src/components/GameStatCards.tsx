@@ -13,6 +13,7 @@ interface GameStat {
     rounds?: number;
     correctAnswers?: number;
     totalAnswers?: number;
+    bestScore?: number;
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -39,6 +40,8 @@ function getSecondaryStat(type: string, stat: GameStat, hideWinRate = false): { 
     const avg = count > 0 ? Math.round(points / count) : 0;
 
     switch (type) {
+        case 'SNAKE':
+            return { value: fmt(stat.bestScore ?? stat.points), label: 'meilleur score' };
         case 'SKYJOW':
             return { value: fmt(avg), label: 'moy/partie' };
         case 'YAHTZEE':
@@ -55,9 +58,8 @@ function getSecondaryStat(type: string, stat: GameStat, hideWinRate = false): { 
             return { value: wins, label: plural(wins, 'victoire', 'victoires') };
         case 'QUIZ': {
             const { correctAnswers = 0, totalAnswers = 0 } = stat;
-            const avgCorrect = count > 0 ? Math.round(correctAnswers / count) : 0;
-            const avgTotal = count > 0 ? Math.round(totalAnswers / count) : 0;
-            return { value: `${avgCorrect}/${avgTotal}`, label: 'moy. bonnes rép.' };
+            const pct = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+            return { value: `${pct}%`, label: 'bonnes réponses' };
         }
         default:
             return { value: fmt(points), label: 'pts' };
@@ -72,8 +74,11 @@ function getBar(type: string, stat: GameStat): { pct: number; label: string; win
         if (totalAnswers === 0) return null;
         const pct = Math.round((correctAnswers / totalAnswers) * 100);
         const color = pct >= 70 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-rose-500';
-        const NO_WINS_COUNTER = new Set(['PUISSANCE4', 'BATTLESHIP']);
-        return { pct, label: `${pct}% vict.`, wins: NO_WINS_COUNTER.has(type) ? null : wins, color };
+        return { pct, label: `${pct}% rép.`, wins: null, color };
+    }
+
+    if (type === 'SNAKE') {
+        return { pct: 0, label: `${fmt(stat.points)} pts`, wins: null, color: 'bg-emerald-500' };
     }
 
     const NO_WINRATE = new Set(['JUST_ONE']);
@@ -152,7 +157,7 @@ export default function GameStatCards({ gameStats, ranks = {}, hideWinRate = fal
                             </div>
 
                             {/* Bar */}
-                            {bar && (
+                            {bar && bar.pct > 0 && (
                                 <div className="mt-2.5 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                     <div className={`h-full rounded-full ${bar.color} transition-all`} style={{ width: `${bar.pct}%` }} />
                                 </div>

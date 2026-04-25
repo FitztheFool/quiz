@@ -109,6 +109,28 @@ export const GAME_CONFIG = {
         rules: "Les joueurs normaux reçoivent un mot secret et donnent des indices sans se trahir. L'imposteur, qui ignore le mot, doit improviser et se fondre dans la masse. Après les tours de parole, tout le monde vote pour éliminer le suspect. L'imposteur est éliminé lorsqu'il reçoit le plus de votes.",
         score: "<p>Imposteur éliminé (pluralité — pas besoin de majorité absolue) : <ul><li>+2 pts pour chaque joueur ayant voté pour lui</li><li>+1 pts par joueur de l'équipe</li></ul></p><br><p>Vote raté : <ul><li>+3 pts pour l'imposteur</li><li>+1 pts par joueur ayant voté pour lui</li></ul></p><br><p>Dans tous les cas, l'imposteur peut tenter de deviner le mot mystère après le vote. S'il devine correctement : +2 pts et il remporte la manche malgré l'élimination. Le classement est basé sur le total de points cumulés.</p>",
     },
+    snake: {
+        gameType: 'SNAKE' as const,
+        label: 'Snake',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Mangez le maximum de pommes sans vous mordre la queue !",
+        players: '1 joueur',
+        rules: "Dirigez votre serpent avec les flèches directionnelles (ou ZQSD). Mangez les pommes rouges pour grandir et marquer des points. La partie se termine si vous heurtez un mur ou votre propre corps.",
+        score: "Chaque pomme rapporte 10 points. Seul votre meilleur score par partie est conservé pour le classement.",
+    },
+    pacman: {
+        gameType: 'PACMAN' as const,
+        label: 'Pac-Man',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Mangez tous les points en évitant les fantômes !",
+        players: '1 joueur',
+        rules: "Dirigez Pac-Man avec les flèches (ou ZQSD) pour manger tous les points du labyrinthe. Évitez les fantômes rouges — ils vous coûtent une vie. Les super-gommes vous permettent de les dévorer temporairement.",
+        score: "10 pts par point, 50 pts par super-gomme, 200 pts par fantôme mangé. Seul votre meilleur score est conservé.",
+    },
 } as const;
 
 export type GameType = keyof typeof GAME_CONFIG;
@@ -123,6 +145,10 @@ export const GAME_OPTIONS = Object.entries(GAME_CONFIG).map(([key, g]) => ({
     label: g.label,
 }));
 
+export const LOBBY_GAME_OPTIONS = GAME_OPTIONS.filter(
+    g => (GAME_CONFIG[g.value] as { mode: string }).mode !== 'solo'
+);
+
 export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     quiz: Array.from({ length: 30 }, (_, i) => i + 1),
     uno: [2, 3, 4, 5, 6, 7, 8],
@@ -134,6 +160,8 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     battleship: [2],
     diamant: [2, 3, 4, 5, 6, 7, 8],
     impostor: [4, 5, 6, 7, 8],
+    snake: [1],
+    pacman: [1],
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {

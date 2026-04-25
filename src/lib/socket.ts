@@ -11,7 +11,7 @@ async function getSocketToken(): Promise<string> {
     const now = Date.now();
     if (cachedToken && now - tokenFetchedAt < TOKEN_TTL_MS) return cachedToken;
     try {
-        const res = await fetch('/api/auth/socket-token');
+        const res = await fetch('/api/socket-token');
         if (res.status === 401) return '';
         if (!res.ok) throw new Error(`${res.status}`);
         const data = await res.json();

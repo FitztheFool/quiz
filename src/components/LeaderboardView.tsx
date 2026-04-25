@@ -131,7 +131,7 @@ export default function LeaderboardView({ game }: Props) {
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex-shrink-0">
                         <GameIcon gameType={gameType} className="w-7 h-7 text-gray-600 dark:text-gray-300" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Classement {label}</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             {pagination
@@ -140,6 +140,12 @@ export default function LeaderboardView({ game }: Props) {
                             }
                         </p>
                     </div>
+                    {GAME_CONFIG[game].mode === 'solo' && (
+                        <Link href={`/${game}`}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm rounded-xl transition-all hover:-translate-y-px shrink-0">
+                            Jouer
+                        </Link>
+                    )}
                 </div>
 
                 {/* Description / Rules / Score */}

@@ -44,7 +44,8 @@
       "Bash(git -C /home/faros/quiz diff HEAD -- src/lib/gameConfig.ts src/app/lobby/create/\\\\[code\\\\]/page.tsx)",
       "Bash(git -C /home/faros/quiz diff HEAD -- src/app/login/page.tsx)",
       "Bash(git -C /home/faros/quiz diff HEAD -- package.json tsconfig.json)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(python3)"
     ],
     "additionalDirectories": [
       "/home/faros/dev-launcher/impostor-server/src",
@@ -59,10 +60,12 @@
       "/home/faros/quiz/src/app/uno/[lobbyId]",
       "/home/faros/quiz/src/app/impostor/[lobbyId]",
       "/home/faros/dev-launcher/lobby-server/src",
-      "/home/faros/quiz/src/app/api/admin"
+      "/home/faros/quiz/src/app/api/admin",
+      "/home/faros/kwizar/src/app/api/quiz/[id]"
     ]
   },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "andrej-karpathy-skills@karpathy-skills": true
   }
 }

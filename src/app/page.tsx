@@ -58,33 +58,50 @@ function SectionDivider({ label, badge, mode }: { label: string; badge: string; 
     );
 }
 
-function GameCard({ gameKey, mode, wide = false }: { gameKey: string; mode: GameMode; wide?: boolean }) {
+function GameCard({ gameKey, mode }: { gameKey: string; mode: GameMode }) {
     const g = GAME_CONFIG[gameKey as keyof typeof GAME_CONFIG];
     const { accent } = MODE_STYLES[mode];
+    const [lobbyCode] = useState(() => crypto.randomUUID());
+
     return (
-        <Link href={`/leaderboard/${gameKey}`}
-            className={`
-                group flex ${wide ? 'flex-row gap-3 items-start' : 'flex-col'}
-                bg-white dark:bg-gray-900
-                border border-gray-100 dark:border-gray-800 border-l-2 ${accent}
-                rounded-xl p-4
-                hover:border-gray-200 dark:hover:border-gray-700 hover:-translate-y-0.5
-                transition-all duration-150
-            `}>
-            <span className={`text-gray-700 dark:text-gray-300 ${wide ? 'mt-0.5 shrink-0' : 'mb-2 block'} group-hover:scale-110 transition-transform`}>
-                <GameIcon gameType={g.gameType} className="w-8 h-8" />
-            </span>
-            <div className="flex-1 min-w-0">
+        <div className={`
+            flex flex-col
+            bg-white dark:bg-gray-900
+            border border-gray-100 dark:border-gray-800 border-l-2 ${accent}
+            rounded-xl p-4
+            hover:border-gray-200 dark:hover:border-gray-700 hover:-translate-y-0.5
+            transition-all duration-150
+        `}>
+            <Link href={`/leaderboard/${gameKey}`} className="flex-1 min-w-0 block">
+                <span className="text-gray-700 dark:text-gray-300 mb-2 block">
+                    <GameIcon gameType={g.gameType} className="w-8 h-8" />
+                </span>
                 <div className="font-bold text-sm text-gray-900 dark:text-gray-100 mb-1">{g.label}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{g.description}</div>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                    <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
-                        <PersonIcon /> {g.players}
-                    </span>
-                    <Pill mode={mode} />
-                </div>
+            </Link>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
+                    <PersonIcon /> {g.players}
+                </span>
+                {mode === 'solo' ? (
+                    <Link href={`/game/${gameKey}`}
+                        className="text-[11px] font-bold px-2.5 py-1 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+                        Jouer
+                    </Link>
+                ) : (
+                    <div className="flex gap-1.5">
+                        <Link href={`/lobby/all?game=${gameKey}`}
+                            className="text-[11px] font-bold px-2.5 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors">
+                            Rejoindre
+                        </Link>
+                        <Link href={`/lobby/create/${lobbyCode}`}
+                            className="text-[11px] font-bold px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
+                            Créer
+                        </Link>
+                    </div>
+                )}
             </div>
-        </Link>
+        </div>
     );
 }
 
@@ -160,9 +177,9 @@ export default function HomePage() {
                 {/* Multi only */}
                 <div className="mt-12">
                     <SectionDivider label="Multijoueur uniquement" badge="3+ joueurs" mode="multi" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                         {GAMES_BY_MODE.multi.map(([key]) => (
-                            <GameCard key={key} gameKey={key} mode="multi" wide />
+                            <GameCard key={key} gameKey={key} mode="multi" />
                         ))}
                     </div>
                 </div>

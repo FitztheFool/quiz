@@ -18,17 +18,17 @@ export async function GET(
 
         const user = await prisma.user.findUnique({
             where: { username },
-            select: { id: true, username: true, image: true, deactivatedAt: true, deletedAt: true },
+            select: { id: true, username: true, image: true, deactivatedAt: true, deletedAt: true, role: true },
         });
 
-        if (!user || user.deactivatedAt || user.deletedAt) {
+        if (!user || user.deletedAt || (user.deactivatedAt && user.role !== 'ADMIN')) {
             return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
         }
 
-        const gameStats: Record<string, { count: number; points: number; wins: number; rounds: number; correctAnswers: number; totalAnswers: number }> = {};
+        const gameStats: Record<string, { count: number; points: number; wins: number; rounds: number; correctAnswers: number; totalAnswers: number; bestScore: number }> = {};
         for (const key of Object.keys(GAME_CONFIG)) {
             const type = GAME_CONFIG[key as keyof typeof GAME_CONFIG].gameType;
-            gameStats[type] = { count: 0, points: 0, wins: 0, rounds: 0, correctAnswers: 0, totalAnswers: 0 };
+            gameStats[type] = { count: 0, points: 0, wins: 0, rounds: 0, correctAnswers: 0, totalAnswers: 0, bestScore: 0 };
         }
 
         // Points + rounds par gameType
@@ -50,7 +50,7 @@ export async function GET(
         `,
             prisma.attempt.findMany({
                 where: { userId: user.id },
-                select: { gameType: true, gameId: true, placement: true },
+                select: { gameType: true, gameId: true, placement: true, score: true },
                 distinct: ['gameId', 'gameType'],
             }),
         ]);
@@ -58,7 +58,7 @@ export async function GET(
         const tabooRounds = tabooRoundsResult[0]?.total_rounds ?? 0;
 
         for (const row of attemptSumsByType) {
-            if (!gameStats[row.gameType]) gameStats[row.gameType] = { count: 0, points: 0, wins: 0, rounds: 0, correctAnswers: 0, totalAnswers: 0 };
+            if (!gameStats[row.gameType]) gameStats[row.gameType] = { count: 0, points: 0, wins: 0, rounds: 0, correctAnswers: 0, totalAnswers: 0, bestScore: 0 };
             gameStats[row.gameType].points = row._sum.score ?? 0;
             gameStats[row.gameType].rounds = row.gameType === 'TABOO' ? tabooRounds : 0;
             gameStats[row.gameType].correctAnswers = row._sum.correctAnswers ?? 0;
@@ -66,9 +66,19 @@ export async function GET(
         }
 
         for (const g of distinctGamesByType) {
-            if (!gameStats[g.gameType]) gameStats[g.gameType] = { count: 0, points: 0, wins: 0, rounds: 0, correctAnswers: 0, totalAnswers: 0 };
+            if (!gameStats[g.gameType]) gameStats[g.gameType] = { count: 0, points: 0, wins: 0, rounds: 0, correctAnswers: 0, totalAnswers: 0, bestScore: 0 };
             gameStats[g.gameType].count++;
             if (g.placement === 1) gameStats[g.gameType].wins++;
+        }
+
+        const soloAttempts = await prisma.attempt.findMany({
+            where: { userId: user.id, gameType: { in: ['SNAKE', 'PACMAN'] } },
+            select: { score: true, gameType: true },
+        });
+        for (const a of soloAttempts) {
+            if (gameStats[a.gameType] && a.score > gameStats[a.gameType].bestScore) {
+                gameStats[a.gameType].bestScore = a.score;
+            }
         }
 
         // Activité récente
