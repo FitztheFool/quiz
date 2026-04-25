@@ -1,32 +1,46 @@
-// src/components/TurnTimer.tsx
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Props = { endsAt: number; duration: number; label?: string; };
 
-/**
- * Barre de timer horizontale réutilisable (mode timestamp).
- * <TurnTimer endsAt={state.turnEndsAt} duration={30} />
- */
 export default function TurnTimer({ endsAt, duration }: Props) {
-    const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+    const [secs, setSecs] = useState(() => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+    const barRef = useRef<HTMLDivElement>(null);
+    const prevSecsRef = useRef(secs);
 
     useEffect(() => {
-        const tick = () => setRemaining(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
-        tick();
-        const id = setInterval(tick, 200);
-        return () => clearInterval(id);
-    }, [endsAt]);
+        let raf: number;
 
-    const pct = duration > 0 ? Math.min((remaining / duration) * 100, 100) : 0;
-    const urgent = pct <= 20 || remaining <= 10;
+        const tick = () => {
+            const msLeft = Math.max(0, endsAt - Date.now());
+            const pct = duration > 0 ? Math.min((msLeft / (duration * 1000)) * 100, 100) : 0;
+
+            if (barRef.current) {
+                barRef.current.style.width = `${pct}%`;
+            }
+
+            const newSecs = Math.ceil(msLeft / 1000);
+            if (newSecs !== prevSecsRef.current) {
+                prevSecsRef.current = newSecs;
+                setSecs(newSecs);
+            }
+
+            if (msLeft > 0) raf = requestAnimationFrame(tick);
+        };
+
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [endsAt, duration]);
+
+    const pct = duration > 0 ? Math.min((secs / duration) * 100, 100) : 0;
+    const urgent = pct <= 20 || secs <= 10;
     const color = pct > 50 ? 'from-green-500 to-emerald-500'
         : pct > 25 ? 'from-yellow-500 to-orange-500'
         : 'from-red-500 to-rose-500';
 
-    const display = remaining >= 60
-        ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`
-        : `${remaining}s`;
+    const display = secs >= 60
+        ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
+        : `${secs}s`;
 
     return (
         <div className="flex items-center gap-3 w-full">
@@ -35,7 +49,8 @@ export default function TurnTimer({ endsAt, duration }: Props) {
             </span>
             <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                    className={`h-full bg-gradient-to-r ${color} rounded-full transition-all duration-200`}
+                    ref={barRef}
+                    className={`h-full bg-gradient-to-r ${color} rounded-full`}
                     style={{ width: `${pct}%` }}
                 />
             </div>

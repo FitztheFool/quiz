@@ -141,7 +141,7 @@ export default function LeaderboardView({ game }: Props) {
                         </p>
                     </div>
                     {GAME_CONFIG[game].mode === 'solo' && (
-                        <Link href={`/${game}`}
+                        <Link href={`/game/${game}`}
                             className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm rounded-xl transition-all hover:-translate-y-px shrink-0">
                             Jouer
                         </Link>
