@@ -1,71 +1,129 @@
-import { COLS, ROWS, CELL, GHOST_COLORS, MAZE_TEMPLATE, type Pos } from './constants';
+import { COLS, ROWS, CELL, GHOST_COLORS, type Pos } from './constants';
 import type { GameState } from './engine';
 
-// ── Palette ───────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-const THEME = {
-    light: {
-        bg:     '#f1f0ec',
-        wall:   '#1e3a8a',
-        wallHi: '#3b82f6',
-        dot:    '#9ca3af',
-        pellet: '#dc2626',
-    },
-    dark: {
-        bg:     '#0f0f23',
-        wall:   '#2563eb',
-        wallHi: '#60a5fa',
-        dot:    '#fbbf24',
-        pellet: '#fbbf24',
-    },
-};
+function isWallLike(tile: number): boolean {
+    return tile === 1 || tile === 2;
+}
 
-// ── Wall drawing ──────────────────────────────────────────────────────────────
+function neighbor(maze: number[][], x: number, y: number): number {
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return 1;
+    return maze[y][x];
+}
 
-function drawWall(ctx: CanvasRenderingContext2D, x: number, y: number, isDark: boolean) {
-    const t = isDark ? THEME.dark : THEME.light;
-    const px = x * CELL + 1;
-    const py = y * CELL + 1;
-    const s = CELL - 2;
-    const r = 4;
+// ── Neon wall drawing ─────────────────────────────────────────────────────────
+// Draw glowing lines on type-1 wall-cell edges that face open corridors.
 
-    ctx.beginPath();
-    ctx.roundRect(px, py, s, s, r);
-    ctx.fillStyle = t.wall;
-    ctx.fill();
+function drawNeonWalls(ctx: CanvasRenderingContext2D, maze: number[][]) {
+    // 3 passes: wide outer glow → medium halo → bright core
+    const passes: [number, number, string][] = [
+        [20, 4, 'rgba(37,99,235,0.55)'],
+        [8, 2.5, 'rgba(96,165,250,0.85)'],
+        [2, 1.5, '#dbeafe'],
+    ];
 
-    // inner highlight edge (top-left)
-    ctx.beginPath();
-    ctx.roundRect(px + 2, py + 2, s - 4, s - 4, r - 1);
-    ctx.strokeStyle = t.wallHi;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = isDark ? 0.35 : 0.25;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    for (const [blur, width, color] of passes) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.shadowColor = '#2563eb';
+        ctx.shadowBlur = blur;
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';   // rounded ends fill junction gaps cleanly
+
+        ctx.beginPath();
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (maze[y][x] !== 1) continue;
+                const px = x * CELL, py = y * CELL;
+
+                if (!isWallLike(neighbor(maze, x, y - 1))) {
+                    ctx.moveTo(px, py); ctx.lineTo(px + CELL, py);
+                }
+                if (!isWallLike(neighbor(maze, x, y + 1))) {
+                    ctx.moveTo(px, py + CELL); ctx.lineTo(px + CELL, py + CELL);
+                }
+                if (!isWallLike(neighbor(maze, x - 1, y))) {
+                    ctx.moveTo(px, py); ctx.lineTo(px, py + CELL);
+                }
+                if (!isWallLike(neighbor(maze, x + 1, y))) {
+                    ctx.moveTo(px + CELL, py); ctx.lineTo(px + CELL, py + CELL);
+                }
+            }
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+// ── Ghost house outline (pink neon) ───────────────────────────────────────────
+// Solid box at cols 7–11, rows 9–11.
+// Gate tubes only drawn when the maze actually has type-2 gate cells in row 7.
+
+function drawGhostHouseOutline(ctx: CanvasRenderingContext2D, maze: number[][]) {
+    const L = 7 * CELL, R = 12 * CELL;
+    const T = 9 * CELL, B = 12 * CELL;
+    const gateTop = 7 * CELL;
+
+    // Detect gate type from maze row 7
+    const hasCenterGate = maze[7]?.[9] === 2;
+    const hasDoubleGate = maze[7]?.[8] === 2 || maze[7]?.[10] === 2;
+    const hasGate = hasCenterGate || hasDoubleGate;
+    const gateL = hasCenterGate ? 9 * CELL : 8 * CELL;
+    const gateR = hasCenterGate ? 10 * CELL : 11 * CELL;
+
+    const passes: [number, number][] = [[16, 2.5], [4, 2]];
+
+    for (const [blur, width] of passes) {
+        ctx.save();
+        ctx.strokeStyle = '#e879f9';
+        ctx.shadowColor = '#e879f9';
+        ctx.shadowBlur = blur;
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Left + bottom + right
+        ctx.beginPath();
+        ctx.moveTo(L, T); ctx.lineTo(L, B);
+        ctx.lineTo(R, B); ctx.lineTo(R, T);
+        ctx.stroke();
+
+        if (hasGate) {
+            // Top with gate gap + tubes rising to row 7
+            ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(gateL, T); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(gateR, T); ctx.lineTo(R, T); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(gateL, T); ctx.lineTo(gateL, gateTop); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(gateR, T); ctx.lineTo(gateR, gateTop); ctx.stroke();
+        } else {
+            // Fully closed top
+            ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(R, T); ctx.stroke();
+        }
+
+        ctx.restore();
+    }
 }
 
 // ── Dot / pellet ──────────────────────────────────────────────────────────────
 
-function drawDot(ctx: CanvasRenderingContext2D, x: number, y: number, isDark: boolean) {
-    const t = isDark ? THEME.dark : THEME.light;
+function drawDot(ctx: CanvasRenderingContext2D, x: number, y: number) {
     ctx.beginPath();
-    ctx.arc(x * CELL + CELL / 2, y * CELL + CELL / 2, 2, 0, Math.PI * 2);
-    ctx.fillStyle = t.dot;
+    ctx.arc(x * CELL + CELL / 2, y * CELL + CELL / 2, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#e2e8f0';
     ctx.fill();
 }
 
-function drawPellet(ctx: CanvasRenderingContext2D, x: number, y: number, phase: number, isDark: boolean) {
-    const t = isDark ? THEME.dark : THEME.light;
+function drawPellet(ctx: CanvasRenderingContext2D, x: number, y: number, phase: number) {
     const cx = x * CELL + CELL / 2;
     const cy = y * CELL + CELL / 2;
     const r = 4.5 + Math.sin(phase * 2) * 0.8;
 
     ctx.save();
-    ctx.shadowColor = t.pellet;
-    ctx.shadowBlur = isDark ? 10 : 6;
+    ctx.shadowColor = '#facc15';
+    ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = t.pellet;
+    ctx.fillStyle = '#facc15';
     ctx.fill();
     ctx.restore();
 }
@@ -76,42 +134,42 @@ function drawPacmanSprite(
     ctx: CanvasRenderingContext2D,
     pos: Pos,
     dir: string,
-    mouthAngle: number,
+    mouthAngle: number
 ) {
     const cx = pos.x * CELL + CELL / 2;
     const cy = pos.y * CELL + CELL / 2;
     const r = CELL / 2 - 1;
-    const angle = Math.abs(Math.sin(mouthAngle)) * 0.36;
 
-    const rotations: Record<string, number> = { R: 0, L: Math.PI, U: -Math.PI / 2, D: Math.PI / 2, N: 0 };
+    const angle = 0.12 + Math.abs(Math.sin(mouthAngle)) * 0.28;
+
+    const rotations: Record<string, number> = {
+        R: 0, L: Math.PI, U: -Math.PI / 2, D: Math.PI / 2, N: 0,
+    };
     const rot = rotations[dir] ?? 0;
 
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rot);
 
-    // Radial gradient body
-    const grad = ctx.createRadialGradient(-r * 0.2, -r * 0.3, 1, 0, 0, r);
+    const grad = ctx.createRadialGradient(-r * 0.25, -r * 0.35, 1, 0, 0, r);
     grad.addColorStop(0, '#fef08a');
     grad.addColorStop(0.6, '#facc15');
     grad.addColorStop(1, '#ca8a04');
 
-    ctx.shadowColor = 'rgba(250,204,21,0.45)';
-    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(250,204,21,0.6)';
+    ctx.shadowBlur = 10;
+
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.arc(0, 0, r, angle, 2 * Math.PI - angle);
+    ctx.arc(0, 0, r, angle, Math.PI * 2 - angle);
     ctx.closePath();
     ctx.fillStyle = grad;
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Eye
-    const eyeX = r * 0.1;
-    const eyeY = -r * 0.45;
     ctx.beginPath();
-    ctx.arc(eyeX, eyeY, 1.8, 0, Math.PI * 2);
-    ctx.fillStyle = '#000';
+    ctx.arc(r * 0.15, -r * 0.45, Math.max(1.5, r * 0.12), 0, Math.PI * 2);
+    ctx.fillStyle = '#111827';
     ctx.fill();
 
     ctx.restore();
@@ -130,7 +188,6 @@ function drawGhost(
     const cx = pos.x * CELL + CELL / 2;
     const cy = pos.y * CELL + CELL / 2;
 
-    // Fantôme mort : seulement les yeux qui rentrent à la prison
     if (dead) {
         const eyeOffX = 3.5;
         const eyeY = cy - 2;
@@ -154,7 +211,6 @@ function drawGhost(
 
     ctx.save();
 
-    // Body gradient
     const grad = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.3, 1, cx, cy, r * 1.4);
     if (frightened) {
         grad.addColorStop(0, '#6366f1');
@@ -169,8 +225,6 @@ function drawGhost(
     ctx.shadowBlur = 8;
     ctx.fillStyle = grad;
 
-    // Ghost shape: dome top + bezier skirt
-    const top = cy - r;
     const bot = cy + r;
     const left = cx - r;
     const right = cx + r;
@@ -179,8 +233,7 @@ function drawGhost(
     const bumpW = (r * 2) / numBumps;
 
     ctx.beginPath();
-    ctx.arc(cx, cy - 1, r, Math.PI, 0); // dome
-    // Wavy skirt with smooth bezier bumps
+    ctx.arc(cx, cy - 1, r, Math.PI, 0);
     for (let b = 0; b < numBumps; b++) {
         const bx0 = right - b * bumpW;
         const bx1 = right - (b + 0.5) * bumpW;
@@ -196,14 +249,12 @@ function drawGhost(
     ctx.shadowBlur = 0;
 
     if (!frightened) {
-        // Eyes — white sclera
         const eyeOffX = 3.5;
         const eyeY = cy - r * 0.25;
         ctx.fillStyle = '#fff';
         ctx.beginPath(); ctx.ellipse(cx - eyeOffX, eyeY, 3, 3.8, 0, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(cx + eyeOffX, eyeY, 3, 3.8, 0, 0, Math.PI * 2); ctx.fill();
 
-        // Pupils — track ghost direction
         const pupilDirs: Record<string, [number, number]> = {
             L: [-1.2, 0], R: [1.2, 0], U: [0, -1.2], D: [0, 1.2], N: [0, 0],
         };
@@ -212,7 +263,6 @@ function drawGhost(
         ctx.beginPath(); ctx.arc(cx - eyeOffX + pdx, eyeY + pdy, 1.8, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(cx + eyeOffX + pdx, eyeY + pdy, 1.8, 0, Math.PI * 2); ctx.fill();
     } else {
-        // Frightened face
         ctx.strokeStyle = 'rgba(255,255,255,0.8)';
         ctx.lineWidth = 1.5;
         ctx.lineCap = 'round';
@@ -223,7 +273,6 @@ function drawGhost(
         ctx.lineTo(cx + 2.5, cy + 2);
         ctx.lineTo(cx + 5, cy - 1);
         ctx.stroke();
-        // Two dots for eyes
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
         ctx.beginPath(); ctx.arc(cx - 3.5, cy - 4, 1.5, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(cx + 3.5, cy - 4, 1.5, 0, Math.PI * 2); ctx.fill();
@@ -245,6 +294,8 @@ function drawLives(ctx: CanvasRenderingContext2D, lives: number) {
         grad.addColorStop(1, '#ca8a04');
 
         ctx.save();
+        ctx.shadowColor = 'rgba(250,204,21,0.5)';
+        ctx.shadowBlur = 6;
         ctx.beginPath();
         ctx.arc(lx, ly, r, 0.3 * Math.PI, 1.7 * Math.PI);
         ctx.lineTo(lx, ly);
@@ -261,23 +312,24 @@ export function drawPacman(
     canvas: HTMLCanvasElement,
     state: GameState,
     mouthAngle: number,
-    isDark: boolean,
+    _isDark: boolean,
 ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const t = isDark ? THEME.dark : THEME.light;
 
-    ctx.fillStyle = t.bg;
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, COLS * CELL, ROWS * CELL);
 
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
             const tile = state.maze[y][x];
-            if (tile === 1) drawWall(ctx, x, y, isDark);
-            else if (tile === 0) drawDot(ctx, x, y, isDark);
-            else if (tile === 3) drawPellet(ctx, x, y, mouthAngle, isDark);
+            if (tile === 0) drawDot(ctx, x, y);
+            else if (tile === 3) drawPellet(ctx, x, y, mouthAngle);
         }
     }
+
+    drawNeonWalls(ctx, state.maze);
+    drawGhostHouseOutline(ctx, state.maze);
 
     for (let i = 0; i < state.ghosts.length; i++) {
         const g = state.ghosts[i];
@@ -289,42 +341,10 @@ export function drawPacman(
 }
 
 // ── Idle screen ───────────────────────────────────────────────────────────────
+// Kept for API compatibility; the hook renders idle via drawPacman(makeInitialState()).
 
-export function drawIdleScreen(canvas: HTMLCanvasElement, isDark: boolean) {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const t = isDark ? THEME.dark : THEME.light;
-
-    ctx.fillStyle = t.bg;
-    ctx.fillRect(0, 0, COLS * CELL, ROWS * CELL);
-
-    for (let y = 0; y < ROWS; y++) {
-        for (let x = 0; x < COLS; x++) {
-            if (MAZE_TEMPLATE[y][x] === 1) drawWall(ctx, x, y, isDark);
-        }
-    }
-
-    ctx.textAlign = 'center';
-    ctx.shadowColor = '#facc15';
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = '#facc15';
-    ctx.font = `bold ${CELL}px monospace`;
-    ctx.fillText('PAC-MAN', (COLS * CELL) / 2, (ROWS * CELL) / 2 - CELL);
-    ctx.shadowBlur = 0;
-
-    const subText = 'Flèches ou Z,Q,S,D pour jouer';
-    ctx.font = `${CELL - 6}px monospace`;
-    const textW = ctx.measureText(subText).width;
-    const tx = (COLS * CELL) / 2;
-    const ty = (ROWS * CELL) / 2 + CELL;
-    const pad = 8;
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    ctx.beginPath();
-    ctx.roundRect(tx - textW / 2 - pad, ty - (CELL - 6) + 2, textW + pad * 2, CELL - 2, 6);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(subText, tx, ty);
-    ctx.textAlign = 'left';
+export function drawIdleScreen(_canvas: HTMLCanvasElement, _isDark: boolean) {
+    // no-op
 }
 
 // ── Color helpers ─────────────────────────────────────────────────────────────

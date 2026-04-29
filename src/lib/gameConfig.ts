@@ -142,6 +142,17 @@ export const GAME_CONFIG = {
         rules: "Déplacez la palette pour rebondir la balle et casser les briques. Ramassez les bonus qui tombent. Vous avez 3 vies.",
         score: "10 pts par brique, 20 pts par brique dure. Meilleur score conservé pour le classement.",
     },
+    tetris: {
+        gameType: 'TETRIS' as const,
+        label: 'Tetris',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Empilez les pièces et complétez des lignes !",
+        players: '1 joueur',
+        rules: "Faites tomber et orientez les pièces pour former des lignes horizontales complètes. Une ligne complète est éliminée. La partie se termine quand les pièces atteignent le haut.",
+        score: "100 pts par ligne × niveau, 300 pour 2 lignes, 500 pour 3, 800 pour un Tetris (4 lignes). Meilleur score conservé.",
+    },
 } as const;
 
 export type GameType = keyof typeof GAME_CONFIG;
@@ -174,6 +185,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     snake: [1],
     pacman: [1],
     breakout: [1],
+    tetris: [1],
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {

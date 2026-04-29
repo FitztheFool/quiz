@@ -17,6 +17,9 @@ import {
     seedBattleshipAttempts,
     seedDiamantAttempts,
     seedImpostorAttempts,
+    seedSnakeAttempts,
+    seedPacmanAttempts,
+    seedBreakoutAttempts,
 } from './seed-attempts';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -115,6 +118,9 @@ async function main() {
     await seedBattleshipAttempts(prisma, allPlayers);
     await seedDiamantAttempts(prisma, allPlayers);
     await seedImpostorAttempts(prisma, allPlayers);
+    await seedSnakeAttempts(prisma, allPlayers);
+    await seedPacmanAttempts(prisma, allPlayers);
+    await seedBreakoutAttempts(prisma, allPlayers);
 
     console.log('\n✅ Seed terminé !');
 }

@@ -43,6 +43,7 @@ enum GameType {
   SNAKE
   PACMAN
   BREAKOUT
+  TETRIS
 }
 
 model Account {

@@ -199,11 +199,14 @@ export function stepGame(state: GameState, pendingDir: Dir): { state: GameState;
 
     // Les fantômes bougent tous les ticks à partir du niveau 3, sinon 1 tick sur 2
     const ghostMoveEvery = level >= 3 ? 1 : 2;
+    const anyDead = ghosts.some(g => g.dead);
     let newGhosts = ghosts;
     if (tick % ghostMoveEvery === 0) {
         newGhosts = ghosts.map((g, i) => {
             const g2 = { ...g, frightened: newFrighten > 0 ? (g.frightened > 0 ? g.frightened - 1 : newFrighten) : 0 };
             if (newFrighten > 0 && g.frightened === 0) return { ...g2, frightened: newFrighten };
+            // Gèle les fantômes vivants pendant qu'un fantôme mangé retourne à la maison
+            if (anyDead && !g.dead) return g2;
             return stepGhost(maze, g2, newPos, effectiveDir, i, ghosts, level);
         });
     }

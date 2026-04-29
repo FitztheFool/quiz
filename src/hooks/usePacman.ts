@@ -57,7 +57,7 @@ export function usePacman(canvasRef: React.RefObject<HTMLCanvasElement | null>) 
     const redrawIdle = useCallback(() => {
         if (!canvasRef.current) return;
         const isDark = document.documentElement.classList.contains('dark');
-        drawIdleScreen(canvasRef.current, isDark);
+        drawPacman(canvasRef.current, makeInitialState(), 0.5, isDark);
     }, [canvasRef]);
 
     useEffect(() => {

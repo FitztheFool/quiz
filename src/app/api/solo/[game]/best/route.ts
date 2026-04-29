@@ -8,6 +8,7 @@ const SOLO_GAMES: Record<string, GameType> = {
     pacman:   'PACMAN',
     breakout: 'BREAKOUT',
     snake:    'SNAKE',
+    tetris:   'TETRIS',
 };
 
 export async function GET(

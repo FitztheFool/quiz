@@ -45,7 +45,11 @@
       "Bash(git -C /home/faros/quiz diff HEAD -- src/app/login/page.tsx)",
       "Bash(git -C /home/faros/quiz diff HEAD -- package.json tsconfig.json)",
       "Bash(npx tsc *)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "Bash(npm view *)",
+      "Bash(npm pack *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('main:', d.get\\('main'\\)\\); print\\('exports:', d.get\\('exports'\\)\\); print\\('files:', d.get\\('files'\\)\\)\")",
+      "Bash([ -f \"$dir/package.json\" ])"
     ],
     "additionalDirectories": [
       "/home/faros/dev-launcher/impostor-server/src",

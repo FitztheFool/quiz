@@ -202,41 +202,44 @@ export function useBreakout(canvasRef: React.RefObject<HTMLCanvasElement | null>
     useEffect(() => { startGameRef.current = startGame; }, [startGame, startGameRef]);
 
     // Touch controls — drag for paddle, tap for launch
+    // Only intercept events whose touch STARTED on the canvas, so UI buttons remain tappable.
     useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
         let touchStartX = 0;
         let touchStartY = 0;
         let touchStartTime = 0;
-        let lastTouchX = 0;
-
-        const canvas = canvasRef.current;
+        let touchOnCanvas = false;
 
         const onTouchStart = (e: TouchEvent) => {
             const t = e.touches[0];
             touchStartX = t.clientX;
             touchStartY = t.clientY;
-            lastTouchX = t.clientX;
             touchStartTime = Date.now();
-            if (phaseRef.current === 'playing') e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            touchOnCanvas = (
+                t.clientX >= rect.left && t.clientX <= rect.right &&
+                t.clientY >= rect.top  && t.clientY <= rect.bottom
+            );
+            if (touchOnCanvas && phaseRef.current === 'playing') e.preventDefault();
         };
 
         const onTouchMove = (e: TouchEvent) => {
-            if (phaseRef.current !== 'playing') return;
+            if (!touchOnCanvas || phaseRef.current !== 'playing') return;
             e.preventDefault();
             const t = e.touches[0];
-            lastTouchX = t.clientX;
-
-            if (!canvas) return;
             const rect = canvas.getBoundingClientRect();
             const scaleX = W / rect.width;
             paddleTargetXRef.current = (t.clientX - rect.left) * scaleX;
         };
 
         const onTouchEnd = (e: TouchEvent) => {
+            if (!touchOnCanvas) return;
+
             const dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
             const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
-            const elapsed = Date.now() - touchStartTime;
-
-            const isTap = dx < 15 && dy < 15 && elapsed < 200;
+            const isTap = dx < 15 && dy < 15 && Date.now() - touchStartTime < 200;
 
             if (phaseRef.current === 'idle' || phaseRef.current === 'over') {
                 startGameRef.current();
@@ -248,15 +251,13 @@ export function useBreakout(canvasRef: React.RefObject<HTMLCanvasElement | null>
             }
         };
 
-        void lastTouchX; // silence unused warning
-
         window.addEventListener('touchstart', onTouchStart, { passive: false });
-        window.addEventListener('touchmove', onTouchMove, { passive: false });
-        window.addEventListener('touchend', onTouchEnd, { passive: false });
+        window.addEventListener('touchmove',  onTouchMove,  { passive: false });
+        window.addEventListener('touchend',   onTouchEnd,   { passive: false });
         return () => {
             window.removeEventListener('touchstart', onTouchStart);
-            window.removeEventListener('touchmove', onTouchMove);
-            window.removeEventListener('touchend', onTouchEnd);
+            window.removeEventListener('touchmove',  onTouchMove);
+            window.removeEventListener('touchend',   onTouchEnd);
         };
     }, [canvasRef, handleLaunch, phaseRef, startGameRef]);
 
