@@ -70,6 +70,9 @@ TEXT :
 - Distracteurs plausibles
 - Points : MCQ=${pts.mcq} | MCQ_UNIQUE=${pts.mcq_unique} | TRUE_FALSE=${pts.true_false} | TEXT=${pts.text}
 
+**Images optionnelles** :
+Pour les questions qui bénéficieraient d'un support visuel (géographie, monuments, animaux, drapeaux, œuvres d'art, sciences, personnages historiques, objets reconnaissables…), ajoute un champ **imageQuery** avec une requête de recherche courte en **anglais** (2-4 mots). Environ **20 à 40 %** des questions maximum. Ne mets pas imageQuery pour les questions abstraites, de calcul ou de logique pure.
+
 Retourne uniquement ce JSON (respecte exactement la structure) :
 
 {
@@ -81,10 +84,20 @@ Retourne uniquement ce JSON (respecte exactement la structure) :
       "text": "Question ?",
       "type": "MCQ",
       "points": ${pts.mcq},
+      "imageQuery": "eiffel tower paris",
       "answers": [
         {"text": "...", "isCorrect": false},
         {"text": "...", "isCorrect": true},
         ...
+      ]
+    },
+    {
+      "text": "Question sans image ?",
+      "type": "TRUE_FALSE",
+      "points": ${pts.true_false},
+      "answers": [
+        {"text": "Vrai", "isCorrect": true},
+        {"text": "Faux", "isCorrect": false}
       ]
     }
     // ... respecte exactement la répartition des types

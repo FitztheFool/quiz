@@ -98,6 +98,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `Données invalides : ${validationError}` }, { status: 500 });
         }
 
+        // Fetch images for questions that have an imageQuery
+        const questionsWithIndex = json.questions
+            .map((q: any, i: number) => ({ q, i }))
+            .filter(({ q }: { q: any }) => typeof q.imageQuery === 'string' && q.imageQuery.trim());
+
+        if (questionsWithIndex.length > 0) {
+            const fetched = await Promise.all(
+                questionsWithIndex.map(({ q, i }: { q: any; i: number }) =>
+                    fetchCoverImage(q.imageQuery).then(url => ({ i, url }))
+                )
+            );
+            for (const { i, url } of fetched) {
+                delete json.questions[i].imageQuery;
+                if (url) json.questions[i].imageUrl = url;
+            }
+        }
+
         return NextResponse.json({ ...json, imageUrl, provider: 'groq' });
 
     } catch (e: any) {

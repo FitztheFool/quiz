@@ -1,34 +1,34 @@
-import { NextAuthOptions } from 'next-auth';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import DiscordProvider from 'next-auth/providers/discord';
-import GoogleProvider from "next-auth/providers/google";
+import NextAuth from 'next-auth';
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import Credentials from 'next-auth/providers/credentials';
+import Discord from 'next-auth/providers/discord';
+import Google from 'next-auth/providers/google';
 import { compare } from 'bcryptjs';
 import prisma from './prisma';
 import { createPending, getPending, deletePending } from './oauthPendingStore';
 
-export const authOptions: NextAuthOptions = {
+export const { auth, handlers, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(prisma as any),
     session: { strategy: 'jwt' },
     pages: { signIn: '/login', signOut: '/login', error: '/login' },
     providers: [
-        DiscordProvider({
+        Discord({
             clientId: process.env.DISCORD_CLIENT_ID!,
             clientSecret: process.env.DISCORD_CLIENT_SECRET!,
         }),
-        GoogleProvider({
+        Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
-        CredentialsProvider({
+        Credentials({
             id: 'oauth-completion',
             name: 'oauth-completion',
             credentials: { token: { type: 'text' } },
             async authorize(credentials) {
                 if (!credentials?.token) return null;
-                const entry = await getPending(credentials.token);
+                const entry = await getPending(credentials.token as string);
                 if (!entry) return null;
-                await deletePending(credentials.token);
+                await deletePending(credentials.token as string);
                 const user = await prisma.user.findUnique({
                     where: { id: entry.userId },
                     select: { id: true, email: true, username: true, role: true, image: true },
@@ -43,14 +43,14 @@ export const authOptions: NextAuthOptions = {
                 };
             },
         }),
-        CredentialsProvider({
+        Credentials({
             id: 'guest',
             name: 'guest',
             credentials: { userId: { type: 'text' } },
             async authorize(credentials) {
                 if (!credentials?.userId) return null;
                 const user = await prisma.user.findUnique({
-                    where: { id: credentials.userId },
+                    where: { id: credentials.userId as string },
                     select: { id: true, email: true, username: true, role: true, image: true, isAnonymous: true, status: true },
                 });
                 if (!user) return null;
@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
                 };
             },
         }),
-        CredentialsProvider({
+        Credentials({
             name: 'credentials',
             credentials: {
                 identifier: { label: 'Email ou pseudo', type: 'text' },
@@ -78,15 +78,15 @@ export const authOptions: NextAuthOptions = {
                 const user = await prisma.user.findFirst({
                     where: {
                         OR: [
-                            { email: credentials.identifier },
-                            { username: credentials.identifier },
+                            { email: credentials.identifier as string },
+                            { username: credentials.identifier as string },
                         ],
                     },
                 });
                 if (!user || !user.passwordHash) throw new Error('Identifiants incorrects');
                 if (user.status === 'BANNED') throw new Error('AccountBanned');
                 if (user.status === 'PENDING') throw new Error('AccountPending');
-                const isPasswordValid = await compare(credentials.password, user.passwordHash);
+                const isPasswordValid = await compare(credentials.password as string, user.passwordHash);
                 if (!isPasswordValid) throw new Error('Identifiants incorrects');
                 if (user.status === 'DEACTIVATED') {
                     await prisma.user.update({ where: { id: user.id }, data: { status: 'ACTIVE', deactivatedAt: null } });
@@ -112,7 +112,6 @@ export const authOptions: NextAuthOptions = {
                 if (dbUser?.status === 'BANNED') return '/login?error=AccountBanned';
                 if (dbUser?.passwordHash) return '/login?error=OAuthAccountConflict';
 
-                // ← ICI
                 if (dbUser && !dbUser.passwordHash) {
                     const existingAccount = await prisma.account.findFirst({
                         where: { userId: dbUser.id },
@@ -139,17 +138,17 @@ export const authOptions: NextAuthOptions = {
                             const taken = await prisma.user.findFirst({ where: { username: c }, select: { id: true } });
                             if (!taken) suggestions.push(c);
                         }
-                        if (suggestions.length < 3) suggestions.push(`user_${user.id.slice(-8)}`);
-                        const token = await createPending(user.id, user.name, suggestions.slice(0, 3), {
+                        if (suggestions.length < 3) suggestions.push(`user_${user.id!.slice(-8)}`);
+                        const token = await createPending(user.id!, user.name, suggestions.slice(0, 3), {
                             email: user.email ?? null,
                             name: user.name ?? null,
                             image: user.image ?? null,
                             provider: account!.provider,
                             providerAccountId: account!.providerAccountId,
                             type: account!.type,
-                            access_token: account!.access_token ?? null,
-                            token_type: account!.token_type ?? null,
-                            scope: account!.scope ?? null,
+                            access_token: (account!.access_token as string) ?? null,
+                            token_type: (account!.token_type as string) ?? null,
+                            scope: (account!.scope as string) ?? null,
                         });
                         return `/auth/choose-username?token=${token}`;
                     }
@@ -161,10 +160,10 @@ export const authOptions: NextAuthOptions = {
             }
             return true;
         },
-        async jwt({ token, user, trigger, account }) {  // ✅ account ajouté
+        async jwt({ token, user, trigger, account }) {
             if (user) {
                 token.id = user.id;
-                token.role = user.role;
+                token.role = (user as any).role;
                 token.username = (user as any).username || user.name || '';
                 token.image = user.image ?? null;
                 token.email = user.email ?? null;
@@ -184,12 +183,11 @@ export const authOptions: NextAuthOptions = {
                     token.status = dbUser.status;
                 }
             }
-            if (account?.error === 'RefreshAccessTokenError') {  // ✅
+            if (account?.error === 'RefreshAccessTokenError') {
                 token.error = 'RefreshAccessTokenError';
             }
-            return token;  // ✅ un seul return
+            return token;
         },
-
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
@@ -198,27 +196,26 @@ export const authOptions: NextAuthOptions = {
                 session.user.image = (token.image as string) ?? null;
                 session.user.email = (token.email as string) ?? null;
                 session.user.isAnonymous = (token.isAnonymous as boolean) ?? false;
-                session.user.status = token.status as string ?? undefined;
+                session.user.status = (token.status as string) ?? undefined;
             }
             if (token.error) {
-                session.error = token.error;
+                (session as any).error = token.error;
             }
             return session;
         },
     },
     events: {
         createUser: async ({ user }) => {
-            const base = user.name || `user_${user.id.slice(-8)}`;
+            const base = user.name || `user_${user.id!.slice(-8)}`;
             let username = base;
-            const taken = await prisma.user.findFirst({ where: { username: base, NOT: { id: user.id } } });
-            if (taken) username = `user_${user.id.slice(-8)}`;
-            // OAuth-created users are active immediately (no email confirmation needed)
-            await prisma.user.update({ where: { id: user.id }, data: { username, status: 'ACTIVE' } });
+            const taken = await prisma.user.findFirst({ where: { username: base, NOT: { id: user.id! } } });
+            if (taken) username = `user_${user.id!.slice(-8)}`;
+            await prisma.user.update({ where: { id: user.id! }, data: { username, status: 'ACTIVE' } });
         },
         signIn: async ({ user, account }) => {
             if (account?.provider === 'oauth-completion') return;
             await prisma.user.updateMany({
-                where: { id: user.id },
+                where: { id: user.id! },
                 data: {
                     lastSeen: new Date(),
                     ...(account?.provider !== 'credentials' && user.image ? { image: user.image } : {}),
@@ -227,7 +224,7 @@ export const authOptions: NextAuthOptions = {
         },
     },
     logger: {
-        error(code, metadata) { console.error('NEXTAUTH ERROR', code, metadata); },
+        error(code, ...message) { console.error('NEXTAUTH ERROR', code, ...message); },
     },
     secret: process.env.NEXTAUTH_SECRET,
-};
+});

@@ -1,10 +1,8 @@
-// lib/authGuards.ts
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function requireRegistered() {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session) {
         return {

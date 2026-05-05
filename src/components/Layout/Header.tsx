@@ -40,7 +40,7 @@ export default function Header() {
       <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="w-full px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5 shrink-0">
               <img src="/logo/icon-light.svg" alt="Kwizar" width={36} height={36}
                 className="rounded-lg block dark:hidden" />
               <img src="/logo/icon-dark.svg" alt="Kwizar" width={36} height={36}
@@ -73,9 +73,9 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 sm:gap-4 ml-auto">
-                <Link href="/login" className="btn-secondary">Connexion</Link>
-                <Link href="/register" className="btn-primary">Inscription</Link>
+              <div className="flex items-center gap-2 ml-auto shrink-0">
+                <Link href="/login" className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Connexion</Link>
+                <Link href="/register" className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors">Inscription</Link>
               </div>
             )}
           </div>

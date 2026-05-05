@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { GameType } from '@/generated/prisma/client';
 
@@ -19,7 +18,7 @@ export async function GET(
     const gameType = SOLO_GAMES[game];
     if (!gameType) return NextResponse.json({ error: 'Jeu invalide' }, { status: 400 });
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ best: 0 });
 
     const agg = await prisma.attempt.aggregate({

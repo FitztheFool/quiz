@@ -1,29 +1,21 @@
-import { getToken } from 'next-auth/jwt';
+import { auth } from '@/lib/auth';
 import { SignJWT } from 'jose';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const secret = new TextEncoder().encode(process.env.INTERNAL_API_KEY!);
 
-export async function GET(req: NextRequest) {
-    const cookieName = process.env.NEXTAUTH_URL?.startsWith('https')
-        ? '__Secure-next-auth.session-token'
-        : 'next-auth.session-token';
+export async function GET() {
+    const session = await auth();
 
-    const token = await getToken({
-        req,
-        secret: process.env.NEXTAUTH_SECRET!,
-        cookieName,
-    });
-
-    if (!token?.id) {
+    if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const socketToken = await new SignJWT({
-        username: token.username as string,
+        username: session.user.username,
     })
         .setProtectedHeader({ alg: 'HS256' })
-        .setSubject(token.id as string)
+        .setSubject(session.user.id)
         .setIssuedAt()
         .setExpirationTime('15m')
         .sign(secret);

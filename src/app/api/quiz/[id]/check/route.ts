@@ -1,8 +1,7 @@
 // src/app/api/quiz/[id]/check/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 import { normalizeAnswer as normalize } from '@/lib/utils';
 
@@ -26,7 +25,7 @@ export async function POST(
             return NextResponse.json({ error: 'questionId requis' }, { status: 400 });
         }
 
-        const session = await getServerSession(authOptions);
+        const session = await auth();
 
         // Vérifier que le quiz existe et est accessible
         const quiz = await prisma.quiz.findUnique({

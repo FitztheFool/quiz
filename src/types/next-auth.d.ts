@@ -1,34 +1,35 @@
-// src/types/next-auth.d.ts
 import 'next-auth';
 import 'next-auth/jwt';
 
 declare module 'next-auth' {
-  interface Session {
-    error?: string;
-    user: {
-      id: string;
-      username: string;
-      role: string;
-      isAnonymous?: boolean;
-      status?: string;
-    } & DefaultSession['user'];
-  }
+    interface Session {
+        error?: string;
+        user: {
+            id: string;
+            username: string;
+            role: string;
+            isAnonymous?: boolean;
+            status?: string;
+        } & DefaultSession['user'];
+    }
 
-  interface User {
-    id: string;
-    username: string;
-    role: string;
-    email: string;
-  }
+    interface User {
+        id?: string;
+        username?: string;
+        role?: string;
+        email?: string | null;
+        isAnonymous?: boolean;
+    }
 }
 
 declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string;
-    username: string;
-    role: string;
-    isAnonymous?: boolean;
-    status?: string;
-    error?: string;
-  }
+    interface JWT {
+        id?: string;
+        username?: string;
+        role?: string;
+        isAnonymous?: boolean;
+        status?: string;
+        error?: string;
+        needsUsernameToken?: string;
+    }
 }

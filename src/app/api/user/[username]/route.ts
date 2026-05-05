@@ -1,8 +1,7 @@
 // src/app/api/user/[username]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 export async function GET(
     req: NextRequest,
@@ -14,7 +13,7 @@ export async function GET(
         return NextResponse.json({ error: 'Username manquant.' }, { status: 400 });
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     const user = await prisma.user.findUnique({
         where: { username },

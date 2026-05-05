@@ -260,7 +260,7 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
 
                 {/* ── Header compact ── */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         {/* Avatar */}
                         <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
                             {profile.image ? (
@@ -278,43 +278,77 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
                                 {isOwnProfile ? `Bonjour, ${displayName}` : displayName}
                             </h1>
                             <p className="text-xs text-gray-400 dark:text-gray-500">
-                                {isOwnProfile ? 'Dashboard personnel' : 'Profil joueur'}
+                                Profil joueur
                             </p>
                         </div>
 
-                        {/* Tabs */}
-                        <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 shrink-0">
-                            {(['stats', 'quizzes'] as TabType[]).map(tab => (
+                        {/* Action (desktop : même ligne que l'avatar) */}
+                        <div className="hidden sm:flex shrink-0 items-center gap-2">
+                            {/* Tabs */}
+                            <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5">
+                                {(['stats', 'quizzes'] as TabType[]).map(tab => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${activeTab === tab
+                                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                            }`}
+                                    >
+                                        {tab === 'stats' ? <><ChartBarIcon className="w-3.5 h-3.5 inline mr-1" />Stats</> : <><BookOpenIcon className="w-3.5 h-3.5 inline mr-1" />Quiz</>}
+                                    </button>
+                                ))}
+                            </div>
+                            {!isOwnProfile && (
                                 <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${activeTab === tab
-                                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                        }`}
+                                    onClick={() => router.back()}
+                                    className="text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition shrink-0"
                                 >
-                                    {tab === 'stats' ? <><ChartBarIcon className="w-3.5 h-3.5 inline mr-1" />Stats</> : <><BookOpenIcon className="w-3.5 h-3.5 inline mr-1" />Quiz</>}
+                                    ← Retour
                                 </button>
-                            ))}
+                            )}
+                            {isOwnProfile && (
+                                <a
+                                    href="/settings"
+                                    className="text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition shrink-0"
+                                >
+                                    <Cog6ToothIcon className="w-3.5 h-3.5 inline mr-1" />Paramètres
+                                </a>
+                            )}
                         </div>
-
-                        {/* Action */}
-                        {!isOwnProfile && (
-                            <button
-                                onClick={() => router.back()}
-                                className="text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition shrink-0"
-                            >
-                                ← Retour
-                            </button>
-                        )}
-                        {isOwnProfile && (
-                            <a
-                                href="/settings"
-                                className="text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition shrink-0"
-                            >
-                                <Cog6ToothIcon className="w-3.5 h-3.5 inline mr-1" />Paramètres
-                            </a>
-                        )}
+                        {/* Tabs + action (mobile : deuxième ligne) */}
+                        <div className="flex sm:hidden w-full items-center gap-2 mt-2">
+                            <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5">
+                                {(['stats', 'quizzes'] as TabType[]).map(tab => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${activeTab === tab
+                                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                            }`}
+                                    >
+                                        {tab === 'stats' ? <><ChartBarIcon className="w-3.5 h-3.5 inline mr-1" />Stats</> : <><BookOpenIcon className="w-3.5 h-3.5 inline mr-1" />Quiz</>}
+                                    </button>
+                                ))}
+                            </div>
+                            {!isOwnProfile && (
+                                <button
+                                    onClick={() => router.back()}
+                                    className="ml-auto text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition shrink-0"
+                                >
+                                    ← Retour
+                                </button>
+                            )}
+                            {isOwnProfile && (
+                                <a
+                                    href="/settings"
+                                    className="ml-auto text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition shrink-0"
+                                >
+                                    <Cog6ToothIcon className="w-3.5 h-3.5 inline mr-1" />Paramètres
+                                </a>
+                            )}
+                        </div>
                     </div>
                 </div>
 
