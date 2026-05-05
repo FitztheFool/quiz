@@ -38,7 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     if (status === 'loading') return (
         <div className="flex-1 flex items-center justify-center py-16">
-            <LoadingSpinner fullScreen={false} />
+            <LoadingSpinner fullScreen={false} message="Chargement..." />
         </div>
     );
 

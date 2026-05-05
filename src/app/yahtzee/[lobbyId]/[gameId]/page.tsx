@@ -127,7 +127,7 @@ export default function YahtzeePage() {
 
     const [hoveredCat, setHoveredCat] = useState<string | null>(null);
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (isNotFound) notFound();
 
     if (!game) return (

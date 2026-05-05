@@ -122,7 +122,7 @@ export default function AdminPanel() {
                 />
             )}
 
-            {activeTab !== 'stats' && loading && <div className="flex items-center justify-center py-16"><LoadingSpinner fullScreen={false} /></div>}
+            {activeTab !== 'stats' && loading && <div className="flex items-center justify-center py-16"><LoadingSpinner fullScreen={false} message="Chargement..." /></div>}
 
             {activeTab !== 'stats' && !loading && (
                 <>

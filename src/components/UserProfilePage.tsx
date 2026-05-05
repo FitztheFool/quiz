@@ -9,19 +9,22 @@ import QuizCard from '@/components/Quiz/QuizCard';
 import Pagination from '@/components/Pagination';
 import UserStats from '@/components/UserStats';
 import { MembersOnlyBanner } from '@/components/MembersOnlyBanner';
-import { ChartBarIcon, BookOpenIcon, Cog6ToothIcon, PencilSquareIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, BookOpenIcon, Cog6ToothIcon, PencilSquareIcon, SparklesIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
 // ── Bloc finaliser le compte ───────────────────────────────────────────────────
 
-function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
-    const { update } = useSession();
-    const router = useRouter();
+function ClaimAccountBlock({ currentUsername, isPendingVerification = false }: { currentUsername: string; isPendingVerification?: boolean }) {
+    const { data: session, update } = useSession();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState(currentUsername);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [pendingEmail, setPendingEmail] = useState('');
+    const [isPending, setIsPending] = useState(isPendingVerification);
+    const [pendingEmail, setPendingEmail] = useState(isPendingVerification ? (session?.user?.email ?? '') : '');
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const [resendLoading, setResendLoading] = useState(false);
+    const [resendRateLimited, setResendRateLimited] = useState(false);
 
     const handleClaim = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,6 +39,12 @@ function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
             const data = await res.json();
             if (!res.ok) { setError(data.error ?? 'Erreur'); return; }
             setPendingEmail(email);
+            setIsPending(true);
+            setResendCooldown(180);
+            await update();
+            const interval = setInterval(() => {
+                setResendCooldown(c => { if (c <= 1) { clearInterval(interval); return 0; } return c - 1; });
+            }, 1000);
         } catch {
             setError('Une erreur est survenue');
         } finally {
@@ -43,17 +52,44 @@ function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
         }
     };
 
-    if (pendingEmail) return (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl px-5 py-4 text-blue-700 dark:text-blue-300 font-medium text-sm">
-            Un email de vérification a été envoyé à <strong>{pendingEmail}</strong>. Cliquez sur le lien pour activer votre compte.
-        </div>
-    );
+    const handleResend = async () => {
+        if (!pendingEmail || resendCooldown > 0) return;
+        setResendLoading(true);
+        try {
+            const res = await fetch('/api/auth/resend-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: pendingEmail }),
+            });
+            const rateLimited = res.status === 429;
+            setResendRateLimited(rateLimited);
+            const cooldown = rateLimited ? 180 : res.ok ? 180 : 0;
+            if (cooldown > 0) {
+                setResendCooldown(cooldown);
+                const interval = setInterval(() => {
+                    setResendCooldown(c => { if (c <= 1) { clearInterval(interval); return 0; } return c - 1; });
+                }, 1000);
+            }
+        } catch {
+            // silencieux
+        } finally {
+            setResendLoading(false);
+        }
+    };
+
+    const wrapperCls = isPending
+        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/60'
+        : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700/60';
+    const titleCls = isPending ? 'text-blue-800 dark:text-blue-200' : 'text-amber-800 dark:text-amber-200';
+    const subtitleCls = isPending ? 'text-blue-700 dark:text-blue-300' : 'text-amber-700 dark:text-amber-300';
 
     return (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/60 rounded-2xl px-5 py-4">
-            <h2 className="text-sm font-bold text-amber-800 dark:text-amber-200 mb-1">Finaliser votre inscription</h2>
-            <p className="text-xs text-amber-700 dark:text-amber-300 mb-4">
-                Vos parties sont déjà sauvegardées. Ajoutez un email et un mot de passe pour ne pas perdre votre compte.
+        <div className={`border rounded-2xl px-5 py-4 ${wrapperCls}`}>
+            <h2 className={`text-sm font-bold mb-1 ${titleCls}`}>Finaliser votre inscription</h2>
+            <p className={`text-xs mb-4 ${subtitleCls}`}>
+                {isPending
+                    ? 'Vos parties sont déjà sauvegardées. Validez votre compte via le mail d\'inscription.'
+                    : 'Vos parties sont déjà sauvegardées. Ajoutez un email et un mot de passe pour ne pas perdre votre compte.'}
             </p>
             <form onSubmit={handleClaim} className="flex flex-col sm:flex-row gap-2">
                 <input
@@ -62,33 +98,58 @@ function ClaimAccountBlock({ currentUsername }: { currentUsername: string }) {
                     onChange={e => setUsername(e.target.value)}
                     placeholder="Pseudo"
                     maxLength={30}
-                    className="input-field text-sm flex-1"
+                    disabled={isPending}
+                    className="input-field text-sm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <input
                     type="email"
-                    value={email}
+                    value={isPending ? pendingEmail : email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="Email"
-                    required
-                    className="input-field text-sm flex-1"
+                    required={!isPending}
+                    disabled={isPending}
+                    className="input-field text-sm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <input
                     type="password"
-                    value={password}
+                    value={isPending ? '••••••' : password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Mot de passe (6 car. min.)"
-                    required
+                    required={!isPending}
                     minLength={6}
-                    className="input-field text-sm flex-1"
+                    disabled={isPending}
+                    className="input-field text-sm flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-primary text-sm px-4 py-2 whitespace-nowrap"
-                >
-                    {loading ? 'Enregistrement...' : 'Valider'}
-                </button>
+                {!isPending && (
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn-primary text-sm px-4 py-2 whitespace-nowrap"
+                    >
+                        {loading ? 'Enregistrement...' : 'Valider'}
+                    </button>
+                )}
             </form>
+            {isPending && (
+                <div className="mt-3 flex items-center gap-3">
+                    {resendCooldown > 0 ? (
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                            {resendRateLimited ? 'Trop de tentatives —' : 'Lien envoyé ✓ —'} Renvoi possible dans{' '}
+                            <span className="font-semibold">{Math.floor(resendCooldown / 60)}:{String(resendCooldown % 60).padStart(2, '0')}</span>
+                        </p>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={handleResend}
+                            disabled={resendLoading}
+                            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 underline hover:no-underline disabled:opacity-50"
+                        >
+                            <EnvelopeIcon className="w-3.5 h-3.5" />
+                            {resendLoading ? 'Envoi…' : 'Renvoyer le mail'}
+                        </button>
+                    )}
+                </div>
+            )}
             {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
         </div>
     );
@@ -159,7 +220,7 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
 
     if (loading) return (
         <div className="flex-1 flex items-center justify-center p-8">
-            <LoadingSpinner fullScreen={false} />
+            <LoadingSpinner fullScreen={false} message="Chargement du profil..." />
         </div>
     );
 
@@ -190,11 +251,11 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
             <div className="max-w-5xl mx-auto px-4 py-5 space-y-4">
                 {/* ── Bannière members only ── */}
-                {isOwnProfile && <MembersOnlyBanner />}
+                {isOwnProfile && <MembersOnlyBanner isPending={session?.user?.role !== 'GUEST' && session?.user?.status === 'PENDING'} />}
 
                 {/* ── Bloc finaliser le compte (invité) ── */}
-                {isOwnProfile && session?.user?.isAnonymous && (
-                    <ClaimAccountBlock currentUsername={username} />
+                {isOwnProfile && session?.user?.role === 'GUEST' && (
+                    <ClaimAccountBlock currentUsername={username} isPendingVerification={!session?.user?.isAnonymous && session?.user?.status === 'PENDING'} />
                 )}
 
                 {/* ── Header compact ── */}

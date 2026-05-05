@@ -196,7 +196,7 @@ export default function DiamantPage() {
         username: meInfo.username,
     });
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (gameNotFound) notFound();
     if (status !== 'authenticated') { router.push('/login'); return null; }
 

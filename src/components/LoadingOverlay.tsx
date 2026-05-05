@@ -15,7 +15,7 @@ export default function LoadingOverlay({ loading, children }: LoadingOverlayProp
         <div className={`relative transition-opacity duration-150 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center">
-                    <LoadingSpinner fullScreen={false} />
+                    <LoadingSpinner fullScreen={false} message="Chargement..." />
                 </div>
             )}
             {children}

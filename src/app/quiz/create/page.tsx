@@ -33,7 +33,7 @@ export default function NewQuizPage() {
     }, [status, session, router]);
 
     if (status === 'loading' || status === 'unauthenticated' || session?.user?.isAnonymous || !ready) {
-        return <LoadingSpinner fullScreen={false} />;
+        return <LoadingSpinner fullScreen={false} message="Chargement..." />;
     }
 
     return (

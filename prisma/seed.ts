@@ -12,6 +12,7 @@ import {
     seedTabooAttempts, seedYahtzeeAttempts, seedPuissance4Attempts,
     seedJustOneAttempts, seedBattleshipAttempts, seedDiamantAttempts,
     seedImpostorAttempts, seedSnakeAttempts, seedPacmanAttempts, seedBreakoutAttempts,
+    seedTetrisAttempts,
 } from './seed-attempts';
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
@@ -54,6 +55,7 @@ async function main() {
     await seedSnakeAttempts(prisma, allPlayers);
     await seedPacmanAttempts(prisma, allPlayers);
     await seedBreakoutAttempts(prisma, allPlayers);
+    await seedTetrisAttempts(prisma, allPlayers);
 
     console.log('\n✅ Seed dev terminé !');
 }

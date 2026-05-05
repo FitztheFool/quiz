@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 
 type QuestionType = 'TRUE_FALSE' | 'MCQ' | 'TEXT' | 'MULTI_TEXT' | 'MCQ_UNIQUE';
 
@@ -44,22 +45,6 @@ interface Category {
 // Votre route POST /api/upload reçoit un FormData avec le champ "file"
 // et retourne { url: string } (ou { secure_url: string } selon votre implémentation).
 // Adaptez l'URL et le nom du champ de retour si nécessaire.
-async function uploadToBackend(file: File): Promise<string> {
-    const body = new FormData();
-    body.append('file', file);
-
-    const res = await fetch('/api/upload', { method: 'POST', body });
-
-    if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error ?? `Erreur ${res.status} lors de l'upload`);
-    }
-
-    const data = await res.json();
-    const url = data.url ?? data.secure_url ?? data.imageUrl;
-    if (!url) throw new Error('Réponse inattendue du serveur (champ url manquant)');
-    return url as string;
-}
 
 // ─── Composant ImageUpload ────────────────────────────────────────────────────
 function ImageUpload({
@@ -87,7 +72,7 @@ function ImageUpload({
         setUploadError(null);
         setUploading(true);
         try {
-            const url = await uploadToBackend(file);
+            const url = await uploadToCloudinary(file, 'quiz');
             onChange(url);
         } catch (e: any) {
             setUploadError(e?.message ?? "Erreur lors de l'upload");

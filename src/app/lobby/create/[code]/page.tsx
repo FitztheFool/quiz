@@ -540,7 +540,7 @@ export default function LobbyCodePage() {
 
     if (warmupStatus === 'warming' || warmupStatus === 'checking') return <ServerWarmupLoader />;
     if (warmupStatus === 'error') return <ServerWarmupLoader error />;
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (status !== 'authenticated' || !session?.user?.id) return null;
 
     const me = session.user.id;

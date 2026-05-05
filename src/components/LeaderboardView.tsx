@@ -195,8 +195,7 @@ export default function LeaderboardView({ game }: Props) {
                 {/* Tableau */}
                 {initialLoading ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <LoadingSpinner fullScreen={false} />
-                        <p className="text-sm text-gray-400">Chargement du classement…</p>
+                        <LoadingSpinner fullScreen={false} message="Chargement du classement…" />
                     </div>
                 ) : leaderboard.length === 0 ? (
                     <div className="text-center py-12">

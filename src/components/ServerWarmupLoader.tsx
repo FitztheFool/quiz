@@ -24,7 +24,7 @@ export default function ServerWarmupLoader({ error }: { error?: boolean }) {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
             <div className="text-center max-w-sm w-full">
                 <div className="mx-auto mb-4">
-                    <LoadingSpinner fullScreen={false} />
+                    <LoadingSpinner fullScreen={false} message="Démarrage du serveur…" />
                 </div>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Démarrage du serveur…</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Environ 45–90 secondes</p>

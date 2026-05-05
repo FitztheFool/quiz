@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 
+export const maxDuration = 60;
+
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -17,21 +19,16 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Aucun fichier reçu' }, { status: 400 });
         }
 
-        // Convertir le File en Buffer
         const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const dataUri = `data:${file.type};base64,${base64}`;
 
-        // Upload vers Cloudinary via un stream
-        const url = await new Promise<string>((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-                { folder: 'quiz', resource_type: 'image' },
-                (error, result) => {
-                    if (error || !result) return reject(error ?? new Error('Upload échoué'));
-                    resolve(result.secure_url);
-                }
-            );
-            stream.end(buffer);
+        const result = await cloudinary.uploader.upload(dataUri, {
+            folder: 'quiz',
+            resource_type: 'image',
+            timeout: 300000,
         });
+        const url = result.secure_url;
 
         return NextResponse.json({ url });
     } catch (e: any) {

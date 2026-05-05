@@ -522,6 +522,39 @@ export async function seedImpostorAttempts(prisma: PrismaClient, players: UserLi
     console.log(`✅ ${total} parties Imposteur créées`);
 }
 
+// ─── TETRIS ───────────────────────────────────────────────────────────────────
+
+export async function seedTetrisAttempts(prisma: PrismaClient, players: UserLike[]) {
+    console.log('\n🟪 Création des attempts Tetris...');
+
+    function tetrisScore(): number {
+        const r = Math.random();
+        if (r < 0.35) return Math.floor(Math.random() * 5) * 100;                  // 0–400  (débutant)
+        if (r < 0.65) return (Math.floor(Math.random() * 15) + 5) * 100;           // 500–1900
+        if (r < 0.85) return (Math.floor(Math.random() * 30) + 20) * 100;          // 2000–4900
+        if (r < 0.95) return (Math.floor(Math.random() * 50) + 50) * 100;          // 5000–9900
+        return (Math.floor(Math.random() * 100) + 100) * 100;                      // 10000–19900 (très bon)
+    }
+
+    for (const player of players) {
+        const attemptsCount = Math.floor(Math.random() * 20) + 15; // 15–34 parties
+        for (let i = 0; i < attemptsCount; i++) {
+            await prisma.attempt.create({
+                data: {
+                    userId: player.id,
+                    score: tetrisScore(),
+                    gameType: 'TETRIS',
+                    gameId: crypto.randomUUID(),
+                    quizId: null, trapScore: 0,
+                    createdAt: daysAgo(Math.floor((i / attemptsCount) * 90), Math.floor(Math.random() * 24)),
+                },
+            });
+        }
+        console.log(`  ✅ Tetris — ${player.username} — ${attemptsCount} parties`);
+    }
+    console.log(`✅ Attempts Tetris créés pour ${players.length} joueurs`);
+}
+
 // ─── SNAKE ────────────────────────────────────────────────────────────────────
 
 export async function seedSnakeAttempts(prisma: PrismaClient, players: UserLike[]) {

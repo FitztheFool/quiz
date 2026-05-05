@@ -64,7 +64,7 @@ export default function UserStats({ username }: Props) {
 
     if (initialLoading) return (
         <div className="flex items-center justify-center py-16">
-            <LoadingSpinner fullScreen={false} />
+            <LoadingSpinner fullScreen={false} message="Chargement des statistiques..." />
         </div>
     );
 

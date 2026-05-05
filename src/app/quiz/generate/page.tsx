@@ -52,7 +52,7 @@ export default function GenerateQuizPage() {
     }, []);
 
     if (status === 'loading' || status === 'unauthenticated' || session?.user?.isAnonymous) {
-        return <LoadingSpinner fullScreen={false} />;
+        return <LoadingSpinner fullScreen={false} message="Chargement..." />;
     }
 
     const setLoadingState = (value: 'play' | 'edit' | null) => {
@@ -109,6 +109,7 @@ export default function GenerateQuizPage() {
                     randomizeQuestions: true,
                     categoryId,
                     creatorRole: 'RANDOM',
+                    imageUrl: data.imageUrl || null,
                     questions: data.questions.map((q: any) => ({
                         text: q.text,
                         type: q.type,

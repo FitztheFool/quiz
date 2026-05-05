@@ -46,6 +46,7 @@ function getSecondaryStat(type: string, stat: GameStat, hideWinRate = false): { 
 
     switch (type) {
         case 'SNAKE':
+        case 'TETRIS':
             return { value: fmt(stat.bestScore ?? stat.points), label: 'meilleur score' };
         case 'PACMAN':
         case 'BREAKOUT':
@@ -82,10 +83,10 @@ function getBar(type: string, stat: GameStat): { pct: number; label: string; win
         if (totalAnswers === 0) return null;
         const pct = Math.round((correctAnswers / totalAnswers) * 100);
         const color = pct >= 70 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-rose-500';
-        return { pct, label: `${pct}% rép.`, wins: null, color };
+        return { pct, label: '', wins: null, color };
     }
 
-    if (type === 'SNAKE' || type === 'PACMAN' || type === 'BREAKOUT') {
+    if (type === 'SNAKE' || type === 'TETRIS' || type === 'PACMAN' || type === 'BREAKOUT') {
         return { pct: 0, label: `${fmt(stat.points)} pts`, wins: null, color: 'bg-emerald-500' };
     }
 
@@ -94,7 +95,7 @@ function getBar(type: string, stat: GameStat): { pct: number; label: string; win
 
     const pct = Math.round((wins / count) * 100);
     const color = pct >= 60 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500';
-    const NO_WINS_COUNTER = new Set(['PUISSANCE4', 'BATTLESHIP']);
+    const NO_WINS_COUNTER = new Set(['PUISSANCE4', 'BATTLESHIP', 'TETRIS']);
     return { pct, label: `${pct}% vict.`, wins: NO_WINS_COUNTER.has(type) ? null : wins, color };
 }
 

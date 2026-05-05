@@ -90,7 +90,7 @@ export default function WordsTab({
             {selectedLetter && (
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-2">
                     {loadingLetter ? (
-                        <div className="flex justify-center py-6"><LoadingSpinner fullScreen={false} /></div>
+                        <div className="flex justify-center py-6"><LoadingSpinner fullScreen={false} message="Chargement..." /></div>
                     ) : letterWords.length === 0 ? (
                         <p className="text-xs text-gray-400 dark:text-gray-500 py-2">Aucun mot pour cette lettre.</p>
                     ) : letterWords.map(w => (

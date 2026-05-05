@@ -40,8 +40,8 @@ export default function GuestLoginButton({ callbackUrl = '/dashboard' }: GuestLo
             const data = await res.json();
             localStorage.setItem('guestUsername', data.username);
 
-            const result = await signIn('guest', { userId: data.userId, redirect: false });
-            if (result?.error) {
+            const result = await signIn('guest', { userId: data.userId, redirect: false }).catch(() => null);
+            if (!result || result.error) {
                 setError('Erreur lors de la connexion');
                 return;
             }

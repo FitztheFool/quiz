@@ -67,7 +67,7 @@ export default function Puissance4Page() {
 
     const [hoverCol, setHoverCol] = useState<number | null>(null);
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (isNotFound) notFound();
 
     if (!gameState || gameState.status === 'waiting') return (

@@ -37,7 +37,7 @@ export default function StatsTab({
     onPlayerClick,
 }: Props) {
     if (loadingStats && !stats) {
-        return <div className="flex items-center justify-center py-16"><LoadingSpinner fullScreen={false} /></div>;
+        return <div className="flex items-center justify-center py-16"><LoadingSpinner fullScreen={false} message="Chargement..." /></div>;
     }
     if (!stats) return null;
 

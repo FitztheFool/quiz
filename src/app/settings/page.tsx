@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useSession, signOut } from 'next-auth/react';
+import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 import Link from 'next/link';
 import { UserIcon, LockClosedIcon, SwatchIcon, SunIcon, MoonIcon, ComputerDesktopIcon, Cog6ToothIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ExclamationTriangleIcon, TrashIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
@@ -75,9 +76,12 @@ export default function SettingsPage() {
         setAvatarPreview(URL.createObjectURL(file));
         setAvatarLoading(true);
         try {
-            const formData = new FormData();
-            formData.append('avatar', file);
-            const res = await fetch(`/api/user/${u}/upload-avatar`, { method: 'POST', body: formData });
+            const cloudinaryUrl = await uploadToCloudinary(file, 'avatars');
+            const res = await fetch(`/api/user/${u}/upload-avatar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl: cloudinaryUrl }),
+            });
             const data = await res.json();
             if (!res.ok) {
                 setAvatarStatus({ type: 'error', msg: data.error ?? 'Erreur upload.' });
@@ -88,7 +92,7 @@ export default function SettingsPage() {
                 await updateSession();
             }
         } catch {
-            setAvatarStatus({ type: 'error', msg: 'Erreur réseau.' });
+            setAvatarStatus({ type: 'error', msg: 'Erreur upload.' });
             setAvatarPreview(null);
         } finally {
             setAvatarLoading(false);

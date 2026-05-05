@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
         const deleted = await prisma.user.deleteMany({
             where: {
                 isAnonymous: true,
+                role: 'GUEST',
             },
         });
 

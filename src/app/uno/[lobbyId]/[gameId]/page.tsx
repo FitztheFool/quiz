@@ -213,7 +213,7 @@ export default function UnoPage() {
         setShowColorPicker(false);
     };
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
 
     // ── Fin de partie ──────────────────────────────────────────────────────────
     if (gameState?.status === 'FINISHED') {

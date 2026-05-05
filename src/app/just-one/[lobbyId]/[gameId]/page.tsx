@@ -88,7 +88,7 @@ export default function JustOnePage() {
 
     const me = meInfo.userId;
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (isNotFound) notFound();
     if (status !== 'authenticated') return null;
 

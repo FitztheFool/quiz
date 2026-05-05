@@ -68,6 +68,7 @@ export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState<TabType>(getTabFromHash);
 
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+    const [quizzesTotal, setQuizzesTotal] = useState(0);
     const [quizzesTotalPages, setQuizzesTotalPages] = useState(0);
     const [search, setSearch] = useState('');
     const [categoryId, setCategoryId] = useState('');
@@ -106,6 +107,7 @@ export default function DashboardPage() {
             const data = await res.json();
             const list = Array.isArray(data) ? data : data.quizzes;
             setQuizzes(list);
+            setQuizzesTotal(Array.isArray(data) ? list.length : data.total);
             setQuizzesTotalPages(Array.isArray(data) ? Math.ceil(list.length / PAGE_SIZE) : data.totalPages);
             setQuizPoints((prev) => ({ ...prev, ...computePoints(list) }));
         },
@@ -181,7 +183,7 @@ export default function DashboardPage() {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
                 <div className="text-center">
-                    <LoadingSpinner />
+                    <LoadingSpinner message="Chargement des quiz..." />
                 </div>
             </div>
         );
@@ -195,7 +197,14 @@ export default function DashboardPage() {
 
             {activeTab === 'available' && (
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Quiz disponibles</h2>
+                    <div className="flex items-center gap-3 mb-4">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {plural(quizzesTotal, 'Quiz disponible', 'Quiz disponibles')}
+                        </h2>
+                        <span className="text-xs font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                            {quizzesTotal}
+                        </span>
+                    </div>
                     <div className="mb-6">
                         <QuizFilters
                             search={search}

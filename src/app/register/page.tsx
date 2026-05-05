@@ -236,7 +236,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
     return (
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={<LoadingSpinner message="Chargement..." />}>
             <RegisterForm />
         </Suspense>
     );

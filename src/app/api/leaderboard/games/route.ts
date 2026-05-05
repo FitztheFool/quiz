@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
                 const draws = data.draws;
                 const score = game === 'skyjow' || game === 'just_one' ? avgScore
                     : game === 'puissance4' || game === 'battleship' ? wins
-                    : (game === 'snake' || game === 'pacman' || game === 'breakout') ? Math.max(...data.scores)
+                    : (game === 'snake' || game === 'tetris' || game === 'pacman' || game === 'breakout') ? Math.max(...data.scores)
                         : totalScore;
                 const totalRounds = roundsByUser.get(userId) ?? 0;
                 const bestLevel = (game === 'pacman' || game === 'breakout') && data.rounds.length > 0
@@ -147,6 +147,7 @@ export async function GET(req: NextRequest) {
                     case 'impostor':
                         detail = `${totalScore} pt${totalScore > 1 ? 's' : ''} · ${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
+                    case 'tetris':
                     case 'snake':
                         detail = `${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;

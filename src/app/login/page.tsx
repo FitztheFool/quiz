@@ -1,7 +1,6 @@
 // src/app/login/page.tsx
 'use client';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { randomUsername } from '@/lib/randomUsername';
 import { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -111,9 +110,9 @@ function LoginForm() {
             const result = await signIn('guest', {
                 userId: data.userId,
                 redirect: false,
-            });
+            }).catch(() => null);
 
-            if (result?.error) {
+            if (!result || result.error) {
                 setGuestError('Erreur lors de la connexion');
                 return;
             }
@@ -374,7 +373,7 @@ function LoginForm() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={<LoadingSpinner message="Chargement..." />}>
             <LoginForm />
         </Suspense>
     );

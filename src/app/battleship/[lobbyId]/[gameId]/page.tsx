@@ -45,7 +45,7 @@ export default function BattleshipPage() {
 
     const [lastShot, setLastShot] = useState<string | null>(null);
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (gameNotFound) notFound();
     if (status !== 'authenticated') { router.push('/login'); return null; }
 

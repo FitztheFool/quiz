@@ -183,7 +183,7 @@ export default function skyjowGamePage() {
 
     // ── Render guards ──────────────────────────────────────────────────────────
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (isNotFound) notFound();
 
     // ── Écran fin de manche ────────────────────────────────────────────────────

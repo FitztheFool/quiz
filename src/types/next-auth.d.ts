@@ -10,6 +10,7 @@ declare module 'next-auth' {
       username: string;
       role: string;
       isAnonymous?: boolean;
+      status?: string;
     } & DefaultSession['user'];
   }
 
@@ -27,6 +28,7 @@ declare module 'next-auth/jwt' {
     username: string;
     role: string;
     isAnonymous?: boolean;
+    status?: string;
     error?: string;
   }
 }

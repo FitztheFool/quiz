@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, isPublic, randomizeQuestions, categoryId, imageUrl, questions } = body;
+    const { title, description, isPublic, randomizeQuestions, categoryId, imageUrl, questions, creatorRole } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Titre requis' }, { status: 400 });
@@ -95,6 +95,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Un quiz ne peut pas dépasser 15 questions.' }, { status: 400 });
     }
 
+    let creatorId = session.user.id;
+    if (creatorRole === 'RANDOM') {
+      const randomUser = await prisma.user.findUnique({ where: { email: 'random@quiz.app' }, select: { id: true } });
+      if (randomUser) creatorId = randomUser.id;
+    }
+
     const quiz = await prisma.quiz.create({
       data: {
         title,
@@ -102,7 +108,7 @@ export async function POST(request: NextRequest) {
         isPublic: isPublic ?? false,
         randomizeQuestions: randomizeQuestions ?? false,
         imageUrl: imageUrl ?? null,
-        creatorId: session.user.id,
+        creatorId,
         categoryId: categoryId ?? null,
         questions: {
           create: questions.map((q: any) => ({

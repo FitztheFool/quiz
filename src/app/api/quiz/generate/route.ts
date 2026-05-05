@@ -34,8 +34,28 @@ function validateQuizJSON(json: any): string | null {
     return null;
 }
 
+async function fetchCoverImage(query: string): Promise<string | null> {
+    const key = process.env.UNSPLASH_ACCESS_KEY;
+    if (!key) return null;
+    try {
+        const res = await fetch(
+            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
+            { headers: { Authorization: `Client-ID ${key}` }, cache: 'no-store' }
+        );
+        if (!res.ok) {
+            console.error(`[Unsplash] ${res.status} pour "${query}":`, await res.text());
+            return null;
+        }
+        const data = await res.json();
+        return data.results?.[0]?.urls?.regular ?? null;
+    } catch (e) {
+        console.error('[Unsplash] fetch error:', e);
+        return null;
+    }
+}
+
 export async function POST(req: NextRequest) {
-    const { session, error } = await requireRegistered();
+    const { error } = await requireRegistered();
     if (error) return error;
 
     const { subject, questionCount = 5, difficulty = 'normal' } = await req.json();
@@ -49,13 +69,15 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const startTime = Date.now();
+        const [completion, imageUrl] = await Promise.all([
+            groqClient.chat.completions.create({
+                model: GROQ_MODEL,
+                messages: [{ role: 'user', content: buildPrompt(subject, questionCount, difficulty) }],
+                temperature: 0.7,
+            }),
+            fetchCoverImage(subject),
+        ]);
 
-        const completion = await groqClient.chat.completions.create({
-            model: GROQ_MODEL,
-            messages: [{ role: 'user', content: buildPrompt(subject, questionCount, difficulty) }],
-            temperature: 0.7,
-        });
 
         const raw = (completion.choices[0].message.content ?? '').trim()
             .replace(/^```json\s*/i, '')
@@ -76,7 +98,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `Données invalides : ${validationError}` }, { status: 500 });
         }
 
-        return NextResponse.json({ ...json, provider: 'groq' });
+        return NextResponse.json({ ...json, imageUrl, provider: 'groq' });
 
     } catch (e: any) {
         console.error('Erreur génération Groq:', e.message);

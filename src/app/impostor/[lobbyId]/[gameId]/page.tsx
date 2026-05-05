@@ -63,7 +63,7 @@ export default function ImpostorPage() {
         onNotFound: () => setIsNotFound(true),
     });
 
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (isNotFound) notFound();
 
     // ─── Fin de partie ────────────────────────────────────────────────────────
@@ -424,5 +424,5 @@ export default function ImpostorPage() {
         );
     }
 
-    return <LoadingSpinner />;
+    return <LoadingSpinner message="Chargement du jeu..." />;
 }

@@ -112,7 +112,7 @@ export default function TabooGamePage() {
     }, [game?.attempts]);
 
     if (isNotFound) notFound();
-    if (status === 'loading') return <LoadingSpinner />;
+    if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
     if (status !== 'authenticated') return null;
     if (!game) return (
         <GameWaitingScreen gameType="taboo" gameName="Taboo" lobbyId={lobbyId} players={[]} myUserId={myId} />

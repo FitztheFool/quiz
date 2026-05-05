@@ -294,7 +294,7 @@ function LobbyWaitingRoom({
                                 : 0;
                             return (
                                 <div key={player.userId} className="flex items-center gap-3">
-                                    <LoadingSpinner fullScreen={false} />
+                                    <LoadingSpinner fullScreen={false} message="En cours..." />
                                     <div className="flex-1">
                                         <div className="mb-1 flex items-center justify-between">
                                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">

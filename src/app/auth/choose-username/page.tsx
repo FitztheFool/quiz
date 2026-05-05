@@ -63,7 +63,7 @@ function ChooseUsernameForm() {
         }
     };
 
-    if (fetching) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+    if (fetching) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner message="Chargement..." /></div>;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center px-4">
@@ -124,7 +124,7 @@ function ChooseUsernameForm() {
 
 export default function ChooseUsernamePage() {
     return (
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={<LoadingSpinner message="Chargement..." />}>
             <ChooseUsernameForm />
         </Suspense>
     );

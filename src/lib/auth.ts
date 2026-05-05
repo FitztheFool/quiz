@@ -98,6 +98,7 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async signIn({ user, account }) {
             if (account?.provider === 'oauth-completion') return true;
+            if (account?.provider === 'guest') return true;
             if (account?.provider !== 'credentials') {
                 const dbUser = await prisma.user.findFirst({
                     where: {
@@ -172,7 +173,7 @@ export const authOptions: NextAuthOptions = {
             if (token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
-                    select: { role: true, username: true, image: true, email: true, isAnonymous: true },
+                    select: { role: true, username: true, image: true, email: true, isAnonymous: true, status: true },
                 });
                 if (dbUser) {
                     token.role = dbUser.role;
@@ -180,6 +181,7 @@ export const authOptions: NextAuthOptions = {
                     if (dbUser.image) token.image = dbUser.image;
                     if (dbUser.email) token.email = dbUser.email;
                     token.isAnonymous = dbUser.isAnonymous;
+                    token.status = dbUser.status;
                 }
             }
             if (account?.error === 'RefreshAccessTokenError') {  // ✅
@@ -196,6 +198,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.image = (token.image as string) ?? null;
                 session.user.email = (token.email as string) ?? null;
                 session.user.isAnonymous = (token.isAnonymous as boolean) ?? false;
+                session.user.status = token.status as string ?? undefined;
             }
             if (token.error) {
                 session.error = token.error;

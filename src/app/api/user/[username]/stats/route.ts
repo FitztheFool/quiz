@@ -72,7 +72,7 @@ export async function GET(
         }
 
         const soloAttempts = await prisma.attempt.findMany({
-            where: { userId: user.id, gameType: { in: ['SNAKE', 'PACMAN', 'BREAKOUT'] } },
+            where: { userId: user.id, gameType: { in: ['SNAKE', 'PACMAN', 'BREAKOUT', 'TETRIS'] } },
             select: { score: true, gameType: true, rounds: true },
         });
         for (const a of soloAttempts) {

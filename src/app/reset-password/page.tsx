@@ -114,7 +114,7 @@ export default function ResetPasswordPage() {
 
                 <div className="card">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Nouveau mot de passe</h2>
-                    <Suspense fallback={<LoadingSpinner fullScreen={false} />}>
+                    <Suspense fallback={<LoadingSpinner fullScreen={false} message="Chargement..." />}>
                         <ResetPasswordForm />
                     </Suspense>
                 </div>
