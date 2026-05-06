@@ -1,108 +1,102 @@
 // src/lib/prompt.ts
+import { ModelId } from './aiModels';
+
 const POINTS_BY_DIFFICULTY: Record<
-    string,
-    { mcq: number; mcq_unique: number; true_false: number; text: number }
+  string,
+  { mcq: number; mcq_unique: number; true_false: number; text: number }
 > = {
-    facile: { mcq: 1, mcq_unique: 1, true_false: 1, text: 2 },
-    normal: { mcq: 2, mcq_unique: 2, true_false: 1, text: 3 },
-    difficile: { mcq: 3, mcq_unique: 3, true_false: 2, text: 5 },
+  facile: { mcq: 1, mcq_unique: 1, true_false: 1, text: 2 },
+  normal: { mcq: 2, mcq_unique: 2, true_false: 1, text: 3 },
+  difficile: { mcq: 3, mcq_unique: 3, true_false: 2, text: 5 },
 };
 
 export function buildPrompt(
-    subject: string,
-    questionCount: number,
-    difficulty: string
+  subject: string,
+  questionCount: number,
+  difficulty: string,
+  modelId?: ModelId   // ← Nouveau paramètre
 ): string {
-    const pts = POINTS_BY_DIFFICULTY[difficulty] ?? POINTS_BY_DIFFICULTY.normal;
+  const pts = POINTS_BY_DIFFICULTY[difficulty] ?? POINTS_BY_DIFFICULTY.normal;
 
-    const tfCount = Math.max(1, Math.floor(questionCount * 0.2));
-    const textCount = Math.max(1, Math.floor(questionCount * 0.15));
-    const mcqUniqueCount = Math.max(1, Math.floor(questionCount * 0.25));
-    const mcqCount = questionCount - tfCount - textCount - mcqUniqueCount;
+  const tfCount = Math.max(1, Math.floor(questionCount * 0.2));
+  const textCount = Math.max(1, Math.floor(questionCount * 0.15));
+  const mcqUniqueCount = Math.max(1, Math.floor(questionCount * 0.25));
+  const mcqCount = questionCount - tfCount - textCount - mcqUniqueCount;
 
-    const levelDescription = difficulty === 'facile'
-        ? 'questions accessibles à tous, vocabulaire simple, notions de base'
-        : difficulty === 'difficile'
-            ? 'questions pointues pour experts, détails précis, pièges subtils possibles'
-            : 'questions intermédiaires, culture générale solide requise';
+  const isGemini = modelId?.startsWith('gemini');
 
-    return `Tu es un expert en création de quiz pédagogiques de haute qualité.
+  const levelDescription = difficulty === 'facile'
+    ? 'niveau débutant : notions simples, vocabulaire courant'
+    : difficulty === 'difficile'
+      ? 'niveau expert : questions pointues, précises, avec pièges subtils'
+      : 'niveau intermédiaire : bonne culture générale et réflexion requises';
 
-**IMPORTANT** : Tu dois répondre **EXCLUSIVEMENT** avec un JSON valide.
-Aucun texte avant, après, aucun markdown, aucune explication, aucun commentaire.
+  const jsonInstruction = isGemini
+    ? '**Réponds EXCLUSIVEMENT avec un JSON valide.**'
+    : '**MODE STRICT JSON** : Réponds **EXCLUSIVEMENT** avec un JSON valide et parfaitement formé. Aucun texte avant ou après.';
+
+  return `Tu es un expert mondial de création de quiz pédagogiques d'excellence.
+
+${jsonInstruction}
 
 **Sujet** : "${subject}"
-**Niveau** : "${difficulty}" → ${levelDescription}
+**Difficulté** : ${difficulty} → ${levelDescription}
 **Nombre total de questions** : EXACTEMENT ${questionCount}
 
-**Répartition exacte** :
-- MCQ : ${mcqCount}
-- MCQ_UNIQUE : ${mcqUniqueCount}
-- TRUE_FALSE : ${tfCount}
-- TEXT : ${textCount}
+**Répartition obligatoire** :
+- MCQ         : ${mcqCount}
+- MCQ_UNIQUE  : ${mcqUniqueCount}
+- TRUE_FALSE  : ${tfCount}
+- TEXT        : ${textCount}
 
-**Contraintes strictes par type** :
+**RÈGLES TRÈS STRICTES** :
 
-MCQ :
+**MCQ**:
 - Exactement 4 réponses
-- Au moins 1 isCorrect: true et au moins 1 isCorrect: false
-- Plusieurs réponses correctes possibles
+- 1 ou 2 réponses correctes maximum
 
-MCQ_UNIQUE :
+**MCQ_UNIQUE**:
 - Exactement 4 réponses
-- Exactement 1 isCorrect: true, les 3 autres false
+- Exactement 1 seule réponse correcte
 
-TRUE_FALSE :
-- Exactement 2 réponses dans l'ordre : "Vrai", "Faux"
+**TRUE_FALSE**:
+- Toujours ["Vrai", "Faux"] dans cet ordre
 - Exactement une seule correcte
-- Réservé aux affirmations factuelles qui sont vraies ou fausses (ex: "La Terre est plate" → Faux)
-- INTERDIT pour les questions "A ou B ?", "ceci ou cela ?", "solo ou en groupe ?" → utiliser MCQ_UNIQUE à la place
 
-TEXT :
-- Exactement 1 réponse avec isCorrect: true
-- La réponse doit être **un seul mot ou un mot composé** (jamais une phrase)
-- Majuscules et accents autorisés et corrects
-- Ponctuation interdite sauf quand nécessaire pour les noms propres (ex: apostrophe)
-- Exemples valides : "Paris", "Léonard de Vinci", "Jeanne d'Arc", "Côte d'Ivoire", "États-Unis", "Marie Curie"
+**TEXT**:
+- Toujours **une seule réponse correcte**
+- Réponse courte : un seul mot ou expression nominale (ex: "Jeanne d'Arc", "Côte d'Ivoire", "Photosynthèse")
+- **Interdit** : plusieurs éléments séparés par des virgules
 
-**Règles globales** :
-- Questions variées et sans répétition
-- Distracteurs plausibles
-- Points : MCQ=${pts.mcq} | MCQ_UNIQUE=${pts.mcq_unique} | TRUE_FALSE=${pts.true_false} | TEXT=${pts.text}
+**Règle importante** :
+Si une question nécessite plusieurs réponses (ex: "noms des 3 amis"), utilise un **MCQ** avec plusieurs "isCorrect": true, ou reformule la question pour qu'elle ne demande qu'une seule réponse.
 
-**Images optionnelles** :
-Pour les questions qui bénéficieraient d'un support visuel (géographie, monuments, animaux, drapeaux, œuvres d'art, sciences, personnages historiques, objets reconnaissables…), ajoute un champ **imageQuery** avec une requête de recherche courte en **anglais** (2-4 mots). Environ **20 à 40 %** des questions maximum. Ne mets pas imageQuery pour les questions abstraites, de calcul ou de logique pure.
+**CRITÈRES DE QUALITÉ OBLIGATOIRES** :
+- Questions claires, variées et bien rédigées
+- Aucune redondance entre les questions
+- Distracteurs plausibles et intelligents
+- Orthographe et grammaire parfaites
+- Difficulté parfaitement adaptée
 
-Retourne uniquement ce JSON (respecte exactement la structure) :
+**Images** :
+Ajoute "imageQuery" (2-5 mots en anglais) sur 25% à 40% des questions lorsqu'une image apporte une vraie valeur pédagogique.
+
+**SCHÉMA JSON À RESPECTER EXACTEMENT** :
 
 {
-  "title": "Titre attractif du quiz",
-  "description": "Description courte (1-2 phrases)",
+  "title": string,
+  "description": string,
   "isPublic": true,
   "questions": [
     {
-      "text": "Question ?",
-      "type": "MCQ",
-      "points": ${pts.mcq},
-      "imageQuery": "eiffel tower paris",
-      "answers": [
-        {"text": "...", "isCorrect": false},
-        {"text": "...", "isCorrect": true},
-        ...
-      ]
-    },
-    {
-      "text": "Question sans image ?",
-      "type": "TRUE_FALSE",
-      "points": ${pts.true_false},
-      "answers": [
-        {"text": "Vrai", "isCorrect": true},
-        {"text": "Faux", "isCorrect": false}
-      ]
+      "text": string,
+      "type": "MCQ" | "MCQ_UNIQUE" | "TRUE_FALSE" | "TEXT",
+      "points": number,
+      "imageQuery"?: string,
+      "answers": Array<{ "text": string, "isCorrect": boolean }>
     }
-    // ... respecte exactement la répartition des types
   ]
 }
 
-Commence directement par { et termine par }.`;
+Pense étape par étape puis retourne **uniquement** le JSON.`;
 }

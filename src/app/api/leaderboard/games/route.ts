@@ -72,20 +72,22 @@ export async function GET(req: NextRequest) {
             select: { userId: true, score: true, trapScore: true, placement: true, gameId: true, rounds: true },
         });
 
-        // Pour Taboo : rounds dédupliqués par (userId, gameId) via raw SQL
-        // → 1 valeur de rounds par partie par joueur, pas de multiplication
-        const tabooRoundsByUser = game === 'taboo'
-            ? await prisma.$queryRaw<{ userId: string; total_rounds: number }[]>`
-                SELECT "userId", SUM(rounds)::int as total_rounds
-                FROM (
-                    SELECT DISTINCT "userId", "gameId", rounds
-                    FROM attempts
-                    WHERE "gameType" = 'TABOO'
-                      AND "userId" = ANY(${eligibleUserIds})
-                ) sub
-                GROUP BY "userId"
-            `
-            : [];
+        // Pour Taboo : 1 valeur de rounds par partie (distinct sur userId+gameId), puis somme par userId
+        const tabooRoundsByUser: { userId: string; total_rounds: number }[] = [];
+        if (game === 'taboo') {
+            const tabooAttempts = await prisma.attempt.findMany({
+                where: { gameType: 'TABOO', userId: { in: eligibleUserIds } },
+                select: { userId: true, gameId: true, rounds: true },
+                distinct: ['userId', 'gameId'],
+            });
+            const sumByUser = new Map<string, number>();
+            for (const a of tabooAttempts) {
+                sumByUser.set(a.userId, (sumByUser.get(a.userId) ?? 0) + (a.rounds ?? 0));
+            }
+            for (const [userId, total_rounds] of sumByUser) {
+                tabooRoundsByUser.push({ userId, total_rounds });
+            }
+        }
 
         const roundsByUser = new Map<string, number>(
             tabooRoundsByUser.map(r => [r.userId, r.total_rounds])

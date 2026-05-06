@@ -5,6 +5,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { AI_MODELS, DEFAULT_MODEL_ID, type ModelId } from '@/lib/aiModels';
 
 interface Category {
     id: string;
@@ -23,6 +24,7 @@ export default function GenerateQuizPage() {
     const [questionCount, setQuestionCount] = useState(5);
     const [categoryId, setCategoryId] = useState('');
     const [difficulty, setDifficulty] = useState('normal');
+    const [modelId, setModelId] = useState<ModelId>(DEFAULT_MODEL_ID);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loadingMode, setLoadingMode] = useState<'play' | 'edit' | null>(null);
     const loading = loadingMode !== null;
@@ -76,7 +78,7 @@ export default function GenerateQuizPage() {
             const res = await fetch('/api/quiz/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subject, questionCount, difficulty }),
+                body: JSON.stringify({ subject, questionCount, difficulty, model: modelId }),
             });
             if (!res.ok) throw new Error((await res.json()).error ?? 'Erreur de génération');
             const data = await res.json();
@@ -136,10 +138,7 @@ export default function GenerateQuizPage() {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center px-4">
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 w-full max-w-md">
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">✨ Générer un quiz</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">L'IA crée un quiz que vous pourrez modifier avant de publier.</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-6">
-                    Modèle : <span className="font-medium">Groq — Llama 3.3 70B</span>
-                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">L'IA crée un quiz que vous pourrez modifier avant de publier.</p>
 
                 {error && (
                     <div className="mb-4 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>
@@ -180,6 +179,22 @@ export default function GenerateQuizPage() {
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modèle IA</label>
+                        <select
+                            value={modelId}
+                            onChange={(e) => setModelId(e.target.value as ModelId)}
+                            disabled={loading}
+                            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {AI_MODELS.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                    {m.label} — {m.desc} ({m.badge})
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div>

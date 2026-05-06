@@ -1,10 +1,16 @@
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
-    const auth = req.headers.get('authorization');
+    const auth = req.headers.get('authorization') ?? '';
     const secret = process.env.INTERNAL_API_KEY;
-    if (!secret || auth !== `Bearer ${secret}`) {
+    const expected = `Bearer ${secret}`;
+    const authorized =
+        secret &&
+        auth.length === expected.length &&
+        timingSafeEqual(Buffer.from(auth), Buffer.from(expected));
+    if (!authorized) {
         return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
     const userId = req.nextUrl.searchParams.get('userId');

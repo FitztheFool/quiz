@@ -17,6 +17,14 @@ export async function POST(
     if (!imageUrl || typeof imageUrl !== 'string')
         return NextResponse.json({ error: 'URL image manquante.' }, { status: 400 });
 
+    let parsedUrl: URL;
+    try { parsedUrl = new URL(imageUrl); } catch {
+        return NextResponse.json({ error: 'URL invalide.' }, { status: 400 });
+    }
+    if (parsedUrl.protocol !== 'https:') {
+        return NextResponse.json({ error: 'URL invalide.' }, { status: 400 });
+    }
+
     await prisma.user.update({
         where: { id: session.user.id },
         data: { image: imageUrl },

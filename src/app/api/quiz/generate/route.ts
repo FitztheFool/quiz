@@ -1,6 +1,7 @@
 // src/app/api/quiz/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { groqClient, GROQ_MODEL } from '@/lib/openai';
+import { getClientForModel } from '@/lib/openai';
+import { AI_MODELS, DEFAULT_MODEL_ID, ModelId } from '@/lib/aiModels';
 import { buildPrompt } from '@/lib/prompt';
 import { requireRegistered } from '@/lib/authGuard';
 
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     const { error } = await requireRegistered();
     if (error) return error;
 
-    const { subject, questionCount = 5, difficulty = 'normal' } = await req.json();
+    const { subject, questionCount = 5, difficulty = 'normal', model: modelParam } = await req.json();
 
     if (questionCount > 15) {
         return NextResponse.json({ error: 'Un quiz ne peut pas dépasser 15 questions.' }, { status: 400 });
@@ -68,11 +69,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Sujet requis' }, { status: 400 });
     }
 
+    const validModelIds = AI_MODELS.map(m => m.id) as string[];
+    const modelId: ModelId = validModelIds.includes(modelParam) ? modelParam : DEFAULT_MODEL_ID;
+    const { client, modelId: resolvedModel } = getClientForModel(modelId);
+
     try {
         const [completion, imageUrl] = await Promise.all([
-            groqClient.chat.completions.create({
-                model: GROQ_MODEL,
-                messages: [{ role: 'user', content: buildPrompt(subject, questionCount, difficulty) }],
+            client.chat.completions.create({
+                model: resolvedModel,
+                messages: [{ role: 'user', content: buildPrompt(subject, questionCount, difficulty, modelId) }],
                 temperature: 0.7,
             }),
             fetchCoverImage(subject),
@@ -115,7 +120,8 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        return NextResponse.json({ ...json, imageUrl, provider: 'groq' });
+        const selectedModel = AI_MODELS.find(m => m.id === modelId)!;
+        return NextResponse.json({ ...json, imageUrl, provider: selectedModel.provider, model: modelId });
 
     } catch (e: any) {
         console.error('Erreur génération Groq:', e.message);

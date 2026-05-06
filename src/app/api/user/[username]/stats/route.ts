@@ -198,6 +198,6 @@ export async function GET(
         });
     } catch (err) {
         console.error('[stats] error:', err);
-        return NextResponse.json({ error: String(err) }, { status: 500 });
+        return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
 }

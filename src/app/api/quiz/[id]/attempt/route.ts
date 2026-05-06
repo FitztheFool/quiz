@@ -16,6 +16,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         return NextResponse.json({ ok: true, skipped: true });
     }
 
+    const quiz = await prisma.quiz.findUnique({
+        where: { id: quizId },
+        select: { isPublic: true, creatorId: true },
+    });
+
+    if (!quiz) {
+        return NextResponse.json({ error: 'Quiz introuvable' }, { status: 404 });
+    }
+
+    if (!quiz.isPublic && quiz.creatorId !== session.user.id) {
+        return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
+
     await prisma.attempt.create({
         data: {
             userId: session.user.id,

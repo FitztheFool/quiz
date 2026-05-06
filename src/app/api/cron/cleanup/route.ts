@@ -1,8 +1,16 @@
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
-    if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    const auth = req.headers.get('authorization') ?? '';
+    const secret = process.env.CRON_SECRET;
+    const expected = `Bearer ${secret}`;
+    const authorized =
+        secret &&
+        auth.length === expected.length &&
+        timingSafeEqual(Buffer.from(auth), Buffer.from(expected));
+    if (!authorized) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,6 +27,6 @@ export async function GET(req: NextRequest) {
 
     } catch (err) {
         console.error('❌ Cron failed:', err);
-        return NextResponse.json({ error: String(err) }, { status: 500 });
+        return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
 }

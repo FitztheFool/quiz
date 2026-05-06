@@ -17,11 +17,12 @@ export async function GET(request: NextRequest) {
 
     const creatorId = searchParams.get('creatorId');
 
+    const isOwnProfile = creatorId && session?.user?.id === creatorId;
     const where: any = {
       ...(search ? { title: { contains: search, mode: 'insensitive' } } : {}),
       ...(categoryId ? { categoryId } : {}),
       ...(creatorId
-        ? { creatorId }
+        ? { creatorId, ...(isOwnProfile ? {} : { isPublic: true }) }
         : onlyMine && session?.user?.id
           ? { creatorId: session.user.id }
           : { isPublic: true }),
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     let creatorId = session.user.id;
-    if (creatorRole === 'RANDOM') {
+    if (creatorRole === 'RANDOM' && session.user.role === 'ADMIN') {
       const randomUser = await prisma.user.findUnique({ where: { email: 'random@quiz.app' }, select: { id: true } });
       if (randomUser) creatorId = randomUser.id;
     }

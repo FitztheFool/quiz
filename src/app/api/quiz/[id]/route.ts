@@ -1,5 +1,6 @@
 // src/app/api/quiz/[id]/route.ts
 
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
@@ -12,9 +13,14 @@ export async function GET(
     const { id: quizId } = await params;
     const session = await auth();
 
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get('authorization') ?? '';
     const internalKey = process.env.INTERNAL_API_KEY;
-    const isInternalRequest = !!(internalKey && authHeader === `Bearer ${internalKey}`);
+    const expectedKey = `Bearer ${internalKey}`;
+    const isInternalRequest = !!(
+        internalKey &&
+        authHeader.length === expectedKey.length &&
+        timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedKey))
+    );
 
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
