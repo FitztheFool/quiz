@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
 
     const letter = req.nextUrl.searchParams.get('letter')?.toUpperCase();
     const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';
-    const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') ?? '1', 10));
-    const pageSize = parseInt(req.nextUrl.searchParams.get('pageSize') ?? String(PAGE_SIZE), 10);
+    const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') ?? '1', 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.nextUrl.searchParams.get('pageSize') ?? String(PAGE_SIZE), 10) || PAGE_SIZE));
 
     const groupId = req.nextUrl.searchParams.get('groupId')?.trim() ?? '';
 

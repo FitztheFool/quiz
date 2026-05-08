@@ -37,7 +37,7 @@ const wordGroups: Record<string, string[]> = {
     ],
     'Lieux insolites': [
         'CIMETIÈRE', 'LABORATOIRE', 'BUNKER', 'CAVERNE', 'CRYPTE', 'ÉGOUT', 'ENTREPÔT',
-        'PHARE', 'MINE', 'CHÂTEAU', 'IGLOO',
+        'MINE', 'CHÂTEAU', 'IGLOO',
     ],
     'Concepts abstraits': [
         'GRAVITÉ', 'DÉMOCRATIE', 'PARADOXE', 'RÉVOLUTION', 'RENAISSANCE', 'PROPHÉTIE', 'INFLATION', 'PANDÉMIE',
@@ -135,7 +135,7 @@ export async function seedShared(prisma: PrismaClient, randomUserId: string) {
     const musique = await prisma.category.create({ data: { name: 'Musique', slug: 'musique' } });
     const videogames = await prisma.category.create({ data: { name: 'Jeux Vidéos', slug: 'jeux-video' } });
     const litterature = await prisma.category.create({ data: { name: 'Littérature', slug: 'litterature' } });
-    await prisma.category.create({ data: { name: 'Cinéma', slug: 'cinema' } });
+    const cinema = await prisma.category.create({ data: { name: 'Cinéma', slug: 'cinema' } });
     const other = await prisma.category.create({ data: { name: 'Autre', slug: 'autre' } });
     console.log('✅ Catégories créées');
 
@@ -154,7 +154,7 @@ export async function seedShared(prisma: PrismaClient, randomUserId: string) {
     // Quiz
     await seedQuizzes(prisma, randomUserId, {
         cultureGenerale, sciences, sports, artsCulture,
-        technologie, popCulture, musique, videogames, litterature, other,
+        technologie, popCulture, musique, videogames, litterature, cinema, other,
     });
 }
 

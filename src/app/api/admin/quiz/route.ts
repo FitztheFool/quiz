@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20')));
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20', 10) || 20));
     const q = searchParams.get('q')?.trim() ?? '';
     const categoryId = searchParams.get('categoryId')?.trim() ?? '';
     const where: NonNullable<NonNullable<Parameters<typeof prisma.quiz.findMany>[0]>['where']> = {};

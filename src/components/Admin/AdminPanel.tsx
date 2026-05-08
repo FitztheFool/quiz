@@ -30,20 +30,23 @@ const SECTION_ID: Record<AdminTab, string> = {
 };
 
 const hashToTab = (hash: string): AdminTab => ({
-    '#admin-stats': 'stats', '#admin-users': 'users',
-    '#admin-quizzes': 'quizzes', '#admin-categories': 'categories',
-    '#admin-words': 'words', '#admin-word-groups': 'wordGroups',
+    '#admin-stats': 'stats',
+    '#admin-users': 'users',
+    '#admin-quizzes': 'quizzes',
+    '#admin-categories': 'categories',
+    '#admin-words': 'words',
+    '#admin-word-groups': 'wordGroups',
 } as Record<string, AdminTab>)[hash] ?? 'stats';
 
 function qs(q: string) { return q.trim() ? `&q=${encodeURIComponent(q.trim())}` : ''; }
 
 const TAB_CONFIG: { key: AdminTab; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { key: 'stats',      label: 'Statistiques',     icon: ChartBarIcon },
-    { key: 'users',      label: 'Utilisateurs',     icon: UsersIcon },
-    { key: 'quizzes',    label: 'Quiz',              icon: QuestionMarkCircleIcon },
-    { key: 'categories', label: 'Catégories',        icon: TagIcon },
-    { key: 'wordGroups', label: 'Groupes de mots',   icon: FolderOpenIcon },
-    { key: 'words',      label: 'Mots',              icon: BookOpenIcon },
+    { key: 'stats', label: 'Statistiques', icon: ChartBarIcon },
+    { key: 'users', label: 'Utilisateurs', icon: UsersIcon },
+    { key: 'categories', label: 'Catégories', icon: TagIcon },
+    { key: 'quizzes', label: 'Quiz', icon: QuestionMarkCircleIcon },
+    { key: 'wordGroups', label: 'Groupes de mots', icon: FolderOpenIcon },
+    { key: 'words', label: 'Mots', icon: BookOpenIcon },
 ];
 
 export default function AdminPanel() {
@@ -67,6 +70,9 @@ export default function AdminPanel() {
     const [wordGroups, setWordGroups] = useState<AdminWordGroup[]>([]);
     const [wordGroupsPage, setWordGroupsPage] = useState(1);
     const [wordGroupsTotalPages, setWordGroupsTotalPages] = useState(1);
+
+    const [quizCategoryFilter, setQuizCategoryFilter] = useState('');
+    const [quizCategoryName, setQuizCategoryName] = useState('');
 
     const [playerModal, setPlayerModal] = useState<{ gameId: string; players: any[] } | null>(null);
 
@@ -126,15 +132,30 @@ export default function AdminPanel() {
         if (res.ok) setWordGroups((await res.json()).groups ?? []);
     }, []);
 
+    const handleViewQuizzes = useCallback((categoryId: string) => {
+        const cat = categories.find(c => c.id === categoryId);
+        setQuizCategoryFilter(categoryId);
+        setQuizCategoryName(cat?.name ?? '');
+        setActiveTab('quizzes');
+        scrollToSection('quizzes');
+    }, [scrollToSection, categories]);
+
+    const handleViewWords = useCallback((groupId: string) => {
+        const group = wordGroups.find(g => g.id === groupId);
+        wordsHook.setWordGroupFilter(groupId);
+        setActiveTab('words');
+        scrollToSection('words');
+    }, [scrollToSection, wordGroups, wordsHook]);
+
     const fetchTab = useCallback(async (tab: AdminTab) => {
         setLoading(true);
         try {
             switch (tab) {
-                case 'users':      await usersHook.fetchUsers(1); break;
-                case 'quizzes':    await Promise.all([fetchQuizzes(1, ''), fetchCategoriesForSelect()]); break;
+                case 'users': await usersHook.fetchUsers(1); break;
+                case 'quizzes': await Promise.all([fetchQuizzes(1, ''), fetchCategoriesForSelect()]); break;
                 case 'categories': await fetchCategories(1, ''); break;
                 case 'wordGroups': await fetchWordGroups(1, ''); break;
-                case 'words':      await Promise.all([wordsHook.fetchWordIndex(), fetchWordGroupsForSelect()]); break;
+                case 'words': await Promise.all([wordsHook.fetchWordIndex(), fetchWordGroupsForSelect()]); break;
             }
         } finally { setLoading(false); }
     }, [usersHook.fetchUsers, wordsHook.fetchWordIndex, fetchQuizzes, fetchCategoriesForSelect, fetchCategories, fetchWordGroups, fetchWordGroupsForSelect]);
@@ -144,7 +165,9 @@ export default function AdminPanel() {
             setActivityPage(1); setActivityUserQuery('');
             userQueryRef.current = ''; gameFilterRef.current = 'ALL'; setGameFilter('ALL');
             fetchFull(activityPeriod, 1, '', 'ALL');
-        } else { fetchTab(activeTab); }
+        } else {
+            fetchTab(activeTab);
+        }
         scrollToSection(activeTab);
     }, [activeTab]);
 
@@ -178,11 +201,10 @@ export default function AdminPanel() {
                         <button
                             key={key}
                             onClick={() => { setActiveTab(key); scrollToSection(key); }}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${
-                                activeTab === key
-                                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
-                            }`}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${activeTab === key
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
+                                }`}
                         >
                             <Icon className="w-4 h-4 shrink-0" />
                             <span>{label}</span>
@@ -200,11 +222,10 @@ export default function AdminPanel() {
                         <button
                             key={key}
                             onClick={() => { setActiveTab(key); scrollToSection(key); }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border whitespace-nowrap transition-colors shrink-0 ${
-                                activeTab === key
-                                    ? 'bg-red-600 text-white border-red-600'
-                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border whitespace-nowrap transition-colors shrink-0 ${activeTab === key
+                                ? 'bg-red-600 text-white border-red-600'
+                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+                                }`}
                         >
                             <Icon className="w-3.5 h-3.5" />
                             {label}
@@ -217,7 +238,14 @@ export default function AdminPanel() {
                     <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
                         <activeConfig.icon className="w-4 h-4 text-red-500 dark:text-red-400" />
                     </div>
-                    <h2 className="text-base font-semibold text-gray-900 dark:text-white">{activeConfig.label}</h2>
+                    <div>
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-white">{activeConfig.label}</h2>
+                        {activeTab === 'quizzes' && quizCategoryName && (
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                Filtrés par : <span className="font-medium text-red-500">{quizCategoryName}</span>
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 {/* Tab content */}
@@ -259,7 +287,14 @@ export default function AdminPanel() {
                                 <QuizzesTab
                                     quizzes={quizzes} quizPage={quizPage} quizTotalPages={quizTotalPages}
                                     categories={quizCategories}
-                                    onFetch={fetchQuizzes}
+                                    initialCategoryId={quizCategoryFilter || undefined}
+                                    onFetch={(page, search, catId) => {
+                                        if (quizCategoryFilter && catId !== quizCategoryFilter) {
+                                            setQuizCategoryFilter('');
+                                            setQuizCategoryName('');
+                                        }
+                                        fetchQuizzes(page, search, catId);
+                                    }}
                                     onDelete={async (id, title) => {
                                         if (!confirm(`Supprimer "${title}" ?`)) return;
                                         const res = await fetch('/api/admin/quiz', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quizId: id }) });
@@ -285,12 +320,14 @@ export default function AdminPanel() {
                                         const res = await fetch('/api/admin/categories', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ categoryId: id }) });
                                         if (res.ok) fetchCategories(categoriesPage, ''); else alert((await res.json()).error);
                                     }}
+                                    onViewQuizzes={handleViewQuizzes}
                                 />
                             )}
                             {activeTab === 'wordGroups' && (
                                 <WordGroupsTab
                                     groups={wordGroups} page={wordGroupsPage} totalPages={wordGroupsTotalPages}
                                     onFetch={fetchWordGroups}
+                                    onViewWords={handleViewWords}
                                     onCreate={async theme => {
                                         const res = await fetch('/api/admin/word-groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme }) });
                                         if (res.ok) fetchWordGroups(wordGroupsPage, ''); else alert((await res.json())?.error ?? 'Erreur');

@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin();
     if (auth.error) return auth.error;
 
-    const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') ?? '1', 10));
-    const pageSize = parseInt(req.nextUrl.searchParams.get('pageSize') ?? String(PAGE_SIZE), 10);
+    const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') ?? '1', 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.nextUrl.searchParams.get('pageSize') ?? String(PAGE_SIZE), 10) || PAGE_SIZE));
     const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';
     const where = q ? { name: { contains: q, mode: 'insensitive' as const } } : {};
     const skip = (page - 1) * pageSize;

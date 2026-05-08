@@ -14,9 +14,11 @@ interface Props {
     onCreate: (name: string) => void;
     onRename: (id: string, name: string) => void;
     onDelete: (id: string, name: string) => void;
+    onViewQuizzes: (categoryId: string) => void;
 }
 
-export default function CategoriesTab({ categories = [], page, totalPages, onFetch, onCreate, onRename, onDelete }: Props) {
+export default function CategoriesTab({ categories = [], page, totalPages, onFetch, onCreate, onRename, onDelete, onViewQuizzes }: Props) {
+
     const [newName, setNewName] = useState('');
     const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
     const [search, setSearch] = useState('');
@@ -80,10 +82,14 @@ export default function CategoriesTab({ categories = [], page, totalPages, onFet
                                 />
                             ) : (
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{cat.name}</span>
-                                    <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full shrink-0 tabular-nums">
-                                        {cat._count.quizzes} {plural(cat._count.quizzes, 'quiz', 'quiz')}
-                                    </span>
+                                    {cat.name}
+                                    <button
+                                        onClick={() => onViewQuizzes(cat.id)}
+                                        className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full shrink-0 tabular-nums hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                        title="Voir les quiz de cette catégorie"
+                                    >
+                                        {cat._count.quizzes} {plural(cat._count.quizzes, 'quiz', 'quizzes')}
+                                    </button>
                                 </div>
                             )}
                             <div className="flex items-center gap-1 shrink-0">

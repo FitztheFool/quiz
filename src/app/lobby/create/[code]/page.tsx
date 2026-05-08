@@ -101,7 +101,7 @@ function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onCh
             <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
             <button type="button" onClick={() => !disabled && onChange(!checked)} disabled={disabled}
                 className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'} ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? 'trangray-x-5' : ''}`} />
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
             </button>
         </div>
     );
@@ -215,7 +215,7 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, selectedQuest
                     className={`font-sans w-full bg-gray-100 dark:bg-gray-700/60 border rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${isSelected ? 'border-green-500/60 pr-16' : 'border-gray-300 dark:border-gray-600/50'}`}
                 />
                 {isSelected && (
-                    <span className="absolute right-2 top-1/2 -trangray-y-1/2 text-xs pointer-events-none flex items-center gap-1">
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none flex items-center gap-1">
                         {selectedQuestionCount !== undefined && <span className="text-gray-400 dark:text-gray-500">({selectedQuestionCount})</span>}
                         <span>✅</span>
                     </span>

@@ -58,6 +58,11 @@ const QUIZ_IMAGE_QUERIES: Record<string, string> = {
     "Histoire de France": "france history paris revolution",
     "Biologie et Animaux": "biology animals nature wildlife",
     "Tennis et Sports de Raquette": "tennis court racket wimbledon",
+    "Les Grands Réalisateurs": "film director clapperboard movie set",
+    "Oscars & Récompenses": "oscar statuette award ceremony red carpet",
+    "Répliques Cultes": "cinema quote movie scene dramatic",
+    "Films des Années 80-90": "retro cinema vhs popcorn 80s 90s",
+    "Cinéma Français": "paris french cinema film eiffel",
     "Cinéma et Littérature": "cinema film books literature",
     "Programmation et Systèmes": "programming code computer screen",
     "Mythologie Grecque": "greek mythology olympus gods",
@@ -94,11 +99,12 @@ export async function seedQuizzes(
         popCulture: { id: string };
         musique: { id: string };
         videogames: { id: string };
-        litterature: { id: string }
+        litterature: { id: string };
+        cinema: { id: string };
         other: { id: string };
     }
 ) {
-    const { cultureGenerale, sciences, sports, artsCulture, technologie, popCulture, musique, videogames, litterature, other } = categories;
+    const { cultureGenerale, sciences, sports, artsCulture, technologie, popCulture, musique, videogames, litterature, cinema, other } = categories;
 
     const quizData: QuizData[] = [
         // ── Jeu Vidéo ──────────────────────────────────────────────────────────
@@ -622,6 +628,68 @@ export async function seedQuizzes(
                 { content: "Quel auteur a reçu le Prix Nobel de littérature en 2022 ?", type: "TEXT", points: 3, answers: [{ content: "Ernaux", isCorrect: true }] },
                 { content: "Le Booker Prize est un prix littéraire britannique", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
                 { content: "Quel romancier péruvien a obtenu le Prix Nobel de littérature en 2010 ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Pablo Neruda", isCorrect: false }, { content: "Octavio Paz", isCorrect: false }, { content: "Mario Vargas Llosa", isCorrect: true }, { content: "Jorge Amado", isCorrect: false }] },
+            ]
+        },
+
+        // ── Cinéma ─────────────────────────────────────────────────────────────
+        {
+            title: "Les Grands Réalisateurs", description: "Derrière la caméra, des génies", categoryId: cinema.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Quel réalisateur a signé 'Inception', 'Interstellar' et 'The Dark Knight' ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Ridley Scott", isCorrect: false }, { content: "Christopher Nolan", isCorrect: true }, { content: "David Fincher", isCorrect: false }, { content: "Denis Villeneuve", isCorrect: false }] },
+                { content: "Steven Spielberg a réalisé 'Jurassic Park'", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel réalisateur français a réalisé 'Amélie Poulain' ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Luc Besson", isCorrect: false }, { content: "Michel Gondry", isCorrect: false }, { content: "Jean-Pierre Jeunet", isCorrect: true }, { content: "François Truffaut", isCorrect: false }] },
+                { content: "Stanley Kubrick a réalisé '2001 : L'Odyssée de l'espace'", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel réalisateur mexicain a réalisé 'Gravity' et 'Roma' ?", type: "TEXT", points: 2, answers: [{ content: "Cuarón", isCorrect: true }, { content: "Alfonso Cuarón", isCorrect: true }] },
+                { content: "Qui a réalisé 'Pulp Fiction' (1994) ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Martin Scorsese", isCorrect: false }, { content: "Quentin Tarantino", isCorrect: true }, { content: "Joel Coen", isCorrect: false }, { content: "Robert Rodriguez", isCorrect: false }] },
+                { content: "Alfred Hitchcock est surnommé 'le maître du suspense'", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Oscars & Récompenses", description: "La nuit des cérémonies les plus suivies", categoryId: cinema.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Quel film a remporté l'Oscar du meilleur film en 2020 ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Joker", isCorrect: false }, { content: "1917", isCorrect: false }, { content: "Parasite", isCorrect: true }, { content: "Once Upon a Time in Hollywood", isCorrect: false }] },
+                { content: "'Parasite' est le premier film non anglophone à remporter l'Oscar du meilleur film", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel acteur a remporté l'Oscar du meilleur acteur pour 'The Revenant' ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Brad Pitt", isCorrect: false }, { content: "Tom Hardy", isCorrect: false }, { content: "Leonardo DiCaprio", isCorrect: true }, { content: "Matt Damon", isCorrect: false }] },
+                { content: "La cérémonie des Oscars se tient chaque année à Los Angeles", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel film détient le record de 11 Oscars remportés en une seule soirée (ex-aequo) ?", type: "MCQ_UNIQUE", points: 3, answers: [{ content: "Titanic", isCorrect: false }, { content: "Titanic, Ben-Hur et Le Seigneur des Anneaux : Le Retour du Roi", isCorrect: true }, { content: "Ben-Hur uniquement", isCorrect: false }, { content: "Avatar", isCorrect: false }] },
+                { content: "L'Oscar de la meilleure musique originale a été remporté par Ennio Morricone pour 'Les Huit Salopards'", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Dans quelle ville se trouve le Dolby Theatre, salle des cérémonies des Oscars ?", type: "TEXT", points: 1, answers: [{ content: "Los Angeles", isCorrect: true }, { content: "hollywood", isCorrect: true }] },
+            ]
+        },
+        {
+            title: "Répliques Cultes", description: "Vous connaissez les films, prouvez-le", categoryId: cinema.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Dans quel film entend-on 'Je serai de retour' ('I'll be back') ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "RoboCop", isCorrect: false }, { content: "Predator", isCorrect: false }, { content: "Terminator", isCorrect: true }, { content: "Total Recall", isCorrect: false }] },
+                { content: "'Houston, on a un problème' est une réplique du film 'Apollo 13'", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Dans quel film dit-on 'La vie, c'est comme une boîte de chocolats' ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Big", isCorrect: false }, { content: "Cast Away", isCorrect: false }, { content: "Forrest Gump", isCorrect: true }, { content: "Philadelphia", isCorrect: false }] },
+                { content: "La réplique 'Tu ne peux pas gérer la vérité !' vient du film 'A Few Good Men'", type: "TRUE_FALSE", points: 2, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Dans quel film Hannibal Lecter dit-il 'Un chianti avec des fèves et du foie' ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Seven", isCorrect: false }, { content: "Le Silence des Agneaux", isCorrect: true }, { content: "Hannibal", isCorrect: false }, { content: "Red Dragon", isCorrect: false }] },
+                { content: "La réplique 'Voici Johnny !' vient du film 'The Shining' de Kubrick", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel film culte contient la réplique 'Sage comme une image, douce comme un agneau' en français… et 'Why so serious?' en VO ?", type: "TEXT", points: 2, answers: [{ content: "The Dark Knight", isCorrect: true }, { content: "dark knight", isCorrect: true }] },
+            ]
+        },
+        {
+            title: "Films des Années 80-90", description: "Une décennie de films cultes inoubliables", categoryId: cinema.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Dans quel film de 1985 Marty McFly voyage-t-il dans le temps ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Retour vers le futur", isCorrect: true }, { content: "Philadelphia Experiment", isCorrect: false }, { content: "Peggy Sue s'est mariée", isCorrect: false }, { content: "Le temps de l'innocence", isCorrect: false }] },
+                { content: "'E.T. l'extra-terrestre' a été réalisé par Steven Spielberg", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel film de 1994 met en scène un lion nommé Simba ?", type: "TEXT", points: 1, answers: [{ content: "Le Roi Lion", isCorrect: true }, { content: "the lion king", isCorrect: true }] },
+                { content: "Dans 'Matrix' (1999), quelle pilule Neo doit-il avaler pour voir la vérité ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "La pilule bleue", isCorrect: false }, { content: "La pilule rouge", isCorrect: true }, { content: "La pilule verte", isCorrect: false }, { content: "La pilule blanche", isCorrect: false }] },
+                { content: "Le film 'Ghost' (1990) met en vedette Patrick Swayze et Demi Moore", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel film de Tim Burton sorti en 1989 met en scène un super-héros à cape noire ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Superman", isCorrect: false }, { content: "Batman", isCorrect: true }, { content: "Darkman", isCorrect: false }, { content: "The Crow", isCorrect: false }] },
+                { content: "Qui joue Hannibal Lecter dans 'Le Silence des Agneaux' (1991) ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Anthony Hopkins", isCorrect: true }, { content: "Gary Oldman", isCorrect: false }, { content: "Jeremy Irons", isCorrect: false }, { content: "Brian Cox", isCorrect: false }] },
+            ]
+        },
+        {
+            title: "Cinéma Français", description: "De la Nouvelle Vague aux blockbusters tricolores", categoryId: cinema.id, isPublic: true, randomizeQuestions: true,
+            questions: [
+                { content: "Quel film français est le plus gros succès du cinéma hexagonal avec plus de 20 millions d'entrées ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Les Intouchables", isCorrect: false }, { content: "Bienvenue chez les Ch'tis", isCorrect: true }, { content: "Astérix et Obélix : Mission Cléopâtre", isCorrect: false }, { content: "La Grande Vadrouille", isCorrect: false }] },
+                { content: "Jean-Luc Godard est l'un des pionniers de la Nouvelle Vague française", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel acteur français incarne Léon dans le film 'Léon' de Luc Besson (1994) ?", type: "MCQ_UNIQUE", points: 1, answers: [{ content: "Gérard Depardieu", isCorrect: false }, { content: "Jean Reno", isCorrect: true }, { content: "Daniel Auteuil", isCorrect: false }, { content: "Vincent Cassel", isCorrect: false }] },
+                { content: "Le film 'Les Choristes' (2004) se déroule dans un internat pour garçons difficiles", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
+                { content: "Quel réalisateur français a signé 'La Haine' (1995) ?", type: "TEXT", points: 2, answers: [{ content: "Kassovitz", isCorrect: true }, { content: "Mathieu Kassovitz", isCorrect: true }] },
+                { content: "Quel acteur a joué à la fois dans 'Astérix', 'Le Dîner de cons' et 'Les Visiteurs' ?", type: "MCQ_UNIQUE", points: 2, answers: [{ content: "Christian Clavier", isCorrect: true }, { content: "Gérard Jugnot", isCorrect: false }, { content: "Thierry Lhermitte", isCorrect: false }, { content: "Jacques Villeret", isCorrect: false }] },
+                { content: "Le Festival de Cannes décerne la Palme d'Or comme récompense suprême", type: "TRUE_FALSE", points: 1, answers: [{ content: "Vrai", isCorrect: true }, { content: "Faux", isCorrect: false }] },
             ]
         },
     ];
