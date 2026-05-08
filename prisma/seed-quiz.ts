@@ -694,6 +694,11 @@ export async function seedQuizzes(
         },
     ];
 
+    for (let i = quizData.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [quizData[i], quizData[j]] = [quizData[j], quizData[i]];
+    }
+
     console.log(`\n🎯 Création de ${quizData.length} quiz...`);
     let createdCount = 0;
 

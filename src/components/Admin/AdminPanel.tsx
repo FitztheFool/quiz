@@ -25,17 +25,17 @@ import {
 
 const PAGE_SIZE = 20;
 const SECTION_ID: Record<AdminTab, string> = {
-    stats: 'admin-stats', users: 'admin-users', quizzes: 'admin-quizzes',
-    categories: 'admin-categories', words: 'admin-words', wordGroups: 'admin-word-groups',
+    stats: 'stats', users: 'users', quizzes: 'quizzes',
+    categories: 'categories', words: 'words', wordGroups: 'word-groups',
 };
 
 const hashToTab = (hash: string): AdminTab => ({
-    '#admin-stats': 'stats',
-    '#admin-users': 'users',
-    '#admin-quizzes': 'quizzes',
-    '#admin-categories': 'categories',
-    '#admin-words': 'words',
-    '#admin-word-groups': 'wordGroups',
+    '#stats': 'stats',
+    '#users': 'users',
+    '#quizzes': 'quizzes',
+    '#categories': 'categories',
+    '#words': 'words',
+    '#word-groups': 'wordGroups',
 } as Record<string, AdminTab>)[hash] ?? 'stats';
 
 function qs(q: string) { return q.trim() ? `&q=${encodeURIComponent(q.trim())}` : ''; }

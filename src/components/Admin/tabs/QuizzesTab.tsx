@@ -42,7 +42,7 @@ export default function QuizzesTab({ quizzes, quizPage, quizTotalPages, categori
     }, [categoryId]);
 
     return (
-        <div id="admin-quizzes" className="scroll-mt-24 space-y-4">
+        <div id="quizzes" className="scroll-mt-24 space-y-4">
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex gap-2">
                 <input
                     type="text"
