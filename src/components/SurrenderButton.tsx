@@ -1,13 +1,21 @@
+'use client';
 // src/components/SurrenderButton.tsx
+import { useRouter } from 'next/navigation';
 import { FlagIcon } from '@heroicons/react/24/outline';
 
 export default function SurrenderButton({ onSurrender, disabled }: {
     onSurrender: () => void;
     disabled?: boolean;
 }) {
+    const router = useRouter();
     return (
         <button
-            onClick={() => { if (!disabled && confirm('Abandonner la partie ?')) onSurrender(); }}
+            onClick={() => {
+                if (!disabled && confirm('Abandonner la partie ?')) {
+                    onSurrender();
+                    router.push('/');
+                }
+            }}
             disabled={disabled}
             className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all border ${
                 disabled

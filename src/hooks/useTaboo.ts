@@ -63,6 +63,7 @@ export function useTaboo({
     const startGameSentRef = useRef(false);
 
     const [game, setGame] = useState<TabooState | null>(null);
+    const [kickedPlayers, setKickedPlayers] = useState<{ userId: string; username: string; team: 0 | 1 | null }[]>([]);
 
     // Host auto-start: start trap once both words are set
     useEffect(() => {
@@ -118,6 +119,15 @@ export function useTaboo({
 
         socket.on('notFound', onNotFound);
         socket.on('taboo:state', (state: TabooState) => setGame(state));
+        socket.on('taboo:playerKicked', ({ userId: uid }: { userId: string }) => {
+            setGame(current => {
+                if (current) {
+                    const p = current.players.find(pl => pl.userId === uid);
+                    if (p) setKickedPlayers(prev => prev.some(k => k.userId === uid) ? prev : [...prev, { userId: uid, username: p.username, team: p.team }]);
+                }
+                return current;
+            });
+        });
 
         socket.on('taboo:requestWords', async ({ count }: { count: number }) => {
             const res = await fetch(`/api/taboo/word?count=${count}`);
@@ -146,6 +156,7 @@ export function useTaboo({
             socket.off('notFound', onNotFound);
             socket.off('connect', join);
             socket.off('taboo:state');
+            socket.off('taboo:playerKicked');
             socket.off('taboo:requestWords');
             socket.off('taboo:needWords');
             joinedRef.current = false;
@@ -153,5 +164,5 @@ export function useTaboo({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lobbyId, userId]);
 
-    return { socketRef, game };
+    return { socketRef, game, kickedPlayers };
 }

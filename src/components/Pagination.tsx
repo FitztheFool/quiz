@@ -6,7 +6,7 @@ interface PaginationProps {
 }
 
 export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  if (!totalPages || !currentPage || totalPages <= 1) return null;
 
   const getPages = () => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -32,19 +32,18 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
         ← Précédent
       </button>
 
-      {pages.map((page, i) =>
-        page === '...' ? (
-          <span key={`ellipsis-${i}`} className="px-2 text-gray-400">…</span>
-        ) : (
-          <button key={page} onClick={() => onPageChange(page)}
-            className={`w-10 h-10 rounded-lg font-semibold transition-colors ${page === currentPage
+      {pages.map((p, i) => {
+        if (p === '...') return <span key={`e-${i}`} className="px-2 text-gray-400">…</span>;
+        return (
+          <button key={p} onClick={() => onPageChange(p)}
+            className={`w-10 h-10 rounded-lg font-semibold transition-colors ${p === currentPage
               ? 'bg-blue-600 text-white shadow-md'
               : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}>
-            {page}
+            }`}>
+            {p}
           </button>
-        )
-      )}
+        );
+      })}
 
       <button
         onClick={() => onPageChange(currentPage + 1)}

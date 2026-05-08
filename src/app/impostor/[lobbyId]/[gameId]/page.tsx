@@ -12,7 +12,7 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
-import { TrophyIcon, FaceFrownIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, FaceFrownIcon, CheckCircleIcon, XCircleIcon, ShieldExclamationIcon, UserIcon, EyeSlashIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -40,7 +40,12 @@ export default function ImpostorPage() {
         revealedClues,
         isLastRound,
         votedFor,
+        pendingVoteFor,
         votedCount,
+        misterWhiteEnabled,
+        mrWhiteVotedFor,
+        pendingMrWhiteVotedFor,
+        mrWhiteVoteCount,
         guessInput,
         setGuessInput,
         guessSubmitted,
@@ -51,9 +56,12 @@ export default function ImpostorPage() {
         timerDuration,
         inactivityUserId,
         inactivityEndsAt,
+        kickedPlayerIds,
         submitClue,
-        requestUnmask,
         vote,
+        voteMrWhite,
+        confirmVote,
+        requestUnmask,
         guessWord,
         surrender,
     } = useImpostor({
@@ -99,7 +107,7 @@ export default function ImpostorPage() {
                         const votedCorrectly = votedForId === gameEnd.impostorId;
                         return (
                             <div key={p.id} className="flex justify-between items-center px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 gap-2">
-                                <span className="text-gray-700 dark:text-gray-300 text-sm flex-shrink-0">{i + 1}. {p.name}{p.id === gameEnd.impostorId ? ' 🕵️' : ''}</span>
+                                <span className="text-gray-700 dark:text-gray-300 text-sm flex-shrink-0 flex items-center gap-1">{i + 1}. {p.name}{p.id === gameEnd.impostorId ? <EyeSlashIcon className="w-3.5 h-3.5 text-red-400" /> : null}</span>
                                 {votedForName && p.id !== gameEnd.impostorId && (
                                     <span className={`text-xs truncate ${votedCorrectly ? 'text-green-400' : 'text-gray-500'}`}>
                                         → {votedForName}
@@ -127,7 +135,7 @@ export default function ImpostorPage() {
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Historique des indices</p>
                             {ordered.map(p => (
                                 <div key={p.id} className="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                    <span className="text-gray-500 dark:text-gray-400 text-xs">{p.name}{p.id === gameEnd.impostorId ? ' 🕵️' : ''} — </span>
+                                    <span className="text-gray-500 dark:text-gray-400 text-xs inline-flex items-center gap-1">{p.name}{p.id === gameEnd.impostorId ? <EyeSlashIcon className="w-3 h-3 text-red-400" /> : null} — </span>
                                     <span className="text-gray-800 dark:text-gray-200 text-sm italic">{p.clues.join(', ')}</span>
                                 </div>
                             ))}
@@ -159,7 +167,7 @@ export default function ImpostorPage() {
             right={<>
                 {role && (
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${role === 'impostor' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30' : 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30'}`}>
-                        {role === 'impostor' ? '🎭 Imposteur' : '🧑 Joueur'}
+                        {role === 'impostor' ? <><ShieldExclamationIcon className="w-3.5 h-3.5 inline mr-1" />Imposteur</> : <><UserIcon className="w-3.5 h-3.5 inline mr-1" />Joueur</>}
                     </span>
                 )}
                 {roundState !== 'WAITING' && roundState !== 'END' && <SurrenderButton onSurrender={surrender} />}
@@ -174,7 +182,7 @@ export default function ImpostorPage() {
             ${role === 'impostor'
                 ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
                 : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'}`}>
-            <span className="text-2xl">{role === 'impostor' ? '🎭' : '🧑'}</span>
+            {role === 'impostor' ? <ShieldExclamationIcon className="w-8 h-8 flex-shrink-0" /> : <UserIcon className="w-8 h-8 flex-shrink-0" />}
             <div>
                 <div className="font-bold">{role === 'impostor' ? "Vous êtes l'imposteur !" : 'Vous êtes un joueur normal'}</div>
                 {role === 'player' && word && <div>Mot secret : <span className="font-bold text-blue-600 dark:text-blue-400">{word}</span></div>}
@@ -256,14 +264,16 @@ export default function ImpostorPage() {
                                     const allForPlayer = clue?.text ? [...past, clue.text] : past;
                                     const done = !!clue;
                                     const current = id === currentSpeakerId;
+                                    const kicked = kickedPlayerIds.includes(id);
                                     return (
                                         <div key={id} className={`flex items-start justify-between gap-2 px-3 py-1.5 rounded-lg text-sm transition-all
-                                            ${current ? 'bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold'
-                                                : done ? 'text-gray-400 dark:text-gray-500'
-                                                    : 'text-gray-600 dark:text-gray-400'}`}>
+                                            ${kicked ? 'opacity-50 text-gray-400 dark:text-gray-500'
+                                                : current ? 'bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold'
+                                                    : done ? 'text-gray-400 dark:text-gray-500'
+                                                        : 'text-gray-600 dark:text-gray-400'}`}>
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                                 <span className="w-5 text-center text-xs flex-shrink-0 flex items-center justify-center">{done ? <CheckCircleIcon className="w-3.5 h-3.5" /> : current ? <span className="text-blue-500">›</span> : i + 1}</span>
-                                                <span className={done ? 'line-through' : ''}>{p?.name ?? id}{id === me.userId ? ' (moi)' : ''}</span>
+                                                <span className={kicked || done ? 'line-through' : ''}>{p?.name ?? id}{id === me.userId ? ' (moi)' : ''}</span>
                                                 {inactivityUserId === id && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
                                             </div>
                                             {allForPlayer.length > 0 && (
@@ -344,28 +354,81 @@ export default function ImpostorPage() {
                 <main className="p-4 flex flex-col items-center">
                     <div className="w-full max-w-lg space-y-4">
                         {roleBanner}
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="font-bold text-gray-900 dark:text-white">Vote final</h2>
-                                <span className="text-xs text-gray-400">{votedCount}/{players.length}</span>
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 space-y-5">
+                            {/* Vote impostor */}
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="font-bold text-gray-900 dark:text-white">Qui est l'imposteur ?</h2>
+                                    <span className="text-xs text-gray-400">{votedCount}/{players.length}</span>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    {players.filter(p => p.id !== me.userId).map(p => {
+                                        const kicked = kickedPlayerIds.includes(p.id);
+                                        const isPending = pendingVoteFor === p.id;
+                                        const isConfirmed = votedFor === p.id;
+                                        return (
+                                            <button key={p.id} disabled={!!votedFor || kicked}
+                                                onClick={() => !kicked && vote(p.id)}
+                                                className={`w-full py-3 px-4 rounded-xl font-medium transition-all text-left
+                                                    ${kicked ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400'
+                                                        : isConfirmed ? 'bg-red-500 text-white cursor-not-allowed'
+                                                            : isPending ? 'bg-red-500/15 border border-red-500/50 text-red-600 dark:text-red-400'
+                                                                : votedFor ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                                                                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-red-500/10 border border-transparent text-gray-700 dark:text-gray-300'}`}>
+                                                <span className="flex items-center gap-2">
+                                                    <span className={kicked ? 'line-through' : ''}>{p.name}</span>
+                                                    {isConfirmed && <span className="text-xs opacity-75">← votre vote</span>}
+                                                    {inactivityUserId === p.id && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 mb-4">Qui est l'imposteur ?</p>
-                            <div className="flex flex-col gap-2">
-                                {players.filter(p => p.id !== me.userId).map(p => (
-                                    <button key={p.id} disabled={!!votedFor}
-                                        onClick={() => vote(p.id)}
-                                        className={`w-full py-3 px-4 rounded-xl font-medium transition-all text-left
-                                            ${votedFor === p.id ? 'bg-red-500 text-white'
-                                                : votedFor ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                                                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-red-500/10 border border-transparent text-gray-700 dark:text-gray-300'}`}>
-                                        <span className="flex items-center gap-2">
-                                            {p.name}{votedFor === p.id ? ' ← votre vote' : ''}
-                                            {inactivityUserId === p.id && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                            {votedFor && <p className="text-center text-sm text-gray-400 mt-3">En attente des autres…</p>}
+
+                            {/* Vote Mr White */}
+                            {misterWhiteEnabled && (
+                                <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5"><UserCircleIcon className="w-4 h-4" /> Qui est le Mister White ?</h2>
+                                        <span className="text-xs text-gray-400">{mrWhiteVoteCount}/{players.length}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {players.filter(p => p.id !== me.userId).map(p => {
+                                            const kicked = kickedPlayerIds.includes(p.id);
+                                            const isPending = pendingMrWhiteVotedFor === p.id;
+                                            const isConfirmed = mrWhiteVotedFor === p.id;
+                                            return (
+                                                <button key={p.id} disabled={!!mrWhiteVotedFor || kicked}
+                                                    onClick={() => !kicked && voteMrWhite(p.id)}
+                                                    className={`w-full py-3 px-4 rounded-xl font-medium transition-all text-left
+                                                        ${kicked ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400'
+                                                            : isConfirmed ? 'bg-orange-500 text-white cursor-not-allowed'
+                                                                : isPending ? 'bg-orange-500/15 border border-orange-500/50 text-orange-600 dark:text-orange-400'
+                                                                    : mrWhiteVotedFor ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                                                                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-orange-500/10 border border-transparent text-gray-700 dark:text-gray-300'}`}>
+                                                    <span className="flex items-center gap-2">
+                                                        <span className={kicked ? 'line-through' : ''}>{p.name}</span>
+                                                        {isConfirmed && <span className="text-xs opacity-75">← votre vote</span>}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Confirm button */}
+                            {!votedFor ? (
+                                <button
+                                    disabled={!pendingVoteFor}
+                                    onClick={confirmVote}
+                                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white">
+                                    Valider les votes
+                                </button>
+                            ) : (
+                                <p className="text-center text-sm text-gray-400">En attente des autres…</p>
+                            )}
                         </div>
                     </div>
                 </main>
@@ -384,7 +447,7 @@ export default function ImpostorPage() {
                 <main className="p-4 flex flex-col items-center">
                     <div className="w-full max-w-lg">
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center space-y-4">
-                            <div className="text-4xl">🕵️</div>
+                            <MagnifyingGlassIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500" />
                             <h2 className="font-bold text-gray-900 dark:text-white text-lg">
                                 {isImpostor ? 'Vous avez été démasqué !' : `${impostorGuessName} a été démasqué !`}
                             </h2>
@@ -411,10 +474,10 @@ export default function ImpostorPage() {
                                 <p className="text-green-500 font-medium text-sm">Réponse envoyée…</p>
                             )}
                             {wordGuessResult && (
-                                <div className={`rounded-xl px-4 py-3 font-semibold text-sm ${wordGuessResult.correct ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+                                <div className={`rounded-xl px-4 py-3 font-semibold text-sm flex items-center gap-2 ${wordGuessResult.correct ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
                                     {wordGuessResult.correct
-                                        ? `✅ Bonne réponse ! Le mot était « ${wordGuessResult.word} »`
-                                        : `❌ Mauvaise réponse. Le mot était « ${wordGuessResult.word} »`}
+                                        ? <><CheckCircleIcon className="w-5 h-5 flex-shrink-0" /> Bonne réponse ! Le mot était « {wordGuessResult.word} »</>
+                                        : <><XCircleIcon className="w-5 h-5 flex-shrink-0" /> Mauvaise réponse. Le mot était « {wordGuessResult.word} »</>}
                                 </div>
                             )}
                         </div>

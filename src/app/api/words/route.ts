@@ -4,18 +4,16 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
     try {
-        const words = await prisma.word.findMany();
+        const groups = await prisma.wordGroup.findMany({ include: { words: true } });
 
-        // Mélanger
-        const shuffled = words
-            .map(w => w.word)
-            .sort(() => Math.random() - 0.5);
-
-        // Grouper par 5
-        const cards = [];
-        for (let i = 0; i + 5 <= shuffled.length; i += 5) {
-            cards.push({ words: shuffled.slice(i, i + 5) });
-        }
+        const cards = groups
+            .filter(g => g.words.length > 0)
+            .sort(() => Math.random() - 0.5)
+            .map(g => ({
+                id: g.id,
+                theme: g.theme,
+                words: g.words.map(w => w.word).sort(() => Math.random() - 0.5),
+            }));
 
         return NextResponse.json(cards);
     } catch (err) {

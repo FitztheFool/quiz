@@ -3,15 +3,18 @@
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
 import { useSession } from 'next-auth/react';
-import { LockClosedIcon } from '@heroicons/react/24/outline';
+import {
+    LockClosedIcon, MagnifyingGlassIcon, TrashIcon,
+    ShieldExclamationIcon, ShieldCheckIcon, UserGroupIcon,
+} from '@heroicons/react/24/outline';
 import type { AdminUser, UserSort } from '../types';
 
 const ROLES = ['GUEST', 'USER', 'RANDOM', 'ADMIN'] as const;
 
 const PROVIDER_LABELS: Record<string, { label: string; className: string }> = {
-    credentials: { label: 'Email', className: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
-    google: { label: 'Google', className: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800' },
-    discord: { label: 'Discord', className: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' },
+    credentials: { label: 'Email',   className: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
+    google:      { label: 'Google',  className: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800' },
+    discord:     { label: 'Discord', className: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' },
 };
 
 function ProviderBadge({ provider }: { provider: string }) {
@@ -43,165 +46,133 @@ interface Props {
 export default function UsersTab({
     users, userPage, userTotalPages,
     userQuery, setUserQuery, userSort, setUserSort,
-    userRole, setUserRole,
-    userStatus, setUserStatus,
+    userRole, setUserRole, userStatus, setUserStatus,
     onPageChange, onRoleChange, onToggleBan, onDeleteUser, onDeleteGuests,
 }: Props) {
     const { data: session } = useSession();
 
+    const selectCls = 'text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg px-3 py-2 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-red-400';
+
     return (
         <div id="admin-users" className="scroll-mt-24 space-y-4">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex flex-wrap gap-2 items-center">
-                <input
-                    type="text"
-                    value={userQuery}
-                    onChange={e => setUserQuery(e.target.value)}
-                    placeholder="Rechercher (username ou email)…"
-                    className="flex-1 min-w-0 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-400"
-                />
-                <select
-                    value={userSort}
-                    onChange={e => setUserSort(e.target.value as UserSort)}
-                    className="text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300"
-                >
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2 items-center">
+                <div className="relative flex-1 min-w-[200px]">
+                    <MagnifyingGlassIcon className="absolute inset-y-0 left-3 my-auto w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={userQuery}
+                        onChange={e => setUserQuery(e.target.value)}
+                        placeholder="Rechercher (username ou email)…"
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                </div>
+                <select value={userSort} onChange={e => setUserSort(e.target.value as UserSort)} className={selectCls}>
                     <option value="createdAt_desc">Plus récents</option>
                     <option value="createdAt_asc">Plus anciens</option>
                     <option value="username_asc">Username A → Z</option>
                     <option value="username_desc">Username Z → A</option>
                 </select>
-                <select
-                    value={userRole || 'ALL'}
-                    onChange={e => setUserRole(e.target.value === 'ALL' ? '' : e.target.value)}
-                    className="text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300"
-                >
+                <select value={userRole || 'ALL'} onChange={e => setUserRole(e.target.value === 'ALL' ? '' : e.target.value)} className={selectCls}>
                     <option value="ALL">Tous les rôles</option>
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
-                <select
-                    value={userStatus || 'ALL'}
-                    onChange={e => setUserStatus(e.target.value === 'ALL' ? '' : e.target.value)}
-                    className="text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300"
-                >
+                <select value={userStatus || 'ALL'} onChange={e => setUserStatus(e.target.value === 'ALL' ? '' : e.target.value)} className={selectCls}>
                     <option value="ALL">Tous les statuts</option>
                     <option value="ACTIVE">Actif</option>
-                    <option value="PENDING">En attente de confirmation du mail</option>
+                    <option value="PENDING">En attente</option>
                     <option value="BANNED">Banni</option>
                     <option value="DEACTIVATED">Désactivé</option>
                 </select>
                 {session?.user?.role === 'ADMIN' && (
                     <button
                         onClick={onDeleteGuests}
-                        className="text-xs font-semibold px-3 py-1.5 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors whitespace-nowrap"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors whitespace-nowrap"
                     >
+                        <UserGroupIcon className="w-4 h-4" />
                         Supprimer les guests
                     </button>
                 )}
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
-                <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+            {/* Table */}
+            <div className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-white dark:bg-gray-900">
-                            <tr className="text-left">
-                                {['', 'Utilisateur', 'Email', 'Provider', 'Inscrit le', 'Vu le', 'Modifié le'].map(h => (
-                                    <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
+                        <thead>
+                            <tr className="bg-gray-50 dark:bg-gray-800 text-left">
+                                {['', 'Utilisateur', 'Email', 'Provider', 'Inscrit le', 'Vu le'].map(h => (
+                                    <th key={h} className="px-4 py-2.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                                 ))}
-                                <th className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                <th className="px-4 py-2.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                                     <span className="inline-flex items-center gap-1">
                                         Statut
                                         <span className="relative group">
-                                            <span className="cursor-help text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-[11px] font-bold leading-none">ⓘ</span>
+                                            <span className="cursor-help text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">ⓘ</span>
                                             <div className="absolute left-1/2 -translate-x-1/2 top-5 z-50 hidden group-hover:block w-56 bg-gray-900 dark:bg-gray-700 text-white text-[11px] rounded-lg shadow-lg p-3 normal-case tracking-normal font-normal">
-                                                <p className="mb-1"><span className="font-semibold text-green-400">Actif</span> / <span className="font-semibold text-red-400">Banni</span> — désactivation admin, bloque la connexion.</p>
-                                                <p><span className="font-semibold text-orange-400">Désactivé</span> — auto-désactivation par l'utilisateur, réactivée à la reconnexion.</p>
+                                                <p className="mb-1"><span className="font-semibold text-green-400">Actif</span> / <span className="font-semibold text-red-400">Banni</span> — désactivation admin.</p>
+                                                <p><span className="font-semibold text-orange-400">Désactivé</span> — auto-désactivation utilisateur.</p>
                                             </div>
                                         </span>
                                     </span>
                                 </th>
                                 {['Rôle', 'Actions'].map(h => (
-                                    <th key={h} className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
+                                    <th key={h} className="px-4 py-2.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{h}</th>
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                        <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50 bg-white dark:bg-gray-900">
                             {users.length === 0 ? (
-                                <tr><td colSpan={10} className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">Aucun utilisateur trouvé</td></tr>
+                                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">Aucun utilisateur trouvé</td></tr>
                             ) : users.map(user => (
-                                <tr key={user.id} className="hover:bg-white dark:hover:bg-gray-900 transition-colors">
-
-                                    {/* Avatar */}
-                                    <td className="px-3 py-2">
+                                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                    <td className="px-4 py-2.5">
                                         {user.image
-                                            ? <img src={user.image} className="w-8 h-8 rounded-lg object-cover border border-gray-100 dark:border-gray-800" />
-                                            : <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{user.username[0]?.toUpperCase()}</div>}
+                                            ? <img src={user.image} className="w-8 h-8 rounded-lg object-cover border border-gray-100 dark:border-gray-700" />
+                                            : <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0">{user.username[0]?.toUpperCase()}</div>}
                                     </td>
-
-                                    {/* Username */}
-                                    <td className="px-3 py-2 font-semibold text-xs">
+                                    <td className="px-4 py-2.5 font-semibold text-xs whitespace-nowrap">
                                         <Link href={session?.user?.username === user.username ? '/dashboard' : `/user/${user.username}`} className="text-blue-600 dark:text-blue-400 hover:underline">{user.username}</Link>
                                     </td>
-
-                                    {/* Email */}
-                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{user.email}</td>
-
-                                    {/* Provider */}
-                                    <td className="px-3 py-2">
+                                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{user.email}</td>
+                                    <td className="px-4 py-2.5">
                                         <div className="flex flex-wrap gap-1">
                                             {user.providers.length === 0
-                                                ? <span className="text-[10px] text-gray-400 dark:text-gray-600">—</span>
-                                                : user.providers.map(p => <ProviderBadge key={p} provider={p} />)
-                                            }
+                                                ? <span className="text-[10px] text-gray-400">—</span>
+                                                : user.providers.map(p => <ProviderBadge key={p} provider={p} />)}
                                         </div>
                                     </td>
-
-                                    {/* Inscrit le */}
-                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(user.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-
-                                    {/* Vu le */}
-                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                        {user.lastSeen ? new Date(user.lastSeen).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap tabular-nums">
+                                        {new Date(user.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                     </td>
-
-                                    {/* Modifié le */}
-                                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                        {user.updatedAt ? new Date(user.updatedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap tabular-nums">
+                                        {user.lastSeen ? new Date(user.lastSeen).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
                                     </td>
-
-                                    {/* Statut */}
-                                    <td className="px-3 py-2">
-                                        <div className="flex flex-col gap-1">
-                                            {user.status === 'BANNED' ? (
-                                                <span className="text-[10px] font-semibold whitespace-nowrap text-red-600 dark:text-red-400">
-                                                    Banni {user.bannedAt ? `le ${new Date(user.bannedAt).toLocaleDateString('fr-FR')}` : ''}
-                                                </span>
-                                            ) : user.status === 'DEACTIVATED' ? (
-                                                <span className="text-[10px] font-semibold whitespace-nowrap text-orange-500 dark:text-orange-400">
-                                                    Compte désactivé {user.deactivatedAt ? `le ${new Date(user.deactivatedAt).toLocaleDateString('fr-FR')}` : ''}
-                                                </span>
-                                            ) : user.status === 'PENDING' ? (
-                                                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">En attente de confirmation du mail</span>
-                                            ) : (
-                                                <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">Actif</span>
-                                            )}
-                                        </div>
+                                    <td className="px-4 py-2.5">
+                                        {user.status === 'BANNED' ? (
+                                            <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 whitespace-nowrap">Banni</span>
+                                        ) : user.status === 'DEACTIVATED' ? (
+                                            <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 whitespace-nowrap">Désactivé</span>
+                                        ) : user.status === 'PENDING' ? (
+                                            <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 whitespace-nowrap">En attente</span>
+                                        ) : (
+                                            <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">Actif</span>
+                                        )}
                                     </td>
-
-                                    {/* Rôle */}
-                                    <td className="px-3 py-2">
+                                    <td className="px-4 py-2.5">
                                         {user.role === 'ADMIN' ? (
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800">
-                                                ADMIN <LockClosedIcon className="w-3 h-3 opacity-60 inline" />
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800">
+                                                ADMIN <LockClosedIcon className="w-3 h-3 opacity-60" />
                                             </span>
                                         ) : (
                                             <select
                                                 value={user.role}
                                                 onChange={e => onRoleChange(user.id, e.target.value)}
-                                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${user.role === 'RANDOM'
-                                                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
-                                                    : user.role === 'GUEST'
-                                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'
-                                                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                                                    }`}
+                                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                                    user.role === 'RANDOM' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
+                                                    : user.role === 'GUEST' ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'
+                                                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
+                                                }`}
                                             >
                                                 {ROLES.map(r => (
                                                     <option key={r} value={r} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-normal">{r}</option>
@@ -209,37 +180,39 @@ export default function UsersTab({
                                             </select>
                                         )}
                                     </td>
-
-                                    {/* Actions */}
-                                    <td className="px-3 py-2">
+                                    <td className="px-4 py-2.5">
                                         {user.role !== 'ADMIN' && (
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => onToggleBan(user.id, user.status === 'BANNED')}
-                                                    className={`text-[10px] font-semibold px-2 py-0.5 border rounded-lg transition-colors ${user.status === 'BANNED'
-                                                        ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                                        : 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                        }`}
+                                                    className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 border rounded-lg transition-colors ${
+                                                        user.status === 'BANNED'
+                                                            ? 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                                            : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                                                    }`}
                                                 >
-                                                    {user.status === 'BANNED' ? 'Débannir' : 'Bannir'}
+                                                    {user.status === 'BANNED'
+                                                        ? <><ShieldCheckIcon className="w-3 h-3" />Débannir</>
+                                                        : <><ShieldExclamationIcon className="w-3 h-3" />Bannir</>
+                                                    }
                                                 </button>
                                                 <button
                                                     onClick={() => onDeleteUser(user.id, user.username)}
-                                                    className="text-[10px] font-semibold text-red-500 hover:text-red-700 px-2 py-0.5 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 dark:text-red-400 px-2 py-1 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                                                 >
+                                                    <TrashIcon className="w-3 h-3" />
                                                     Supprimer
                                                 </button>
                                             </div>
                                         )}
                                     </td>
-
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-                <Pagination currentPage={userPage} totalPages={userTotalPages} onPageChange={onPageChange} />
             </div>
+            <Pagination currentPage={userPage} totalPages={userTotalPages} onPageChange={onPageChange} />
         </div>
     );
 }

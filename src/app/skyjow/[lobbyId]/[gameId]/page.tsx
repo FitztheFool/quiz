@@ -287,7 +287,7 @@ export default function skyjowGamePage() {
                                         <span className={`font-bold ${s.userId === userId ? 'text-amber-600 dark:text-amber-300' : 'text-gray-800 dark:text-white'}`}>
                                             {s.username}{s.userId === userId && ' (moi)'}
                                         </span>
-                                        {disq && <span className="text-xs bg-orange-500/30 text-orange-400 px-1.5 py-0.5 rounded">{isAfk ? '⌛ AFK' : '🚫 Abandon'}</span>}
+                                        {disq && <span className="text-xs bg-orange-500/30 text-orange-400 px-1.5 py-0.5 rounded flex items-center gap-0.5">{isAfk ? <><ClockIcon className="w-3 h-3" />AFK</> : <><NoSymbolIcon className="w-3 h-3" />Abandon</>}</span>}
                                     </div>
                                     <span className={`font-black text-xl ${i === 0 && !disq ? 'text-amber-500 dark:text-amber-400' : 'text-gray-600 dark:text-gray-300'}`}>
                                         {s.totalScore} pts

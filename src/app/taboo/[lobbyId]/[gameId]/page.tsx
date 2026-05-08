@@ -12,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
 import { useTaboo } from '@/hooks/useTaboo';
 import { TrapPhase } from '@/components/TrapPhase';
+import { NoSymbolIcon } from '@heroicons/react/24/outline';
 
 import { useChat } from '@/context/ChatContext';
 import { plural } from '@/lib/utils';
@@ -81,12 +82,12 @@ const TABOO_LEFT = (
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function TabooGamePage() {
-    const { session, status, router, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
+    const { session, status, router, lobbyId, isNotFound, setIsNotFound } = useGamePage();
 
     const myId = session?.user?.id ?? '';
     const username = session?.user?.username ?? session?.user?.email ?? 'User';
 
-    const { socketRef, game } = useTaboo({
+    const { socketRef, game, kickedPlayers } = useTaboo({
         lobbyId,
         userId: myId,
         username,
@@ -148,7 +149,7 @@ export default function TabooGamePage() {
                         <div className="flex items-center gap-2">
                             <span className="hidden sm:inline text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Phase pièges</span>
                             <button
-                                onClick={() => { if (confirm('Abandonner la partie ?')) socketRef.current?.emit('taboo:surrender'); }}
+                                onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                                 className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                             >
                                 <span className="hidden sm:inline">🏳️ Abandonner</span>
@@ -192,7 +193,7 @@ export default function TabooGamePage() {
                 : 'text-orange-600 dark:text-orange-400';
 
         const wordJustPlayed = teamWhoJustPlayed === 0 ? game.team0Word : game.team1Word;
-        const trapsUsed = teamWhoJustPlayed === 0 ? game.team1Traps : game.team0Traps;
+        const trapsUsed = game.currentTraps.filter(t => t);
 
         return (
             <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
@@ -204,7 +205,7 @@ export default function TabooGamePage() {
                         <div className="flex items-center gap-2">
                             <span className="hidden sm:inline">Round </span><span className="whitespace-nowrap">{game.round}/{game.totalRounds}</span>
                             <button
-                                onClick={() => { if (confirm('Abandonner la partie ?')) socketRef.current?.emit('taboo:surrender'); }}
+                                onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                                 className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                             >
                                 <span className="hidden sm:inline">🏳️ Abandonner</span>
@@ -227,13 +228,13 @@ export default function TabooGamePage() {
                             </p>
                         </div>
 
-                        {trapsUsed.filter(t => t).length > 0 && (
+                        {trapsUsed.length > 0 && (
                             <div className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
-                                <p className="text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-2">🚫 Mots piégés</p>
+                                <p className="text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-2">Mots piégés</p>
                                 <div className="flex flex-wrap gap-1 justify-center">
-                                    {trapsUsed.filter(t => t).map((t, i) => (
-                                        <span key={i} className="text-xs bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-500/30 px-2 py-1 rounded-full">
-                                            🚫 {t}
+                                    {trapsUsed.map((t, i) => (
+                                        <span key={i} className="text-xs bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-500/30 px-2 py-1 rounded-full font-semibold">
+                                            {t}
                                         </span>
                                     ))}
                                 </div>
@@ -282,7 +283,7 @@ export default function TabooGamePage() {
                         <div className="flex items-center gap-2">
                             <span className="hidden sm:inline">Round </span><span className="whitespace-nowrap">{game.round}/{game.totalRounds}</span>
                             <button
-                                onClick={() => { if (confirm('Abandonner la partie ?')) socketRef.current?.emit('taboo:surrender'); }}
+                                onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                                 className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                             >
                                 <span className="hidden sm:inline">🏳️ Abandonner</span>
@@ -337,17 +338,27 @@ export default function TabooGamePage() {
                                 </div>
                                 {game.currentTraps.length > 0 && (
                                     <div className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
-                                        <p className="text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-2">🚫 Vos mots piégés</p>
+                                        <p className="text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1 justify-center"><NoSymbolIcon className="w-3 h-3" /> Vos mots piégés</p>
                                         <div className="flex flex-wrap gap-1 justify-center">
                                             {game.currentTraps.map((t, i) => (
-                                                <span key={i} className="text-xs bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-500/30 px-2 py-1 rounded-full">
-                                                    🚫 {t}
+                                                <span key={i} className="text-xs bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-500/30 px-2 py-1 rounded-full flex items-center gap-0.5">
+                                                    <NoSymbolIcon className="w-3 h-3 flex-shrink-0" />{t}
                                                 </span>
                                             ))}
                                         </div>
                                     </div>
                                 )}
                             </>
+                        )}
+
+                        {kickedPlayers.length > 0 && (
+                            <div className="flex flex-wrap gap-1 justify-center">
+                                {kickedPlayers.map(p => (
+                                    <span key={p.userId} className="px-2 py-1 rounded-lg text-xs font-semibold line-through opacity-50 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-400 dark:text-white/30">
+                                        {p.username}
+                                    </span>
+                                ))}
+                            </div>
                         )}
 
                         {isCurrentTeam && (
@@ -416,7 +427,7 @@ export default function TabooGamePage() {
                     <div className="flex items-center gap-2">
                         <span className="whitespace-nowrap text-xs sm:text-sm"><span className="hidden sm:inline">Round </span>{game.round}/{game.totalRounds}</span>
                         <button
-                            onClick={() => { if (confirm('Abandonner la partie ?')) socketRef.current?.emit('taboo:surrender'); }}
+                            onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                             className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                         >
                             🏳️ <span className="hidden sm:inline">Abandonner</span>
@@ -425,8 +436,11 @@ export default function TabooGamePage() {
                 }
             />
 
-            <div className="shrink-0 px-4 py-1.5 bg-white/50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-400 text-center">
-                🎤 Orateur : <span className="font-semibold text-gray-900 dark:text-white">{currentOratorUsername}</span>
+            <div className="shrink-0 px-4 py-1.5 bg-white/50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-400 text-center flex items-center justify-center gap-3 flex-wrap">
+                <span>🎤 Orateur : <span className="font-semibold text-gray-900 dark:text-white">{currentOratorUsername}</span></span>
+                {kickedPlayers.map(p => (
+                    <span key={p.userId} className="line-through opacity-50">{p.username}</span>
+                ))}
             </div>
 
             <TimerBar endsAt={game.turnDeadline ?? undefined} duration={game.turnDuration} paused={game.paused} />
@@ -503,7 +517,7 @@ export default function TabooGamePage() {
                         {game.currentTraps.length > 0 && (
                             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
                                 <div className="p-5 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-center">
-                                    <p className="text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-3">🚫 Vos mots piégés</p>
+                                    <p className="text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-3 flex items-center gap-1 justify-center"><NoSymbolIcon className="w-3 h-3" /> Vos mots piégés</p>
                                     <div className="flex flex-wrap gap-2 justify-center">
                                         {game.currentTraps.map((t, i) => (
                                             <span key={i} className="text-sm bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-500/30 px-3 py-1.5 rounded-full font-semibold">
@@ -538,7 +552,7 @@ export default function TabooGamePage() {
                 )}
             </div>
 
-            {game.phase === 'finished' && !modalDismissed && (() => {
+            {game.phase === 'finished' && (() => {
                 const scores = Object.entries(game.scores).sort((a, b) => b[1] - a[1]);
                 const isDraw = scores.length >= 2 && scores[0][1] === scores[1][1];
                 const winner = scores[0];
@@ -548,7 +562,6 @@ export default function TabooGamePage() {
                         subtitle={isDraw ? 'Égalité !' : `Victoire de l'équipe ${winner[0] === '0' ? '🔵 Bleue' : '🔴 Rouge'} !`}
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                         onLeave={() => router.push('/')}
-                        onClose={() => setModalDismissed(true)}
                         asModal
                     >
                         <div className="flex gap-4 justify-center">

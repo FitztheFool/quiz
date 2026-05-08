@@ -1,7 +1,7 @@
 // src/page.tsx
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getUnoSocket } from '@/lib/socket';
@@ -10,6 +10,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameIcon from '@/components/GameIcon';
 import SurrenderButton from '@/components/SurrenderButton';
+import { NoSymbolIcon } from '@heroicons/react/24/outline';
 
 type CardColor = 'red' | 'green' | 'blue' | 'yellow' | 'wild';
 type Card = { id: string; color: CardColor; value: string };
@@ -70,8 +71,8 @@ const COLOR_TEXT: Record<string, string> = {
     red: '🔴', green: '🟢', blue: '🔵', yellow: '🟡',
 };
 
-const VALUE_LABEL: Record<string, string> = {
-    skip: '🚫', reverse: '🔄', draw2: '+2', wild: '🌈', wild4: '+4',
+const VALUE_LABEL: Record<string, ReactNode> = {
+    skip: <NoSymbolIcon className="w-5 h-5" />, reverse: '🔄', draw2: '+2', wild: '🌈', wild4: '+4',
 };
 
 const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -111,6 +112,7 @@ export default function UnoPage() {
     const [inactivitySeconds, setInactivitySeconds] = useState<number | null>(null);
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
     const inactivityIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const [kickedPlayers, setKickedPlayers] = useState<{ userId: string; username: string }[]>([]);
 
     const me = useMemo(() => ({
         userId: session?.user?.id ?? '',
@@ -147,7 +149,8 @@ export default function UnoPage() {
             }, 1000);
         };
 
-        const onPlayerKicked = () => {
+        const onPlayerKicked = ({ userId, username }: { userId: string; username: string }) => {
+            setKickedPlayers(prev => prev.some(p => p.userId === userId) ? prev : [...prev, { userId, username }]);
             setInactivitySeconds(null);
             setInactivityUserId(null);
             if (inactivityIntervalRef.current) {
@@ -384,6 +387,11 @@ export default function UnoPage() {
                         </div>
                     );
                 })}
+                {kickedPlayers.filter(k => k.userId !== me.userId).map(p => (
+                    <div key={p.userId} className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 opacity-50">
+                        <span className="text-sm font-semibold line-through text-gray-400">{p.username}</span>
+                    </div>
+                ))}
             </div>
 
             {/* Zone centrale */}

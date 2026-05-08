@@ -32,6 +32,7 @@ export function useJustOne({
 }) {
     const socket = useMemo(() => getJustOneSocket(), []);
     const joinedRef = useRef(false);
+    const playersRef = useRef<Player[]>([]);
 
     const [players, setPlayers] = useState<Player[]>([]);
     const [guesserId, setGuesserId] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export function useJustOne({
     const [currentWordIndex, setCurrentWordIndex] = useState<number | null>(null);
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
     const [inactivityEndsAt, setInactivityEndsAt] = useState<number | null>(null);
+    const [kickedPlayers, setKickedPlayers] = useState<{ id: string; name: string }[]>([]);
 
     const isGuesser = guesserId === userId;
 
@@ -80,7 +82,10 @@ export function useJustOne({
         socket.emit('just_one:join', { lobbyId, playerName: username, userId });
 
         socket.on('notFound', onNotFound);
-        socket.on('just_one:players', ({ players: ps }: { players: Player[] }) => setPlayers(ps));
+        socket.on('just_one:players', ({ players: ps }: { players: Player[] }) => {
+            playersRef.current = ps;
+            setPlayers(ps);
+        });
 
         socket.on('just_one:roundStart', (payload: {
             guesserId: string; guesserName: string; card?: { words: string[] };
@@ -143,7 +148,11 @@ export function useJustOne({
             setInactivityEndsAt(Date.now() + secondsLeft * 1000);
         });
 
-        socket.on('just_one:playerKicked', ({ userId: uid }: { userId: string }) => {
+        socket.on('just_one:playerKicked', ({ userId: uid, username }: { userId: string; username?: string }) => {
+            const name = username ?? playersRef.current.find(p => p.id === uid)?.name ?? uid;
+            playersRef.current = playersRef.current.filter(p => p.id !== uid);
+            setKickedPlayers(kp => kp.some(p => p.id === uid) ? kp : [...kp, { id: uid, name }]);
+            setPlayers(prev => prev.filter(p => p.id !== uid));
             setInactivityUserId(prev => prev === uid ? null : prev);
             setInactivityEndsAt(null);
         });
@@ -220,6 +229,7 @@ export function useJustOne({
         currentWordIndex,
         inactivityUserId,
         inactivityEndsAt,
+        kickedPlayers,
         isGuesser,
         pickWord,
         submitClue,

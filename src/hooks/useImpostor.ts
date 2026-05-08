@@ -22,6 +22,11 @@ export type GameEndPayload = {
     impostorGuess?: string | null;
     impostorGuessCorrect?: boolean;
     allClues?: { round: number; clues: Clue[] }[];
+    misterWhiteEnabled?: boolean;
+    misterWhiteId?: string | null;
+    misterWhiteName?: string | null;
+    misterWhiteWord?: string | null;
+    mrWhiteCaught?: boolean;
 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -39,6 +44,13 @@ export function useImpostor({
 }) {
     const socket = getImpostorSocket();
     const joinedRef = useRef(false);
+
+    // Refs for timer auto-submit (avoid stale closures)
+    const pendingVoteRef = useRef<string | null>(null);
+    const pendingMrWhiteRef = useRef<string | null>(null);
+    const votedForRef = useRef<string | null>(null);
+    const mrWhiteVotedRef = useRef<string | null>(null);
+    const misterWhiteEnabledRef = useRef(false);
 
     const [players, setPlayers] = useState<Player[]>([]);
     const [role, setRole] = useState<Role | null>(null);
@@ -63,7 +75,12 @@ export function useImpostor({
     const [isLastRound, setIsLastRound] = useState(false);
 
     const [votedFor, setVotedFor] = useState<string | null>(null);
+    const [pendingVoteFor, setPendingVoteFor] = useState<string | null>(null);
     const [votedCount, setVotedCount] = useState(0);
+    const [misterWhiteEnabled, setMisterWhiteEnabled] = useState(false);
+    const [mrWhiteVotedFor, setMrWhiteVotedFor] = useState<string | null>(null);
+    const [pendingMrWhiteVotedFor, setPendingMrWhiteVotedFor] = useState<string | null>(null);
+    const [mrWhiteVoteCount, setMrWhiteVoteCount] = useState(0);
 
     const [guessInput, setGuessInput] = useState('');
     const [guessSubmitted, setGuessSubmitted] = useState(false);
@@ -75,6 +92,7 @@ export function useImpostor({
     const [timerDuration, setTimerDuration] = useState(60);
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
     const [inactivityEndsAt, setInactivityEndsAt] = useState<number | null>(null);
+    const [kickedPlayerIds, setKickedPlayerIds] = useState<string[]>([]);
 
     function startTimer(seconds: number) {
         setTimerDuration(seconds);
@@ -91,8 +109,8 @@ export function useImpostor({
         socket.on('notFound', onNotFound);
         socket.on('impostor:players', ({ players }: { players: Player[] }) => setPlayers(players));
 
-        socket.on('impostor:gameStart', ({ role, word, players, totalRounds, speakingOrder }: {
-            role: Role; word: string | null; players: Player[]; totalRounds: number; speakingOrder: string[];
+        socket.on('impostor:gameStart', ({ role, word, players, totalRounds, speakingOrder, misterWhiteEnabled: mwe }: {
+            role: Role; word: string | null; players: Player[]; totalRounds: number; speakingOrder: string[]; misterWhiteEnabled?: boolean;
         }) => {
             setRole(role);
             setWord(word);
@@ -100,6 +118,7 @@ export function useImpostor({
             setTotalRounds(totalRounds);
             setSpeakingOrder(speakingOrder);
             setPastCluesByPlayer({});
+            setMisterWhiteEnabled(!!mwe);
         });
 
         socket.on('impostor:writingPhase', ({ round, totalRounds, speakingOrder, players }: {
@@ -160,18 +179,24 @@ export function useImpostor({
             setUnmaskThreshold(threshold);
         });
 
-        socket.on('impostor:votingPhase', ({ players: ps, round, timePerRound }: {
-            players: Player[]; round: number; timePerRound: number;
+        socket.on('impostor:votingPhase', ({ players: ps, round, timePerRound, misterWhiteEnabled: mwe }: {
+            players: Player[]; round: number; timePerRound: number; misterWhiteEnabled?: boolean;
         }) => {
             setPlayers(ps);
             setCurrentRound(round);
-            setVotedFor(null);
+            setVotedFor(null); votedForRef.current = null;
+            setPendingVoteFor(null); pendingVoteRef.current = null;
             setVotedCount(0);
+            setMrWhiteVotedFor(null); mrWhiteVotedRef.current = null;
+            setPendingMrWhiteVotedFor(null); pendingMrWhiteRef.current = null;
+            setMrWhiteVoteCount(0);
+            setMisterWhiteEnabled(!!mwe); misterWhiteEnabledRef.current = !!mwe;
             setRoundState('VOTING');
             startTimer(timePerRound ?? 60);
         });
 
         socket.on('impostor:voteUpdate', ({ votedCount: vc }: { votedCount: number }) => setVotedCount(vc));
+        socket.on('impostor:mrWhiteVoteUpdate', ({ mrWhiteVotedCount: vc }: { mrWhiteVotedCount: number }) => setMrWhiteVoteCount(vc));
 
         socket.on('impostor:guessPhase', ({ impostorName }: { impostorId: string; impostorName: string }) => {
             setImpostorGuessName(impostorName);
@@ -197,6 +222,7 @@ export function useImpostor({
         });
 
         socket.on('impostor:playerKicked', ({ userId: uid }: { userId: string }) => {
+            setKickedPlayerIds(prev => prev.includes(uid) ? prev : [...prev, uid]);
             setInactivityUserId(prev => prev === uid ? null : prev);
             setInactivityEndsAt(null);
         });
@@ -217,6 +243,7 @@ export function useImpostor({
             socket.off('impostor:unmaskVoteUpdate');
             socket.off('impostor:votingPhase');
             socket.off('impostor:voteUpdate');
+            socket.off('impostor:mrWhiteVoteUpdate');
             socket.off('impostor:guessPhase');
             socket.off('impostor:wordGuessResult');
             socket.off('impostor:finished');
@@ -242,8 +269,29 @@ export function useImpostor({
     }, [socket, lobbyId]);
 
     const vote = useCallback((targetId: string) => {
-        setVotedFor(targetId);
-        socket?.emit('impostor:vote', { lobbyId, targetId });
+        if (votedForRef.current) return;
+        pendingVoteRef.current = targetId;
+        setPendingVoteFor(targetId);
+    }, []);
+
+    const voteMrWhite = useCallback((targetId: string) => {
+        if (mrWhiteVotedRef.current) return;
+        pendingMrWhiteRef.current = targetId;
+        setPendingMrWhiteVotedFor(targetId);
+    }, []);
+
+    const confirmVote = useCallback(() => {
+        if (!pendingVoteRef.current || votedForRef.current) return;
+        const target = pendingVoteRef.current;
+        votedForRef.current = target;
+        setVotedFor(target);
+        socket?.emit('impostor:vote', { lobbyId, targetId: target });
+        if (misterWhiteEnabledRef.current && pendingMrWhiteRef.current && !mrWhiteVotedRef.current) {
+            const mrTarget = pendingMrWhiteRef.current;
+            mrWhiteVotedRef.current = mrTarget;
+            setMrWhiteVotedFor(mrTarget);
+            socket?.emit('impostor:voteMrWhite', { lobbyId, targetId: mrTarget });
+        }
     }, [socket, lobbyId]);
 
     const guessWord = useCallback(() => {
@@ -251,6 +299,28 @@ export function useImpostor({
         setGuessSubmitted(true);
         socket?.emit('impostor:guessWord', { lobbyId, guess: guessInput.trim() });
     }, [socket, lobbyId, guessInput]);
+
+    // Auto-submit pending votes ~500ms before server timer fires
+    useEffect(() => {
+        if (roundState !== 'VOTING' || !timerEndsAt) return;
+        const remaining = timerEndsAt - Date.now() - 500;
+        if (remaining <= 0) return;
+        const id = setTimeout(() => {
+            if (pendingVoteRef.current && !votedForRef.current) {
+                const target = pendingVoteRef.current;
+                votedForRef.current = target;
+                setVotedFor(target);
+                socket?.emit('impostor:vote', { lobbyId, targetId: target });
+            }
+            if (misterWhiteEnabledRef.current && pendingMrWhiteRef.current && !mrWhiteVotedRef.current) {
+                const mrTarget = pendingMrWhiteRef.current;
+                mrWhiteVotedRef.current = mrTarget;
+                setMrWhiteVotedFor(mrTarget);
+                socket?.emit('impostor:voteMrWhite', { lobbyId, targetId: mrTarget });
+            }
+        }, remaining);
+        return () => clearTimeout(id);
+    }, [timerEndsAt, roundState, socket, lobbyId]);
 
     const surrender = useCallback(() => {
         socket?.emit('impostor:surrender');
@@ -277,7 +347,12 @@ export function useImpostor({
         revealedClues,
         isLastRound,
         votedFor,
+        pendingVoteFor,
         votedCount,
+        misterWhiteEnabled,
+        mrWhiteVotedFor,
+        pendingMrWhiteVotedFor,
+        mrWhiteVoteCount,
         guessInput,
         setGuessInput,
         guessSubmitted,
@@ -288,9 +363,12 @@ export function useImpostor({
         timerDuration,
         inactivityUserId,
         inactivityEndsAt,
+        kickedPlayerIds,
         submitClue,
-        requestUnmask,
         vote,
+        voteMrWhite,
+        confirmVote,
+        requestUnmask,
         guessWord,
         surrender,
     };

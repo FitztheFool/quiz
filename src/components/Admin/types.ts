@@ -1,5 +1,5 @@
 export type UserSort = 'createdAt_desc' | 'createdAt_asc' | 'username_asc' | 'username_desc';
-export type AdminTab = 'stats' | 'users' | 'quizzes' | 'categories' | 'words';
+export type AdminTab = 'stats' | 'users' | 'quizzes' | 'categories' | 'words' | 'wordGroups';
 
 export interface AdminUser {
     status: 'ACTIVE' | 'BANNED' | 'DEACTIVATED' | 'PENDING';
@@ -28,6 +28,12 @@ export interface AdminQuiz {
         questions: number;
         attempts: number
     };
+}
+
+export interface AdminWordGroup {
+    id: string;
+    theme: string;
+    _count: { words: number };
 }
 
 export interface AdminCategory {

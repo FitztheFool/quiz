@@ -106,8 +106,8 @@ export const GAME_CONFIG = {
         scoreLabel: 'Points',
         description: "Un imposteur se cache parmi vous — saurez-vous le démasquer ?",
         players: '4 – 8 joueurs',
-        rules: "Les joueurs normaux reçoivent un mot secret et donnent des indices sans se trahir. L'imposteur, qui ignore le mot, doit improviser et se fondre dans la masse. Après les tours de parole, tout le monde vote pour éliminer le suspect. L'imposteur est éliminé lorsqu'il reçoit le plus de votes.",
-        score: "<p>Imposteur éliminé (pluralité — pas besoin de majorité absolue) : <ul><li>+2 pts pour chaque joueur ayant voté pour lui</li><li>+1 pts par joueur de l'équipe</li></ul></p><br><p>Vote raté : <ul><li>+3 pts pour l'imposteur</li><li>+1 pts par joueur ayant voté pour lui</li></ul></p><br><p>Dans tous les cas, l'imposteur peut tenter de deviner le mot mystère après le vote. S'il devine correctement : +2 pts et il remporte la manche malgré l'élimination. Le classement est basé sur le total de points cumulés.</p>",
+        rules: "Les joueurs normaux reçoivent un mot secret et donnent des indices sans se trahir. L'imposteur, qui ignore le mot, doit improviser et se fondre dans la masse. En option, un Mister White reçoit un mot différent mais de la même catégorie — il ne sait pas qu'il est Mister White. Après les tours de parole, tout le monde vote pour éliminer l'imposteur et (si l'option est activée) le Mister White.",
+        score: "<p>Imposteur éliminé : <ul><li>+2 pts pour chaque joueur ayant voté pour lui</li><li>+1 pt par joueur de l'équipe</li></ul></p><br><p>Vote raté : <ul><li>+3 pts pour l'imposteur</li><li>+1 pt par joueur ayant quand même voté pour lui</li></ul></p><br><p>Mister White (si option activée) : <ul><li>Non identifié : +2 pts pour le Mister White</li><li>Identifié : +1 pt pour chaque joueur ayant voté pour lui</li></ul></p><br><p>Dans tous les cas, l'imposteur peut tenter de deviner le mot mystère après le vote. S'il devine correctement : +2 pts et il remporte la manche malgré l'élimination. Le classement est basé sur le total de points cumulés.</p>",
     },
     snake: {
         gameType: 'SNAKE' as const,

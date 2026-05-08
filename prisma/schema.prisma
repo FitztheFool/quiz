@@ -219,10 +219,20 @@ model Attempt {
 }
 
 model Word {
-  id          String   @id @default(cuid())
-  word        String   @unique
+  id          String     @id @default(cuid())
+  word        String     @unique
   description String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
+  wordGroupId String?
+  wordGroup   WordGroup? @relation(fields: [wordGroupId], references: [id])
 
   @@map("words")
+}
+
+model WordGroup {
+  id    String @id @default(cuid())
+  theme String @unique
+  words Word[]
+
+  @@map("word_groups")
 }

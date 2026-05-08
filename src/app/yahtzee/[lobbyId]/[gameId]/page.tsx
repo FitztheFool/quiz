@@ -6,6 +6,7 @@ import GameOverModal from '@/components/GameOverModal';
 import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
+import { NoSymbolIcon } from '@heroicons/react/24/outline';
 import AfkCountdown from '@/components/AfkCountdown';
 import { useState } from 'react';
 import { notFound } from 'next/navigation';
@@ -169,7 +170,7 @@ export default function YahtzeePage() {
                             <div key={p.userId} className={`rounded-xl border px-4 py-3 ${isFirst ? 'bg-amber-400/20 border-amber-400/50' : disq ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-2xl">{disq ? '🚫' : (MEDAL[rank!] ?? `${rank! + 1}.`)}</span>
+                                        <span className="text-2xl flex items-center">{disq ? <NoSymbolIcon className="w-6 h-6 text-gray-400" /> : (MEDAL[rank!] ?? `${rank! + 1}.`)}</span>
                                         <span className={`font-bold ${p.userId === myId ? 'text-amber-600 dark:text-amber-300' : 'text-gray-800 dark:text-white'}`}>
                                             {p.username}{p.userId === myId && ' (moi)'}
                                         </span>
@@ -448,7 +449,7 @@ export default function YahtzeePage() {
                         {eliminatedPlayers.filter(p => p.userId !== myId).map(p => (
                             <details key={p.userId} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden opacity-50">
                                 <summary className="px-5 py-4 cursor-pointer font-semibold text-gray-500 dark:text-gray-400 flex items-center justify-between">
-                                    <span className="flex items-center gap-2">🚫 Fiche de {p.username} <span className="text-xs font-normal">{p.abandon ? '(Abandon)' : '(AFK)'}</span></span>
+                                    <span className="flex items-center gap-2"><NoSymbolIcon className="w-4 h-4 flex-shrink-0" /> Fiche de {p.username} <span className="text-xs font-normal">{p.abandon ? '(Abandon)' : '(AFK)'}</span></span>
                                     <span className="text-gray-400 dark:text-gray-500 text-sm">{p.total} pts</span>
                                 </summary>
                                 <div className="px-5 pb-4 space-y-1">

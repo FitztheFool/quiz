@@ -13,13 +13,21 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
-import { TrophyIcon, StarIcon, FaceSmileIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, StarIcon, FaceSmileIcon, ClockIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, XCircleIcon, ForwardIcon, QuestionMarkCircleIcon, ListBulletIcon } from '@heroicons/react/24/outline';
 
 // ─── Composants ───────────────────────────────────────────────────────────────
 
-function PlayerBadge({ name, submitted, isGuesser, isMe, inactivityEndsAt }: {
-    name: string; submitted: boolean; isGuesser: boolean; isMe: boolean; inactivityEndsAt?: number | null;
+function PlayerBadge({ name, submitted, isGuesser, isMe, inactivityEndsAt, kicked }: {
+    name: string; submitted: boolean; isGuesser: boolean; isMe: boolean; inactivityEndsAt?: number | null; kicked?: boolean;
 }) {
+    if (kicked) {
+        return (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-gray-100/40 dark:bg-gray-800/40 text-xs font-medium opacity-50">
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-gray-300 dark:bg-gray-600" />
+                <span className="line-through">{name}{isMe ? ' (moi)' : ''}</span>
+            </div>
+        );
+    }
     const isInactive = inactivityEndsAt != null;
     return (
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all
@@ -33,8 +41,8 @@ function PlayerBadge({ name, submitted, isGuesser, isMe, inactivityEndsAt }: {
             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0
                 ${isInactive ? 'bg-orange-400' : isGuesser ? 'bg-yellow-400' : submitted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
             <span>{name}{isMe ? ' (moi)' : ''}</span>
-            {isGuesser && <span>👁️</span>}
-            {!isGuesser && submitted && <span>✅</span>}
+            {isGuesser && <EyeIcon className="w-3 h-3" />}
+            {!isGuesser && submitted && <CheckCircleIcon className="w-3 h-3" />}
             {isInactive && <AfkCountdown endsAt={inactivityEndsAt!} />}
         </div>
     );
@@ -72,6 +80,7 @@ export default function JustOnePage() {
         currentWordIndex,
         inactivityUserId,
         inactivityEndsAt,
+        kickedPlayers,
         isGuesser,
         pickWord,
         submitClue,
@@ -116,7 +125,11 @@ export default function JustOnePage() {
 
         // RESOLUTION
         if (roundState === 'RESOLUTION' && lastResult) {
-            const emoji = lastResult.result === 'CORRECT' ? '✅' : lastResult.result === 'PASS' ? '⏭️' : '❌';
+            const icon = lastResult.result === 'CORRECT'
+                ? <CheckCircleIcon className="w-12 h-12 mx-auto text-green-500" />
+                : lastResult.result === 'PASS'
+                    ? <ForwardIcon className="w-12 h-12 mx-auto text-gray-400" />
+                    : <XCircleIcon className="w-12 h-12 mx-auto text-red-500" />;
             const label = lastResult.result === 'CORRECT' ? 'Bonne réponse !'
                 : lastResult.result === 'PASS' ? 'Passé'
                     : lastResult.reason === 'NO_VALID_CLUES' ? 'Aucun indice valide !' : 'Mauvaise réponse !';
@@ -125,7 +138,7 @@ export default function JustOnePage() {
                     : 'text-red-500 dark:text-red-400';
             return (
                 <div className="text-center space-y-4">
-                    <div className="text-5xl">{emoji}</div>
+                    {icon}
                     <p className={`text-xl font-bold ${color}`}>{label}</p>
                     <div className="bg-gray-100 dark:bg-gray-800 rounded-xl px-6 py-3 inline-block">
                         <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Le mot était</p>
@@ -141,7 +154,7 @@ export default function JustOnePage() {
             if (isGuesser) {
                 return (
                     <div className="text-center space-y-4">
-                        <div className="text-4xl">👁️</div>
+                        <EyeIcon className="w-12 h-12 mx-auto text-blue-500" />
                         <p className="text-lg font-bold text-gray-900 dark:text-white">C'est ton tour de deviner !</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Choisis un numéro de 1 à 5.</p>
                         <div className="flex justify-center gap-3 flex-wrap">
@@ -158,7 +171,7 @@ export default function JustOnePage() {
             }
             return (
                 <div className="text-center space-y-3">
-                    <div className="text-4xl animate-pulse">⏳</div>
+                    <ClockIcon className="w-12 h-12 mx-auto text-gray-400 animate-pulse" />
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                         <span className="font-semibold text-gray-900 dark:text-white">{guesserName}</span> choisit son mot…
                     </p>
@@ -186,7 +199,7 @@ export default function JustOnePage() {
             if (isGuesser) {
                 return (
                     <div className="text-center space-y-4">
-                        <div className="text-4xl">🤫</div>
+                        <EyeSlashIcon className="w-12 h-12 mx-auto text-gray-400" />
                         <p className="text-lg font-bold text-gray-900 dark:text-white">Les autres écrivent leurs indices…</p>
                         <div className="flex flex-wrap gap-2 justify-center">
                             {players.filter(p => p.id !== guesserId).map(p => (
@@ -240,7 +253,7 @@ export default function JustOnePage() {
                     ) : (
                         <div className="text-center space-y-2">
                             <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
-                                <p className="text-xs text-green-600 dark:text-green-400">Indices envoyés ✅</p>
+                                <p className="text-xs text-green-600 dark:text-green-400 flex items-center justify-center gap-1"><CheckCircleIcon className="w-3 h-3" /> Indices envoyés</p>
                                 <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{myClue}{cluesPerPlayer >= 2 && myClue2 ? ` · ${myClue2}` : ''}</p>
                             </div>
                             <p className="text-xs text-gray-400 dark:text-gray-500">En attente des autres joueurs…</p>
@@ -270,7 +283,7 @@ export default function JustOnePage() {
                                     ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300'
                                     : 'border-red-500/30 bg-red-500/10 text-red-500 dark:text-red-400 line-through opacity-60'}`}>
                                 <span>{c.value}</span>
-                                {c.valid ? <span>✅</span> : <span>❌</span>}
+                                {c.valid ? <CheckCircleIcon className="w-4 h-4 text-green-500" /> : <XCircleIcon className="w-4 h-4 text-red-400" />}
                             </div>
                         ))}
                     </div>
@@ -306,13 +319,13 @@ export default function JustOnePage() {
                             <button
                                 onClick={() => submitGuess(null)}
                                 className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 text-sm font-semibold hover:border-gray-400 transition-all">
-                                ⏭️ Passer
+                                <ForwardIcon className="w-4 h-4 inline mr-1" />Passer
                             </button>
                             <button
                                 onClick={() => { if (!myGuess.trim()) return; submitGuess(myGuess.trim()); }}
                                 disabled={!myGuess.trim()}
                                 className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition-all">
-                                ✅ Valider
+                                <CheckCircleIcon className="w-4 h-4 inline mr-1" />Valider
                             </button>
                         </div>
                     </div>
@@ -320,7 +333,7 @@ export default function JustOnePage() {
             }
             return (
                 <div className="text-center space-y-3">
-                    <div className="text-4xl animate-bounce">🤔</div>
+                    <QuestionMarkCircleIcon className="w-12 h-12 mx-auto text-gray-400 animate-bounce" />
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                         <span className="font-semibold text-gray-900 dark:text-white">{guesserName}</span> est en train de deviner…
                     </p>
@@ -345,12 +358,12 @@ export default function JustOnePage() {
                 left={<><GameIcon gameType="just_one" className="w-5 h-5 text-gray-700 dark:text-gray-300" /><span className="font-bold">Just One</span></>}
                 center={<div className="text-center leading-tight">
                     {round > 0 && <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">Manche {round}/13 · <span className="text-blue-500">{score} pt{score !== 1 ? 's' : ''}</span></p>}
-                    {guesserName && <p className="text-xs text-gray-500 dark:text-gray-400">{isGuesser ? 'Tu devines' : <><span>👁️ </span><span className="font-medium">{guesserName}</span> devine</>}</p>}
+                    {guesserName && <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">{isGuesser ? 'Tu devines' : <><EyeIcon className="w-3 h-3" /><span className="font-medium">{guesserName}</span> devine</>}</p>}
                 </div>}
                 right={<>
-                    <button onClick={() => setShowHistory(h => !h)} className="text-xs px-2 sm:px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all whitespace-nowrap">
-                        <span className="hidden sm:inline">📜 Historique</span>
-                        <span className="sm:hidden">📜</span>
+                    <button onClick={() => setShowHistory(h => !h)} className="text-xs px-2 sm:px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all whitespace-nowrap flex items-center gap-1">
+                        <ListBulletIcon className="w-4 h-4" />
+                        <span className="hidden sm:inline">Historique</span>
                     </button>
                     {roundState !== 'WAITING' && roundState !== 'END_GAME' && <SurrenderButton onSurrender={surrender} />}
                 </>}
@@ -369,6 +382,9 @@ export default function JustOnePage() {
                         inactivityEndsAt={inactivityUserId === p.id ? inactivityEndsAt : null}
                     />
                 ))}
+                {kickedPlayers.map(p => (
+                    <PlayerBadge key={p.id} name={p.name} submitted={false} isGuesser={false} isMe={p.id === me} kicked />
+                ))}
             </div>
 
             <main className="p-4 flex flex-col items-center">
@@ -384,7 +400,7 @@ export default function JustOnePage() {
                                 <div key={i} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
                                     <span className="text-gray-400 dark:text-gray-500">Manche {h.round}</span>
                                     <span className="font-semibold text-gray-700 dark:text-gray-300">{h.targetWord}</span>
-                                    <span>{h.result === 'CORRECT' ? '✅' : h.result === 'PASS' ? '⏭️' : '❌'}</span>
+                                    <span>{h.result === 'CORRECT' ? <CheckCircleIcon className="w-4 h-4 text-green-500" /> : h.result === 'PASS' ? <ForwardIcon className="w-4 h-4 text-gray-400" /> : <XCircleIcon className="w-4 h-4 text-red-400" />}</span>
                                 </div>
                             ))}
                         </div>
