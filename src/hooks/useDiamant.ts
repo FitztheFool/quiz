@@ -19,8 +19,8 @@ export interface Card {
 export interface PlayerInfo {
     userId: string;
     username: string;
-    handRubies: number;
-    safeRubies: number;
+    handDiamants: number;
+    safeDiamants: number;
     relicPoints: number;
     relicsOwned: number;
     inCave: boolean;
@@ -44,7 +44,7 @@ export interface FinalScore {
     userId: string;
     username: string;
     score: number;
-    safeRubies: number;
+    safeDiamants: number;
     relicPoints: number;
     relicsOwned: number;
 }
@@ -57,8 +57,8 @@ export interface DiamantState {
     totalRounds: number;
     // Cartes révélées dans la manche
     revealedCards: Card[];
-    // Rubis restants sur chaque carte trésor (index → rubis)
-    rubisOnCards: Record<number, number>;
+    // Diamants restants sur chaque carte trésor (index → diamants)
+    diamantOnCards: Record<number, number>;
     // Index des cartes relique encore dans la grotte
     relicsInCave: string[];
     // Combien de reliques ont déjà quitté la grotte (pour calcul valeur)
@@ -108,7 +108,7 @@ export function useDiamant({
         round: 1,
         totalRounds: 5,
         revealedCards: [],
-        rubisOnCards: {},
+        diamantOnCards: {},
         relicsInCave: [],
         relicsExited: 0,
         players: [],
@@ -134,10 +134,16 @@ export function useDiamant({
         phase: s.phase ?? prev.phase,
         round: s.round ?? prev.round,
         revealedCards: s.revealedCards ?? prev.revealedCards,
-        rubisOnCards: s.rubisonCards ?? prev.rubisOnCards,
+        diamantOnCards: s.diamantOnCards ?? prev.diamantOnCards,
         relicsInCave: s.relicsInCave ?? prev.relicsInCave,
         relicsExited: s.relicsExited ?? prev.relicsExited,
-        players: s.players ?? prev.players,
+        players: s.players
+            ? s.players.map((p: any) => ({
+                ...p,
+                handDiamants: p.handDiamants ?? 0,
+                safeDiamants: p.safeDiamants ?? 0,
+            }))
+            : prev.players,
     });
 
     // ── Connect ───────────────────────────────────────────────────────────────
@@ -233,6 +239,8 @@ export function useDiamant({
 
         // ── Decisions revealed ────────────────────────────────────────────────
         socket.on('diamant:decisionsRevealed', (payload: any) => {
+            console.log('decisionsRevealed players:', payload.state?.players); // ← ajoutez cette ligne
+
             setState((prev) => ({
                 ...applyPublicState(prev, payload.state),
                 decisionPhase: false,
@@ -259,7 +267,10 @@ export function useDiamant({
             setState((prev) => ({
                 ...prev,
                 phase: 'finished',
-                finalScores: payload.scores ?? [],
+                finalScores: (payload.scores ?? []).map((p: any) => ({
+                    ...p,
+                    safeDiamants: p.safeDiamants ?? 0,
+                })),
                 winnerId: payload.winnerId ?? null,
                 decisionPhase: false,
             }));

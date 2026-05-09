@@ -9,8 +9,12 @@ import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameIcon from '@/components/GameIcon';
 import GameOverModal from '@/components/GameOverModal';
 import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
-import { SparklesIcon } from '@heroicons/react/24/solid'
-import { LockClosedIcon } from '@heroicons/react/24/solid'
+import { plural } from '@/lib/utils';
+import TimerBar from '@/components/TimerBar';
+import GamePageHeader from '@/components/GamePageHeader';
+import SurrenderButton from '@/components/SurrenderButton';
+import AfkCountdown from '@/components/AfkCountdown';
+import { TrophyIcon, SparklesIcon, LockClosedIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -45,12 +49,6 @@ const TREASURE_IMG: Record<number, string> = {
     17: '/diamant/cards/17.png',
 };
 
-import TimerBar from '@/components/TimerBar';
-import GamePageHeader from '@/components/GamePageHeader';
-import SurrenderButton from '@/components/SurrenderButton';
-import AfkCountdown from '@/components/AfkCountdown';
-import { TrophyIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline';
-
 // ── Card component ────────────────────────────────────────────────────────────
 
 const TREASURE_VARIANT: Record<string, string> = {
@@ -71,14 +69,14 @@ function getRelicImg(relicsExited: number): string {
 function ExpeditionCard({
     card,
     index,
-    rubisOnCard,
+    diamantOnCard,
     isLast,
     isRelic,
     relicsExited,
 }: {
     card: Card;
     index: number;
-    rubisOnCard: number;
+    diamantOnCard: number;
     isLast: boolean;
     isRelic: boolean;
     relicsExited: number;
@@ -98,10 +96,11 @@ function ExpeditionCard({
         >
             {isTreasure && (
                 <>
-                    <img src={getTreasureImg(card)} alt={`${card.value} rubis`} className="w-full rounded-xl" />
-                    {rubisOnCard > 0 && (
+                    <img src={getTreasureImg(card)} alt={`${card.value} ${plural(card.value!, 'diamant', 'diamants')}`}
+                        className="w-full rounded-xl" />
+                    {diamantOnCard > 0 && (
                         <div className="absolute -top-2.5 -right-2.5 bg-amber-500 text-black text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow">
-                            {rubisOnCard}
+                            {diamantOnCard}
                         </div>
                     )}
                 </>
@@ -130,10 +129,10 @@ function ExpeditionCard({
 
 function PlayerRow({ player, isMe, inactivityEndsAt }: { player: PlayerInfo; isMe: boolean; inactivityEndsAt?: number | null }) {
     return (
-        <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all
-            ${!player.inCave ? 'border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900/40' : ''}
-            ${player.inCave && isMe ? 'border-amber-400 dark:border-amber-600/50 bg-amber-100 dark:bg-amber-950/30' : ''}
-            ${player.inCave && !isMe ? 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40' : ''}
+        <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border  transition-all
+            ${isMe ? 'border-amber-400 dark:border-amber-600/50 bg-amber-100 dark:bg-amber-950/30' : ''}
+            ${!isMe && player.inCave ? 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40' : ''}
+            ${!isMe && !player.inCave ? 'border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900/40' : ''}
         `}>
             {/* Status indicator */}
             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${player.inCave ? 'bg-green-500 dark:bg-green-400 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />
@@ -154,11 +153,11 @@ function PlayerRow({ player, isMe, inactivityEndsAt }: { player: PlayerInfo; isM
                 <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">🏕️ au camp</span>
             )}
 
-            {/* Hand rubies (only for me) */}
+            {/* Hand diamant (only for me) */}
             {isMe && player.inCave && (
                 <div className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 font-bold">
                     <SparklesIcon className="w-4 h-4" />
-                    <span>{player.handRubies}</span>
+                    <span>{player.handDiamants}</span>
                 </div>
             )}
 
@@ -168,7 +167,7 @@ function PlayerRow({ player, isMe, inactivityEndsAt }: { player: PlayerInfo; isM
                     <LockClosedIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
                         <SparklesIcon className="w-3.5 h-3.5" />
-                        {player.safeRubies}
+                        {player.safeDiamants}
                     </span>
                     {player.relicPoints > 0 && (
                         <span className="text-emerald-600 dark:text-emerald-400 font-bold">
@@ -177,7 +176,7 @@ function PlayerRow({ player, isMe, inactivityEndsAt }: { player: PlayerInfo; isM
                     )}
                     <span className="text-gray-400 dark:text-gray-600">=</span>
                     <span className="font-black text-gray-800 dark:text-white text-sm">
-                        {player.safeRubies + player.relicPoints}
+                        {(player.safeDiamants ?? 0) + (player.relicPoints ?? 0)}
                     </span>
                 </div>
             )}
@@ -228,13 +227,11 @@ export default function DiamantPage() {
                         <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 sm:px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap">
                             <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
                                 <SparklesIcon className="w-3.5 h-3.5" />
-                                {me.safeRubies}
+                                {me.safeDiamants ?? 0}
                             </span>
-                            <span className="hidden sm:inline text-gray-400 dark:text-gray-600">+</span>
-                            <span className="hidden sm:inline text-emerald-600 dark:text-emerald-400 font-bold">🏺{me.relicPoints}</span>
+                            <span className="hidden sm:inline text-emerald-600 dark:text-emerald-400 font-bold">🏺{me.relicPoints ?? 0}</span>
                             <span className="text-gray-400 dark:text-gray-600">=</span>
-                            <span className="text-gray-800 dark:text-white font-black">{me.safeRubies + me.relicPoints}</span>
-                            <span className="text-gray-400 dark:text-gray-600 text-xs">pts</span>
+                            <span className="text-gray-800 dark:text-white font-black">{(me.safeDiamants ?? 0) + (me.relicPoints ?? 0)}</span>
                         </div>
                     )}
                     {state.phase === 'playing' && <SurrenderButton onSurrender={surrender} disabled={iSurrendered} />}
@@ -312,7 +309,7 @@ export default function DiamantPage() {
                                                     key={card.id}
                                                     card={card}
                                                     index={i}
-                                                    rubisOnCard={state.rubisOnCards[i] ?? 0}
+                                                    diamantOnCard={state.diamantOnCards[i] ?? 0}
                                                     isLast={i === state.revealedCards.length - 1}
                                                     isRelic={state.relicsInCave.includes(card.id)}
                                                     relicsExited={state.relicsExited}
@@ -333,10 +330,10 @@ export default function DiamantPage() {
                                     {state.lastCard.type === 'treasure' && (
                                         <span className="flex items-center gap-1 flex-wrap">
                                             <SparklesIcon className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                                            Trésor de <strong>{state.lastCard.value}</strong> rubis —
-                                            chaque explorateur reçoit <strong>{state.lastSharePerPlayer ?? 0}</strong> rubis
-                                            {(state.rubisOnCards[state.lastCardIndex!] ?? 0) > 0 &&
-                                                ` (${state.rubisOnCards[state.lastCardIndex!]} restant sur la carte)`
+                                            Trésor de <strong>{state.lastCard.value}</strong> {plural(state.lastCard.value!, 'diamant', 'diamants')} —
+                                            chaque explorateur reçoit <strong>{state.lastSharePerPlayer ?? 0}</strong> {plural(state.lastSharePerPlayer ?? 0, 'diamant', 'diamants')}
+                                            {(state.diamantOnCards[state.lastCardIndex!] ?? 0) > 0 &&
+                                                ` (${state.diamantOnCards[state.lastCardIndex!]} restant sur la carte)`
                                             }
                                         </span>
                                     )}
@@ -414,12 +411,12 @@ export default function DiamantPage() {
                         myUserId={myUserId}
                         entries={state.finalScores.map((p) => {
                             const surrendered = state.players.find(pl => pl.userId === p.userId)?.surrendered ?? false;
-                            const parts = [`💎 ${p.safeRubies} rubis`];
+                            const parts = [`💎 ${p.safeDiamants} ${plural(p.safeDiamants, 'diamant', 'diamants')}`];
                             if (p.relicPoints > 0) parts.push(`🏺 ${p.relicPoints} pts reliques`);
                             return {
                                 userId: p.userId,
                                 username: p.username,
-                                score: `${p.score} pts`,
+                                score: `${p.score ?? 0} pts`,
                                 subScore: parts.join('  ·  '),
                                 badges: surrendered ? ['Abandon'] : undefined,
                                 disqualified: surrendered,
