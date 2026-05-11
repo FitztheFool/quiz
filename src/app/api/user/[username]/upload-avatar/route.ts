@@ -24,6 +24,17 @@ export async function POST(
     if (parsedUrl.protocol !== 'https:') {
         return NextResponse.json({ error: 'URL invalide.' }, { status: 400 });
     }
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const expectedHost = cloudName ? 'res.cloudinary.com' : null;
+    const expectedPathPrefix = cloudName ? `/${cloudName}/image/upload/` : null;
+    if (
+        !expectedHost ||
+        !expectedPathPrefix ||
+        parsedUrl.hostname !== expectedHost ||
+        !parsedUrl.pathname.startsWith(expectedPathPrefix)
+    ) {
+        return NextResponse.json({ error: 'URL image non autorisée.' }, { status: 400 });
+    }
 
     await prisma.user.update({
         where: { id: session.user.id },

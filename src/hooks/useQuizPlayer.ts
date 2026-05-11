@@ -231,14 +231,11 @@ export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode: timeModePr
                 username: session.user.username ?? session.user.email ?? 'User',
             });
         } else {
-            const correctAnswers = questionResultsRef.current.filter(r => r.isCorrect).length;
             fetch(`/api/quiz/${quizId}/attempt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    score: earnedPointsRef.current,
-                    correctAnswers,
-                    totalAnswers: quiz.questions.length,
+                    answers: answersRef.current,
                     isOwnQuiz: quiz.creatorId === session?.user?.id,
                 }),
             }).catch(() => { });

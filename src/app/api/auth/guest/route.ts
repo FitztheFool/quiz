@@ -4,11 +4,24 @@ import { Prisma } from '@/generated/prisma/client';
 import { auth } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 import { randomUsername } from '@/lib/randomUsername';
+import { checkRateLimit, getIp } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (session) return NextResponse.json({ ok: true });
+
+        const ip = getIp(req);
+        if (ip === 'unknown') {
+            return NextResponse.json({ error: 'IP requise' }, { status: 400 });
+        }
+        const rl = checkRateLimit(`guest-create:${ip}`, 5, 60 * 60_000);
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Trop de comptes invités créés. Réessayez plus tard.' },
+                { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+            );
+        }
 
         const body = await req.json().catch(() => ({}));
         let username: string = (typeof body.username === 'string' && body.username.trim()) || randomUsername();

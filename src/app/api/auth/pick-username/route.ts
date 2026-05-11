@@ -19,18 +19,32 @@ export async function POST(req: NextRequest) {
 
         const meta = entry.metadata;
 
-        // Crée l'utilisateur s'il n'existe pas encore (signIn callback a redirigé avant création)
-        await prisma.user.upsert({
+        // N'autoriser l'écrasement du username que si l'utilisateur n'en a pas encore.
+        // Empêche la prise de contrôle d'un compte existant via un token leaké.
+        const existing = await prisma.user.findUnique({
             where: { id: entry.userId },
-            update: { username },
-            create: {
-                id: entry.userId,
-                email: meta?.email ?? `${entry.userId}@discord.placeholder`,
-                name: meta?.name ?? null,
-                image: meta?.image ?? null,
-                username,
-            },
+            select: { id: true, username: true },
         });
+        if (existing && existing.username) {
+            return NextResponse.json({ error: 'Compte déjà configuré' }, { status: 409 });
+        }
+
+        if (existing) {
+            await prisma.user.update({
+                where: { id: entry.userId },
+                data: { username },
+            });
+        } else {
+            await prisma.user.create({
+                data: {
+                    id: entry.userId,
+                    email: meta?.email ?? `${entry.userId}@discord.placeholder`,
+                    name: meta?.name ?? null,
+                    image: meta?.image ?? null,
+                    username,
+                },
+            });
+        }
 
         // Crée le compte OAuth si non existant (nécessaire pour les futures connexions Discord)
         if (meta?.provider && meta?.providerAccountId) {

@@ -713,7 +713,7 @@ export async function seedQuizzes(
                     isPublic: quiz.isPublic,
                     randomizeQuestions: quiz.randomizeQuestions,
                     creatorId,
-                    imageUrl: imageUrl ?? null,   // ← ajout
+                    imageUrl: imageUrl ?? null,
                     questions: {
                         create: quiz.questions.map((q) => ({
                             content: q.content,
@@ -725,7 +725,6 @@ export async function seedQuizzes(
                 },
             });
             createdCount++;
-            console.log(`  ✅ ${createdCount}/${quizData.length} - ${quiz.title}`);
         } catch (error) {
             console.error(`  ❌ Erreur lors de la création du quiz "${quiz.title}":`, error);
         }
