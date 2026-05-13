@@ -78,6 +78,7 @@ type LobbyState = {
     gameId?: string | null;
     teams?: Record<string, 0 | 1> | null;
     bots?: number;
+    botSlots?: Array<{ userId: string; username: string }>;
 };
 
 function useDebounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number): T {
@@ -309,6 +310,7 @@ export default function LobbyCodePage() {
     const [ludoWinMode, setLudoWinMode] = useState<'first_done' | 'full_ranking'>('first_done');
     const [ludoTeamMode, setLudoTeamMode] = useState<'none' | '2v2'>('none');
     const [botCount, setBotCount] = useState(0);
+    const [botSlots, setBotSlots] = useState<Array<{ userId: string; username: string }>>([]);
     const { setLobbyId } = useChat();
 
     useEffect(() => {
@@ -432,6 +434,7 @@ export default function LobbyCodePage() {
                 setLudoTeamMode(state.ludoOptions.teamMode ?? 'none');
             }
             setBotCount(state.bots ?? 0);
+            setBotSlots(Array.isArray(state.botSlots) ? state.botSlots : []);
 
             // ── Partie en cours : afficher un bandeau, ne pas auto-rediriger ─
             if (state.status === 'PLAYING') {
@@ -952,6 +955,7 @@ export default function LobbyCodePage() {
                                 <div className="grid grid-cols-2 gap-3">
                                     {[0, 1].map(team => {
                                         const teamPlayers = players.filter(p => teams?.[p.userId] === team);
+                                        const teamBots = botSlots.filter(b => teams?.[b.userId] === team);
                                         const myTeamLocal = session?.user?.id ? teams?.[session.user.id] : undefined;
                                         return (
                                             <div key={team} className={`rounded-xl border p-3 space-y-2 ${team === 0 ? 'border-blue-500/30 bg-blue-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
@@ -974,7 +978,13 @@ export default function LobbyCodePage() {
                                                             {p.userId === hostId && <StarIcon className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />}
                                                         </div>
                                                     ))}
-                                                    {teamPlayers.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-600 italic">Aucun joueur</p>}
+                                                    {teamBots.map(b => (
+                                                        <div key={b.userId} className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${team === 0 ? 'bg-blue-400' : 'bg-red-400'}`} />
+                                                            {b.username}
+                                                        </div>
+                                                    ))}
+                                                    {teamPlayers.length === 0 && teamBots.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-600 italic">Aucun joueur</p>}
                                                 </div>
                                             </div>
                                         );
