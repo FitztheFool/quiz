@@ -27,19 +27,15 @@ export default function LobbyCard({ lobby, onJoin, onPlayersClick }: LobbyCardPr
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-300 dark:border-gray-700 shadow-sm hover:border-blue-400 hover:shadow-xl transition-all relative flex flex-col h-full">
             <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">{lobby.title}</h3>
-                <span className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${
-                    isWaiting
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
-                }`}>
+                <span className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${isWaiting
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
+                    }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${isWaiting ? 'bg-green-500' : 'bg-blue-500'}`} />
                     {isWaiting ? 'En attente' : 'En cours'}
                 </span>
             </div>
 
-            <span className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-2 tracking-wider mb-1">
-                Code : {lobby.id}
-            </span>
 
             <p className="text-gray-600 dark:text-gray-300 mb-6 line-clamp-2">{lobby.description}</p>
 

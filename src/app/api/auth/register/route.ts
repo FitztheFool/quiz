@@ -26,9 +26,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (typeof password !== 'string' || password.length < 8 || password.length > 200) {
       return NextResponse.json(
-        { error: 'Le mot de passe doit contenir au moins 6 caractères' },
+        { error: 'Le mot de passe doit contenir au moins 8 caractères' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return NextResponse.json(
+        { error: 'Email invalide' },
         { status: 400 }
       );
     }
@@ -48,18 +55,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
-      if (existingUser.email === email) {
-        return NextResponse.json(
-          { error: 'Cet email est déjà utilisé' },
-          { status: 400 }
-        );
-      }
-      if (existingUser.username === username) {
-        return NextResponse.json(
-          { error: "Ce nom d'utilisateur est déjà pris" },
-          { status: 400 }
-        );
-      }
+      // Message générique pour ne pas révéler quel email/pseudo est déjà enregistré.
+      return NextResponse.json(
+        { error: 'Email ou nom d\'utilisateur déjà utilisé' },
+        { status: 400 }
+      );
     }
 
     // Hasher le mot de passe

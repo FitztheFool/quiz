@@ -44,6 +44,7 @@ enum GameType {
   PACMAN
   BREAKOUT
   TETRIS
+  LUDO
 }
 
 model Account {

@@ -35,6 +35,18 @@ function validateQuizJSON(json: any): string | null {
     return null;
 }
 
+const UNSPLASH_HOSTS = new Set(['images.unsplash.com', 'plus.unsplash.com']);
+
+function isUnsplashUrl(url: unknown): url is string {
+    if (typeof url !== 'string') return false;
+    try {
+        const u = new URL(url);
+        return u.protocol === 'https:' && UNSPLASH_HOSTS.has(u.hostname);
+    } catch {
+        return false;
+    }
+}
+
 async function fetchCoverImage(query: string): Promise<string | null> {
     const key = process.env.UNSPLASH_ACCESS_KEY;
     if (!key) return null;
@@ -48,7 +60,8 @@ async function fetchCoverImage(query: string): Promise<string | null> {
             return null;
         }
         const data = await res.json();
-        return data.results?.[0]?.urls?.regular ?? null;
+        const candidate = data.results?.[0]?.urls?.regular;
+        return isUnsplashUrl(candidate) ? candidate : null;
     } catch (e) {
         console.error('[Unsplash] fetch error:', e);
         return null;
@@ -124,7 +137,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ...json, imageUrl, provider: selectedModel.provider, model: modelId });
 
     } catch (e: any) {
-        console.error('Erreur génération Groq:', e.message);
-        return NextResponse.json({ error: 'Erreur lors de la génération : ' + e.message }, { status: 500 });
+        console.error('Erreur génération Groq:', e?.message ?? e);
+        return NextResponse.json({ error: 'Erreur lors de la génération' }, { status: 500 });
     }
 }

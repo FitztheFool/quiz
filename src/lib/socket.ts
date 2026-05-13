@@ -37,6 +37,7 @@ let justOneSocket: Socket | null = null;
 let impostorSocket: Socket | null = null;
 let diamantSocket: Socket | null = null;
 let battleshipSocket: Socket | null = null;
+let ludoSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -136,4 +137,11 @@ export function getImpostorSocket(): Socket | null {
     if (!impostorSocket) impostorSocket = createSocket(process.env.NEXT_PUBLIC_IMPOSTOR_SERVER_URL ?? "http://localhost:10010", "Impostor Socket");
     connectIfAuth(impostorSocket);
     return impostorSocket;
+}
+
+export function getLudoSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!ludoSocket) ludoSocket = createSocket(process.env.NEXT_PUBLIC_LUDO_SERVER_URL ?? "http://localhost:10011", "Ludo Socket");
+    connectIfAuth(ludoSocket);
+    return ludoSocket;
 }

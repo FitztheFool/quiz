@@ -35,6 +35,10 @@ export async function POST(
     ) {
         return NextResponse.json({ error: 'URL image non autorisée.' }, { status: 400 });
     }
+    // Vérifie que l'image appartient au dossier avatar du user (signé via upload/sign).
+    if (!parsedUrl.pathname.includes(`/avatar/${session.user.id}/`)) {
+        return NextResponse.json({ error: 'URL image non autorisée.' }, { status: 400 });
+    }
 
     await prisma.user.update({
         where: { id: session.user.id },

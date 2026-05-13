@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { GameType } from '@/generated/prisma/client';
+import { timingSafeEqual } from 'crypto';
 
 interface ScoreEntry {
     userId: string;
@@ -32,17 +34,27 @@ interface AttemptPayload {
     scores: ScoreEntry[];
 }
 
+const VALID_GAME_TYPES = new Set(Object.values(GameType));
+const MAX_SCORE = 10_000_000;
+const MAX_ROUNDS = 10_000;
+const MAX_PLACEMENT = 1_000;
+const MAX_GAME_ID_LEN = 128;
+
+function clampInt(n: unknown, min: number, max: number, fallback = 0): number {
+    if (typeof n !== 'number' || !Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
 export async function POST(req: NextRequest) {
     const auth = req.headers.get('authorization');
     const secret = process.env.INTERNAL_API_KEY;
     const expected = `Bearer ${secret}`;
 
-    // Comparaison en temps constant pour éviter les timing attacks
     const authorized =
-        secret &&
-        auth &&
+        !!secret &&
+        !!auth &&
         auth.length === expected.length &&
-        require('crypto').timingSafeEqual(Buffer.from(auth), Buffer.from(expected));
+        timingSafeEqual(Buffer.from(auth), Buffer.from(expected));
 
     if (!authorized) {
         return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
@@ -54,6 +66,18 @@ export async function POST(req: NextRequest) {
 
         if (!gameType || !gameId || !Array.isArray(scores) || scores.length === 0) {
             return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
+        }
+        if (!VALID_GAME_TYPES.has(gameType as GameType)) {
+            return NextResponse.json({ error: 'gameType invalide' }, { status: 400 });
+        }
+        if (typeof gameId !== 'string' || gameId.length === 0 || gameId.length > MAX_GAME_ID_LEN) {
+            return NextResponse.json({ error: 'gameId invalide' }, { status: 400 });
+        }
+        if (scores.length > 32) {
+            return NextResponse.json({ error: 'Trop de scores' }, { status: 400 });
+        }
+        if (bots && (!Array.isArray(bots) || bots.length > 32)) {
+            return NextResponse.json({ error: 'bots invalide' }, { status: 400 });
         }
 
         // Vérifier que les userId existent en BDD
@@ -75,34 +99,40 @@ export async function POST(req: NextRequest) {
         await Promise.all(
             validScores.map((s, i) => {
                 const botScores = i === 0 ? botScoresJson : null;
+                const score = clampInt(s.score, 0, MAX_SCORE);
+                const placement = s.placement == null ? null : clampInt(s.placement, 1, MAX_PLACEMENT, 1);
+                const trapScore = clampInt(s.trapScore, 0, MAX_SCORE);
+                const rounds = clampInt(s.rounds, 0, MAX_ROUNDS);
+                const correctAnswers = clampInt(s.correctAnswers, 0, MAX_ROUNDS);
+                const totalAnswers = clampInt(s.totalAnswers, 0, MAX_ROUNDS);
                 return prisma.attempt.upsert({
                     where: { userId_gameId: { userId: s.userId, gameId } },
                     update: {
-                        score: s.score,
-                        placement: s.placement ?? null,
-                        trapScore: s.trapScore ?? 0,
-                        rounds: s.rounds ?? 0,
-                        correctAnswers: s.correctAnswers ?? 0,
-                        totalAnswers: s.totalAnswers ?? 0,
-                        abandon: s.abandon ?? false,
-                        afk: s.afk ?? false,
-                        vsBot: vsBot ?? false,
+                        score,
+                        placement,
+                        trapScore,
+                        rounds,
+                        correctAnswers,
+                        totalAnswers,
+                        abandon: !!s.abandon,
+                        afk: !!s.afk,
+                        vsBot: !!vsBot,
                         ...(botScores !== null ? { botScores } : {}),
                     },
                     create: {
                         userId: s.userId,
-                        gameType: gameType as any,
+                        gameType: gameType as GameType,
                         gameId,
                         quizId: quizId ?? null,
-                        score: s.score,
-                        placement: s.placement ?? null,
-                        trapScore: s.trapScore ?? 0,
-                        rounds: s.rounds ?? 0,
-                        correctAnswers: s.correctAnswers ?? 0,
-                        totalAnswers: s.totalAnswers ?? 0,
-                        abandon: s.abandon ?? false,
-                        afk: s.afk ?? false,
-                        vsBot: vsBot ?? false,
+                        score,
+                        placement,
+                        trapScore,
+                        rounds,
+                        correctAnswers,
+                        totalAnswers,
+                        abandon: !!s.abandon,
+                        afk: !!s.afk,
+                        vsBot: !!vsBot,
                         botScores,
                     },
                 });

@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { hash } from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { sendVerificationEmail } from '@/lib/mail';
+import { checkRateLimit, getIp } from '@/lib/rateLimit';
 
 export async function PATCH(req: NextRequest) {
     const session = await auth();
@@ -15,19 +16,29 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: 'Compte déjà finalisé' }, { status: 400 });
     }
 
+    const { allowed, retryAfter } = checkRateLimit(`guest-claim:${session.user.id}:${getIp(req)}`, 5, 15 * 60 * 1000);
+    if (!allowed) {
+        return NextResponse.json(
+            { error: 'Trop de tentatives. Réessayez plus tard.' },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+        );
+    }
+
     const { email, password, username } = await req.json();
 
     if (!email || !password) {
         return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
     }
-    if (password.length < 6) {
-        return NextResponse.json({ error: 'Le mot de passe doit contenir au moins 6 caractères' }, { status: 400 });
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+        return NextResponse.json({ error: 'Email invalide' }, { status: 400 });
+    }
+    if (typeof password !== 'string' || password.length < 8 || password.length > 200) {
+        return NextResponse.json({ error: 'Le mot de passe doit contenir au moins 8 caractères' }, { status: 400 });
     }
     if (username && !/^[a-zA-Z0-9_]{2,32}$/.test(username)) {
         return NextResponse.json({ error: 'Nom d\'utilisateur invalide (2-32 caractères, lettres/chiffres/underscore uniquement)' }, { status: 400 });
     }
 
-    // Vérifier conflits
     const conflict = await prisma.user.findFirst({
         where: {
             AND: [
@@ -43,10 +54,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     if (conflict) {
-        if (conflict.email === email) {
-            return NextResponse.json({ error: 'Cet email est déjà utilisé.' }, { status: 400 });
-        }
-        return NextResponse.json({ error: "Ce nom d'utilisateur est déjà pris." }, { status: 400 });
+        return NextResponse.json({ error: 'Email ou nom d\'utilisateur déjà utilisé.' }, { status: 400 });
     }
 
     const passwordHash = await hash(password, 10);

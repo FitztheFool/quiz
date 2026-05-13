@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     let creatorId = session.user.id;
-    if (creatorRole === 'RANDOM' && session.user.role === 'ADMIN') {
+    if (creatorRole === 'RANDOM') {
       const randomUser = await prisma.user.findUnique({ where: { email: 'random@quiz.app' }, select: { id: true } });
       if (randomUser) creatorId = randomUser.id;
     }

@@ -38,6 +38,7 @@ type LobbyMeta = {
     skyjowOptions?: { eliminateRows: boolean };
     battleshipOptions?: { gridSize: number; turnTime: number };
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
+    ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
 };
 
 
@@ -56,6 +57,7 @@ type LobbyState = {
     skyjowOptions?: { eliminateRows: boolean };
     battleshipOptions?: { gridSize: number; turnTime: number };
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
+    ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
     timeMode?: string;
     timePerQuestion?: number;
     quizId?: string | null;
@@ -288,6 +290,10 @@ export default function LobbyCodePage() {
     const [impostorRounds, setImpostorRounds] = useState(1);
     const [impostorTime, setImpostorTime] = useState(60);
     const [impostorMisterWhite, setImpostorMisterWhite] = useState(false);
+    const [ludoPawnExit, setLudoPawnExit] = useState<'6' | '6_or_1' | 'any'>('6');
+    const [ludoBonusOn6, setLudoBonusOn6] = useState<'unlimited' | 'triple_lose' | 'none'>('unlimited');
+    const [ludoWinMode, setLudoWinMode] = useState<'first_done' | 'full_ranking'>('first_done');
+    const [ludoTeamMode, setLudoTeamMode] = useState<'none' | '2v2'>('none');
     const [botCount, setBotCount] = useState(0);
     const { setLobbyId } = useChat();
 
@@ -386,6 +392,7 @@ export default function LobbyCodePage() {
                 tabooOptions: state.tabooOptions ?? prev?.tabooOptions,
                 skyjowOptions: state.skyjowOptions ?? prev?.skyjowOptions,
                 battleshipOptions: state.battleshipOptions ?? prev?.battleshipOptions,
+                ludoOptions: state.ludoOptions ?? prev?.ludoOptions,
                 quizOptions: state.timeMode
                     ? { timeMode: state.timeMode, timePerQuestion: state.timePerQuestion ?? 15 }
                     : prev?.quizOptions,
@@ -418,6 +425,12 @@ export default function LobbyCodePage() {
                 setTurnTime(state.battleshipOptions.turnTime ?? 30);
             }
             if (state.impostorOptions) { setImpostorRounds(state.impostorOptions.rounds ?? 1); setImpostorTime(state.impostorOptions.timePerRound ?? 60); setImpostorMisterWhite(state.impostorOptions.misterWhite ?? false); }
+            if (state.ludoOptions) {
+                setLudoPawnExit(state.ludoOptions.pawnExit ?? '6');
+                setLudoBonusOn6(state.ludoOptions.bonusOn6 ?? 'unlimited');
+                setLudoWinMode(state.ludoOptions.winMode ?? 'first_done');
+                setLudoTeamMode(state.ludoOptions.teamMode ?? 'none');
+            }
             setBotCount(state.bots ?? 0);
 
             // ── Partie en cours : afficher un bandeau, ne pas auto-rediriger ─
@@ -452,7 +465,11 @@ export default function LobbyCodePage() {
             const tabooOk = g !== 'taboo' || teamsOk;
             const unoTeamModeVal = state.unoOptions?.teamMode ?? 'none';
             const unoOk = g !== 'uno' || unoTeamModeVal !== '2v2' || teamsOk;
-            setCanStart(countOk && hasQuiz && tabooOk && unoOk && state.hostId === meUserId);
+            const ludoTeamModeVal = state.ludoOptions?.teamMode ?? 'none';
+            const ludoIs2v2 = g === 'ludo' && ludoTeamModeVal === '2v2';
+            const ludoTeamsOk = !ludoIs2v2 || (t0 === 2 && t1 === 2);
+            const ludoOk = g !== 'ludo' || ludoTeamsOk;
+            setCanStart(countOk && hasQuiz && tabooOk && unoOk && ludoOk && state.hostId === meUserId);
         };
 
         socket.on('lobby:state', onState);
@@ -497,6 +514,7 @@ export default function LobbyCodePage() {
                 if (m.skyjowOptions) setSkyjowEliminateRows(m.skyjowOptions.eliminateRows);
                 if (m.battleshipOptions) { setGridSize(m.battleshipOptions.gridSize); setTurnTime(m.battleshipOptions.turnTime); }
                 if (m.impostorOptions) { setImpostorRounds(m.impostorOptions.rounds ?? 1); setImpostorTime(m.impostorOptions.timePerRound ?? 60); setImpostorMisterWhite(m.impostorOptions.misterWhite ?? false); }
+                if (m.ludoOptions) { setLudoPawnExit(m.ludoOptions.pawnExit); setLudoBonusOn6(m.ludoOptions.bonusOn6); setLudoWinMode(m.ludoOptions.winMode); setLudoTeamMode(m.ludoOptions.teamMode); }
             }
             socket.emit('lobby:join', { lobbyId, userId: meUserId, username: meUsername, title: m?.title, description: m?.description, maxPlayers: m?.maxPlayers, isPublic: m?.isPublic });
             const gameFromUrl = searchParams.get('game');
@@ -507,6 +525,7 @@ export default function LobbyCodePage() {
             if (m?.skyjowOptions) setTimeout(() => socket.emit('lobby:setSkyjowOptions', m!.skyjowOptions), 400);
             if (m?.battleshipOptions) setTimeout(() => socket.emit('lobby:setBattleshipOptions', m!.battleshipOptions), 400);
             if (m?.impostorOptions) setTimeout(() => socket.emit('lobby:setImpostorOptions', m!.impostorOptions), 400);
+            if (m?.ludoOptions) setTimeout(() => socket.emit('lobby:setLudoOptions', m!.ludoOptions), 400);
             if (m?.quizOptions) setTimeout(() => socket.emit('lobby:setQuizOptions', m!.quizOptions), 400);
         }
 
@@ -548,7 +567,7 @@ export default function LobbyCodePage() {
     const isAdmin = session.user.role === 'ADMIN';
     const isHost = hostId === me;
     const selectedGame = LOBBY_GAME_OPTIONS.find(g => g.value === gameType);
-    const isMaxLocked = gameType === 'puissance4' || (gameType === 'uno' && unoTeamMode === '2v2');
+    const isMaxLocked = gameType === 'puissance4' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2');
     const formatTime = (t: number) => t < 60 ? `${t}s` : `${Math.floor(t / 60)} min${t % 60 ? ` ${t % 60}s` : ''}`;
 
     const handleGameTypeChange = (g: GameType) => {
@@ -570,6 +589,15 @@ export default function LobbyCodePage() {
             socket?.emit('lobby:setMeta', { maxPlayers: 4 });
         }
         socket?.emit('lobby:setUnoOptions', { teamMode: mode });
+    };
+
+    const handleLudoTeamMode = (mode: 'none' | '2v2') => {
+        setLudoTeamMode(mode);
+        if (mode === '2v2') {
+            setMaxPlayersState(4);
+            socket?.emit('lobby:setMeta', { maxPlayers: 4 });
+        }
+        socket?.emit('lobby:setLudoOptions', { teamMode: mode });
     };
 
     return (
@@ -840,6 +868,35 @@ export default function LobbyCodePage() {
                             </div>
                         )}
 
+                        {gameType === 'ludo' && (
+                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Ludo</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {([{ v: 'none', label: 'Chacun pour soi', desc: '2–4 joueurs' }, { v: '2v2', label: '2v2', desc: '4 joueurs' }] as const).map(opt => (
+                                        <button key={opt.v} onClick={() => isHost && handleLudoTeamMode(opt.v)}
+                                            className={`py-2.5 px-3 rounded-xl border-2 text-xs font-semibold transition-all flex flex-col items-center gap-0.5
+                                                ${ludoTeamMode === opt.v
+                                                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300'
+                                                    : 'border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'}`}>
+                                            <span>{opt.label}</span><span className="opacity-60 font-normal">{opt.desc}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <OptionRow label="Sortie d'un pion">
+                                    <OptionSelect value={ludoPawnExit} onChange={v => { setLudoPawnExit(v as '6' | '6_or_1' | 'any'); socket?.emit('lobby:setLudoOptions', { pawnExit: v }); }}
+                                        options={[{ v: '6', label: 'Sur un 6' }, { v: '6_or_1', label: 'Sur 6 ou 1' }, { v: 'any', label: 'Sur tout score' }]} disabled={!isHost} />
+                                </OptionRow>
+                                <OptionRow label="Bonus sur un 6">
+                                    <OptionSelect value={ludoBonusOn6} onChange={v => { setLudoBonusOn6(v as 'unlimited' | 'triple_lose' | 'none'); socket?.emit('lobby:setLudoOptions', { bonusOn6: v }); }}
+                                        options={[{ v: 'unlimited', label: 'Relance illimitée' }, { v: 'triple_lose', label: 'Triple 6 = tour perdu' }, { v: 'none', label: 'Aucun bonus' }]} disabled={!isHost} />
+                                </OptionRow>
+                                <OptionRow label="Fin de partie">
+                                    <OptionSelect value={ludoWinMode} onChange={v => { setLudoWinMode(v as 'first_done' | 'full_ranking'); socket?.emit('lobby:setLudoOptions', { winMode: v }); }}
+                                        options={[{ v: 'first_done', label: 'Premier arrivé' }, { v: 'full_ranking', label: 'Classement complet' }]} disabled={!isHost} />
+                                </OptionRow>
+                            </div>
+                        )}
+
                         {NO_OPTIONS_GAMES[gameType] && (
                             <div className="bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-4 text-center">
                                 <p className="text-xs text-gray-400 dark:text-gray-500 italic">{NO_OPTIONS_GAMES[gameType]}</p>
@@ -881,7 +938,7 @@ export default function LobbyCodePage() {
                         </div>
 
                         {/* Équipes */}
-                        {(gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2')) && (
+                        {(gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2')) && (
                             <div className="bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5">
                                 <div className="flex items-center justify-between mb-3">
                                     <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Équipes</h2>
@@ -1050,7 +1107,7 @@ export default function LobbyCodePage() {
                                                 ? <span className="flex items-center justify-center gap-1.5"><PlayIcon className="w-4 h-4" />Lancer {selectedGame?.label ?? 'la partie'} !</span>
                                                 : gameType === 'quiz' && !selectedQuizId && players.length >= 2
                                                     ? <span className="flex items-center justify-center gap-1.5"><QuestionMarkCircleIcon className="w-4 h-4" />Choix du quiz…</span>
-                                                    : (gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2')) && !tabooOk
+                                                    : (gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2')) && !tabooOk
                                                         ? <span className="flex items-center justify-center gap-1.5"><ClockIcon className="w-4 h-4" />En attente des équipes…</span>
                                                         : <span className="flex items-center justify-center gap-1.5"><ClockIcon className="w-4 h-4" />En attente de joueurs…</span>}
                                 </button>
