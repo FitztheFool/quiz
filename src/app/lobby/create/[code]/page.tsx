@@ -24,6 +24,20 @@ import {
     type GameType,
 } from '@/lib/gameConfig';
 
+const GAME_SERVER_URL_BY_TYPE: Partial<Record<GameType, string | undefined>> = {
+    uno:        process.env.NEXT_PUBLIC_UNO_SERVER_URL,
+    quiz:       process.env.NEXT_PUBLIC_QUIZ_SERVER_URL,
+    taboo:      process.env.NEXT_PUBLIC_TABOO_SERVER_URL,
+    skyjow:     process.env.NEXT_PUBLIC_SKYJOW_SERVER_URL,
+    yahtzee:    process.env.NEXT_PUBLIC_YAHTZEE_SERVER_URL,
+    puissance4: process.env.NEXT_PUBLIC_P4_SERVER_URL,
+    just_one:   process.env.NEXT_PUBLIC_JUSTONE_SERVER_URL,
+    battleship: process.env.NEXT_PUBLIC_BATTLESHIP_SERVER_URL,
+    diamant:    process.env.NEXT_PUBLIC_DIAMANT_SERVER_URL,
+    impostor:   process.env.NEXT_PUBLIC_IMPOSTOR_SERVER_URL,
+    ludo:       process.env.NEXT_PUBLIC_LUDO_SERVER_URL,
+};
+
 type Player = { userId: string; username: string };
 
 type LobbyMeta = {
@@ -311,34 +325,20 @@ export default function LobbyCodePage() {
         reconnectConfigRef.current = { gameType, maxPlayers, isPublic, meta };
     }, [gameType, maxPlayers, isPublic, meta]);
 
-    // While waiting for a game server to wake up, poll the game server's /health directly
-    // from the browser (user's IP, not lobby-server IP) to avoid Render rate-limiting.
-    // Once health returns ok, notify the lobby-server so it can immediately retry the
-    // socket connection (bypassing its rate-limited IP on Render).
+    // While waiting for a game server to wake up, poll its /health via our /api/warmup
+    // proxy (same-origin) so client-side adblockers don't filter onrender.com requests.
     useEffect(() => {
         if (!isWarming) return;
-        const lobbyUrl = process.env.NEXT_PUBLIC_LOBBY_SERVER_URL;
-        if (!lobbyUrl) return;
-        let gameServerUrl: string | null = null;
+        const gameServerUrl = GAME_SERVER_URL_BY_TYPE[gameType];
+        if (!gameServerUrl) return;
         const notifyReady = () => socket?.emit('lobby:gameServerReady', { gameType });
         const interval = setInterval(async () => {
             try {
-                // Étape 1 : récupère l'URL du game server (une seule fois)
-                if (!gameServerUrl) {
-                    const res = await fetch(`${lobbyUrl}/warmup/${gameType}`);
-                    const data = await res.json();
-                    if (data.gameServerUrl) gameServerUrl = data.gameServerUrl;
-                    // ⚠️ On NE s'arrête PAS ici — le lobby répond OK immédiatement
-                    // même si le game server dort encore
-                }
-                // Étape 2 : poll directement le /health du game server
-                if (gameServerUrl) {
-                    const res = await fetch(`${gameServerUrl}/health`, {
-                        signal: AbortSignal.timeout(5_000),
-                    });
-                    if (res.ok) { clearInterval(interval); notifyReady(); }
-                }
-            } catch { /* timeout / CORS / réseau — on réessaie au prochain tick */ }
+                const res = await fetch(`/api/warmup?url=${encodeURIComponent(gameServerUrl)}`, {
+                    signal: AbortSignal.timeout(10_000),
+                });
+                if (res.ok) { clearInterval(interval); notifyReady(); }
+            } catch { /* timeout / réseau — on réessaie au prochain tick */ }
         }, 3_000);
         return () => clearInterval(interval);
     }, [isWarming, gameType, socket]);
