@@ -87,6 +87,7 @@ export default function GenerateQuizPage() {
                 const normalized = {
                     ...data,
                     categoryId: categoryId || '',
+                    generatedWithModel: modelId,
                     questions: data.questions.map((q: any, qi: number) => ({
                         ...q,
                         tempId: `gen_q_${qi}`,
