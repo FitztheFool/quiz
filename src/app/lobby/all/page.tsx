@@ -96,7 +96,7 @@ function LobbiesPageInner() {
     if (warmupStatus === 'error') return <ServerWarmupLoader error />;
     if (loading) {
         return (
-            <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
+            <main className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Voir les lobbies</h1>
                     <p className="text-lg text-gray-600 dark:text-gray-300">Rejoignez une partie et amusez-vous !</p>
@@ -107,7 +107,7 @@ function LobbiesPageInner() {
     }
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900">
+        <main className="flex-1">
             <div className="max-w-7xl mx-auto px-4 py-6 sm:py-12">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Voir les lobbies</h1>

@@ -136,7 +136,7 @@ export default function GenerateQuizPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 w-full max-w-md">
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">✨ Générer un quiz</h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">L'IA crée un quiz que vous pourrez modifier avant de publier.</p>
