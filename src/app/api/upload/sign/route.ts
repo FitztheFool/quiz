@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
         timestamp,
         folder,
         allowed_formats: ALLOWED_FORMATS,
-        max_bytes: MAX_BYTES,
     };
     const signature = cloudinary.utils.api_sign_request(
         signedParams,
