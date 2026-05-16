@@ -1,17 +1,14 @@
 // src/app/lobby/all/page.tsx
 'use client';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import ServerWarmupLoader from '@/components/ServerWarmupLoader';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { useLobbySocket } from '@/hooks/useSocket';
 import { useServerWarmup } from '@/hooks/useServerWarmup';
 import { GAME_CONFIG, LOBBY_GAME_OPTIONS } from '@/lib/gameConfig';
 import PlayerModal from '@/components/PlayerModal';
 import LobbyCard from '@/components/LobbyCard';
-import GameIcon from '@/components/GameIcon';
-import { RectangleGroupIcon, MagnifyingGlassIcon, FlagIcon, ClockIcon, UserIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { RectangleGroupIcon, MagnifyingGlassIcon, FlagIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface Lobby {
     id: string;
@@ -35,16 +32,12 @@ function LobbiesPageInner() {
     const { socket, connected } = useLobbySocket();
     const [lobbies, setLobbies] = useState<Lobby[]>([]);
 
-    const [loading, setLoading] = useState(false); // No loading since we have mock data
     const [selectedGameType, setSelectedGameType] = useState(() => {
         const g = searchParams.get('game');
         return g && gameTypes.includes(g) ? g : 'all';
     });
     const [showFull, setShowFull] = useState(false);
-    const [showWaiting, setShowWaiting] = useState(true);
     const [sortBy, setSortBy] = useState('newest');
-    const { data: session } = useSession();
-    const [showMyLobbies, setShowMyLobbies] = useState(false);
     const [lobbyPlayerModal, setLobbyPlayerModal] = useState<{ gameId: string; players: { username: string; score: number; placement: number | null }[] } | null>(null);
 
 
@@ -65,10 +58,10 @@ function LobbiesPageInner() {
     }, [socket, connected]);
 
     const filteredLobbies = lobbies.filter(lobby => {
-        if (!showMyLobbies && lobby.host === (session?.user?.username ?? session?.user?.email)) return false;
+
         if (selectedGameType !== 'all' && lobby.gameType !== selectedGameType) return false;
         if (!showFull && lobby.currentPlayers >= lobby.maxPlayers) return false;
-        if (!showWaiting && lobby.status === 'waiting') return false;
+        if (lobby.status === 'in-progress') return false;
         return true;
     }).sort((a, b) => {
         switch (sortBy) {
@@ -76,11 +69,6 @@ function LobbiesPageInner() {
                 return b.currentPlayers - a.currentPlayers;
             case 'capacity':
                 return (b.currentPlayers / b.maxPlayers) - (a.currentPlayers / a.maxPlayers);
-            case 'game':
-                return a.gameType.localeCompare(b.gameType);
-            case 'status':
-                if (a.status === b.status) return 0;
-                return a.status === 'waiting' ? -1 : 1;
             case 'newest':
             default:
                 // Assuming no date, sort by id or something
@@ -94,17 +82,6 @@ function LobbiesPageInner() {
 
     if (warmupStatus === 'warming' || warmupStatus === 'checking') return <ServerWarmupLoader />;
     if (warmupStatus === 'error') return <ServerWarmupLoader error />;
-    if (loading) {
-        return (
-            <main className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Voir les lobbies</h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-300">Rejoignez une partie et amusez-vous !</p>
-                    <LoadingSpinner message="Chargement des lobbies..." />
-                </div>
-            </main>
-        );
-    }
 
     return (
         <main className="flex-1">
@@ -115,11 +92,17 @@ function LobbiesPageInner() {
 
                 {/* Filters */}
                 <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
-                        <MagnifyingGlassIcon className="w-5 h-5" />
-                        Filtres et Tri
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <MagnifyingGlassIcon className="w-5 h-5" />
+                            Filtres et Tri
+                        </h2>
+                        <div className="text-right">
+                            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{filteredLobbies.length}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">lobbies trouvés</span>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Type de jeu</label>
                             <select
@@ -144,31 +127,16 @@ function LobbiesPageInner() {
                                 <option value="newest" className="bg-white dark:bg-gray-700">Plus récent</option>
                                 <option value="players" className="bg-white dark:bg-gray-700">Nombre de joueurs</option>
                                 <option value="capacity" className="bg-white dark:bg-gray-700">Capacité</option>
-                                <option value="game" className="bg-white dark:bg-gray-700">Type de jeu</option>
-                                <option value="status" className="bg-white dark:bg-gray-700">Statut</option>
-                            </select>
+                                            </select>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <label className="flex items-center cursor-pointer">
-                                <input type="checkbox" checked={showFull} onChange={(e) => setShowFull(e.target.checked)}
-                                    className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"><FlagIcon className="w-4 h-4" />Lobbies complets</span>
-                            </label>
-                            <label className="flex items-center cursor-pointer">
-                                <input type="checkbox" checked={showWaiting} onChange={(e) => setShowWaiting(e.target.checked)}
-                                    className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"><ClockIcon className="w-4 h-4" />Lobbies en attente</span>
-                            </label>
-                            <label className="flex items-center cursor-pointer">
-                                <input type="checkbox" checked={showMyLobbies} onChange={(e) => setShowMyLobbies(e.target.checked)}
-                                    className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"><UserIcon className="w-4 h-4" />Mes lobbies</span>
-                            </label>
-                        </div>
-                        <div className="flex items-center justify-center">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{filteredLobbies.length}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">lobbies trouvés</div>
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Filtres</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className="flex items-center cursor-pointer">
+                                    <input type="checkbox" checked={showFull} onChange={(e) => setShowFull(e.target.checked)}
+                                        className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"><FlagIcon className="w-4 h-4" />Lobbies complets</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -207,9 +175,7 @@ function LobbiesPageInner() {
                                 onClick={() => {
                                     setSelectedGameType('all');
                                     setShowFull(false);
-                                    setShowWaiting(true);
                                     setSortBy('newest');
-                                    setShowMyLobbies(false);
                                 }}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
                             >
