@@ -10,7 +10,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameIcon from '@/components/GameIcon';
 import SurrenderButton from '@/components/SurrenderButton';
-import { NoSymbolIcon } from '@heroicons/react/24/outline';
+import { NoSymbolIcon, TrophyIcon } from '@heroicons/react/24/outline';
 
 type CardColor = 'red' | 'green' | 'blue' | 'yellow' | 'wild';
 type Card = { id: string; color: CardColor; value: string };
@@ -32,6 +32,8 @@ type FinalScore = {
     score: number;
     rank: number;
     kicked: boolean;
+    abandon?: boolean;
+    afk?: boolean;
 };
 
 type GameState = {
@@ -75,7 +77,12 @@ const VALUE_LABEL: Record<string, ReactNode> = {
     skip: <NoSymbolIcon className="w-5 h-5" />, reverse: '🔄', draw2: '+2', wild: '🌈', wild4: '+4',
 };
 
-const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
+function RankBadge({ rank }: { rank: number }) {
+    if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold">1</span>;
+    if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs font-bold">2</span>;
+    if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-700 dark:bg-orange-800 text-orange-50 dark:text-orange-100 text-xs font-bold">3</span>;
+    return <span className="inline-flex items-center justify-center w-7 h-7 text-xs font-semibold text-gray-400">#{rank}</span>;
+}
 
 function UnoCard({ card, playable, selected, onClick }: {
     card: Card; playable?: boolean; selected?: boolean; onClick?: () => void;
@@ -224,7 +231,9 @@ export default function UnoPage() {
         return (
             <div className="flex-1 bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md text-gray-900 dark:text-white text-center shadow-lg">
-                    <div className="text-6xl mb-2">🏆</div>
+                    <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 mb-2 mx-auto">
+                        <TrophyIcon className="w-8 h-8 text-amber-500 dark:text-amber-400" />
+                    </div>
                     <h1 className="text-2xl font-bold mb-1">{gameState.winner?.username} a gagné !</h1>
                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
                         {gameState.spectator ? 'Vous avez observé cette partie' : 'Classement final'}
@@ -236,16 +245,17 @@ export default function UnoPage() {
                             ${s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-gray-100 dark:bg-gray-700'}
                             ${s.kicked ? 'opacity-60' : ''}`}>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xl w-7 text-center">
-                                        {RANK_MEDAL[s.rank] ?? `#${s.rank}`}
-                                    </span>
+                                    <RankBadge rank={s.rank} />
                                     <div>
                                         <div className="flex items-center gap-1.5">
                                             <span className="font-semibold">{s.username}</span>
                                             {s.userId === me.userId && !gameState.spectator && (
                                                 <span className="text-gray-500 dark:text-gray-400 text-xs">(moi)</span>
                                             )}
-                                            {s.kicked && (
+                                            {s.abandon && (
+                                                <span className="text-xs bg-orange-500/30 text-orange-400 px-1.5 py-0.5 rounded">Abandon</span>
+                                            )}
+                                            {!s.abandon && s.kicked && (
                                                 <span className="text-xs bg-red-500/30 text-red-400 px-1.5 py-0.5 rounded">AFK</span>
                                             )}
                                         </div>

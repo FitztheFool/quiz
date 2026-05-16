@@ -192,8 +192,8 @@ export default function AdminPanel() {
         <div className="flex gap-0 min-h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
 
             {/* Sidebar */}
-            <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-                <div className="px-4 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+            <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                <div className="px-4 pt-5 pb-4 border-b border-gray-200 dark:border-gray-800">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Administration</p>
                 </div>
                 <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">

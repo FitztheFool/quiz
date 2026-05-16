@@ -8,6 +8,7 @@ import {
     TrophyIcon,
     StarIcon,
     XMarkIcon,
+    Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import { plural } from '@/lib/utils';
 import Pagination from '@/components/Pagination';
@@ -39,6 +40,7 @@ const STAT_CARDS: { key: string; label: (n: number) => string; icon: React.FC<{ 
     { key: 'quizzes', label: n => plural(n, 'Quiz créé', 'Quiz créés'),       icon: PuzzlePieceIcon, color: 'text-violet-500 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
     { key: 'games',   label: n => plural(n, 'Partie jouée', 'Parties jouées'),icon: TrophyIcon,      color: 'text-amber-500  dark:text-amber-400',  bg: 'bg-amber-50  dark:bg-amber-900/20' },
     { key: 'points',  label: n => plural(n, 'Point marqué', 'Points marqués'),icon: StarIcon,        color: 'text-green-500  dark:text-green-400',  bg: 'bg-green-50  dark:bg-green-900/20' },
+    { key: 'gameTypes', label: n => plural(n, 'Jeu disponible', 'Jeux disponibles'), icon: Squares2X2Icon, color: 'text-pink-500 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-900/20' },
 ];
 
 export default function StatsTab({
@@ -61,13 +63,14 @@ export default function StatsTab({
         quizzes: stats.totals.quizzes,
         games: totalGames,
         points: stats.totals.pointsScored,
+        gameTypes: Object.values(stats.totals.gameStats).filter(v => v.count > 0).length,
     };
 
     return (
         <div id="admin-stats" className="scroll-mt-24 space-y-5">
 
             {/* Stat cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 {STAT_CARDS.map(({ key, label, icon: Icon, color, bg }) => (
                     <div key={key} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
                         <div className="flex items-start justify-between gap-2">

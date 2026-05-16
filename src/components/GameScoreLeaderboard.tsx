@@ -1,4 +1,5 @@
 // src/components/GameScoreLeaderboard.tsx
+import React from 'react';
 import { NoSymbolIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 function RankBadge({ rank }: { rank: number }) {
@@ -18,7 +19,7 @@ export interface GameScoreEntry {
     userId: string;
     username: string;
     score: string;
-    subScore?: string;
+    subScore?: React.ReactNode;
     badges?: string[];
     disqualified?: boolean;
 }

@@ -263,10 +263,12 @@ export default function LobbyCodePage() {
     const { status: warmupStatus } = useServerWarmup(process.env.NEXT_PUBLIC_LOBBY_SERVER_URL);
     const socket = useMemo(() => getLobbySocket(), []);
     const joinedRef = useRef(false);
+    const playersRef = useRef<Player[]>([]);
     const reconnectConfigRef = useRef({ gameType: 'uno' as GameType, maxPlayers: 8, isPublic: false, meta: null as LobbyMeta | null });
 
     const [meta, setMeta] = useState<LobbyMeta | null>(null);
     const [players, setPlayers] = useState<Player[]>([]);
+    useEffect(() => { playersRef.current = players; }, [players]);
     const [hostId, setHostId] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [canStart, setCanStart] = useState(false);
@@ -494,7 +496,7 @@ export default function LobbyCodePage() {
                 } else {
                     const routeFn = GAME_ROUTES[payload.gameType];
                     if (routeFn) {
-                        sessionStorage.setItem(`lobby_players_${lobbyId}`, JSON.stringify(players));
+                        sessionStorage.setItem(`lobby_players_${lobbyId}`, JSON.stringify(playersRef.current));
                         router.push(routeFn(lobbyId, payload.gameId));
                     }
                 }

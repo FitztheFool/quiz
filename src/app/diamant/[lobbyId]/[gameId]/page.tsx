@@ -14,7 +14,7 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
-import { TrophyIcon, SparklesIcon, LockClosedIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, SparklesIcon, LockClosedIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, ClockIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -411,13 +411,24 @@ export default function DiamantPage() {
                         myUserId={myUserId}
                         entries={state.finalScores.map((p) => {
                             const surrendered = state.players.find(pl => pl.userId === p.userId)?.surrendered ?? false;
-                            const parts = [`💎 ${p.safeDiamants} ${plural(p.safeDiamants, 'diamant', 'diamants')}`];
-                            if (p.relicPoints > 0) parts.push(`🏺 ${p.relicPoints} pts reliques`);
                             return {
                                 userId: p.userId,
                                 username: p.username,
                                 score: `${p.score ?? 0} pts`,
-                                subScore: parts.join('  ·  '),
+                                subScore: (
+                                    <span className="flex items-center gap-2 flex-wrap">
+                                        <span className="flex items-center gap-1">
+                                            <SparklesIcon className="w-3 h-3" />
+                                            {p.safeDiamants} {plural(p.safeDiamants, 'diamant', 'diamants')}
+                                        </span>
+                                        {p.relicPoints > 0 && (
+                                            <span className="flex items-center gap-1">
+                                                <ArchiveBoxIcon className="w-3 h-3" />
+                                                {p.relicPoints} pts reliques
+                                            </span>
+                                        )}
+                                    </span>
+                                ),
                                 badges: surrendered ? ['Abandon'] : undefined,
                                 disqualified: surrendered,
                             };

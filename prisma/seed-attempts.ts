@@ -628,6 +628,50 @@ export async function seedPacmanAttempts(prisma: PrismaClient, players: UserLike
     console.log(`✅ Attempts Pacman créés pour ${players.length} joueurs`);
 }
 
+// ─── LUDO ─────────────────────────────────────────────────────────────────────
+
+export async function seedLudoAttempts(prisma: PrismaClient, players: UserLike[]) {
+    console.log('\n🎯 Création des parties Ludo...');
+    const total = 40;
+
+    const dates = Array.from({ length: total }, (_, g) =>
+        daysAgo(Math.floor((g / total) * 70), Math.floor(Math.random() * 36))
+    ).sort((a, b) => a.getTime() - b.getTime());
+
+    for (let g = 0; g < total; g++) {
+        const gameId = crypto.randomUUID();
+        const playerCount = Math.min(Math.floor(Math.random() * 3) + 2, players.length); // 2-4 players
+        const participants = shufflePlayers(players).slice(0, playerCount);
+
+        const bots = maybeBots(() => Math.floor(Math.random() * 30) + 10, 2);
+        const vsBot = bots.length > 0;
+
+        // Score = pawns that reached home (0-4), winner has most
+        const ranked = participants
+            .map(player => ({ player, score: Math.floor(Math.random() * 4) + 1 }))
+            .sort((a, b) => b.score - a.score);
+        // Winner always gets 4 (all pawns home)
+        ranked[0].score = 4;
+
+        if (vsBot) assignBotPlacements(bots, ranked.map(r => r.score));
+
+        for (let p = 0; p < ranked.length; p++) {
+            const { abandon, afk } = randomLeaveFlags(p === 0);
+            await prisma.attempt.create({
+                data: {
+                    userId: ranked[p].player.id, score: ranked[p].score,
+                    gameType: 'LUDO', placement: p + 1,
+                    gameId, quizId: null, trapScore: 0, abandon, afk, vsBot,
+                    ...(vsBot && p === 0 ? { botScores: bots } : {}),
+                    createdAt: new Date(dates[g].getTime() + p * 1000),
+                },
+            });
+        }
+        console.log(`  ✅ Ludo ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
+    }
+    console.log(`✅ ${total} parties Ludo créées`);
+}
+
 // ─── BREAKOUT ─────────────────────────────────────────────────────────────────
 
 export async function seedBreakoutAttempts(prisma: PrismaClient, players: UserLike[]) {
