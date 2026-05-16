@@ -29,10 +29,16 @@ export async function PATCH(
     if (existing && existing.id !== session.user.id)
         return NextResponse.json({ error: 'Cet email est déjà utilisé.' }, { status: 409 });
 
-    await prisma.user.update({
-        where: { id: session.user.id },
-        data: { email: trimmed, status: 'PENDING' },
-    });
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { email: trimmed, status: 'PENDING' },
+        });
+    } catch (e: any) {
+        if (e?.code === 'P2025')
+            return NextResponse.json({ error: 'Session expirée, reconnectez-vous.' }, { status: 401 });
+        throw e;
+    }
 
     await prisma.verificationToken.deleteMany({ where: { identifier: trimmed } });
     const token = randomBytes(32).toString('hex');
