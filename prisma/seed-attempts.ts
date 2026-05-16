@@ -240,28 +240,42 @@ export async function seedTabooAttempts(prisma: PrismaClient, players: UserLike[
     console.log(`✅ ${total} parties Taboo créées`);
 }
 
-// ─── YAHTZEE ──────────────────────────────────────────────────────────────────
+// ─── Ranked-game factory ──────────────────────────────────────────────────────
+// Shared by Yahtzee, Diamant, Ludo (and any future "highest score wins" game).
 
-export async function seedYahtzeeAttempts(prisma: PrismaClient, players: UserLike[]) {
-    console.log('\n🎲 Création des parties Yahtzee...');
-    const total = 50;
+interface RankedGameConfig {
+    gameType: string;
+    label: string;
+    total: number;
+    daysSpread: number;
+    maxPlayers: number;
+    scoreGen: () => number;
+    maxBots?: number;
+    postRank?: (ranked: { player: UserLike; score: number }[]) => void;
+}
+
+async function seedRankedAttempts(prisma: PrismaClient, players: UserLike[], cfg: RankedGameConfig): Promise<void> {
+    const { gameType, label, total, daysSpread, maxPlayers, scoreGen, maxBots = 2, postRank } = cfg;
+    console.log(`\n Création des parties ${label}...`);
 
     const dates = Array.from({ length: total }, (_, g) =>
-        daysAgo(Math.floor((g / total) * 100), Math.floor(Math.random() * 36))
+        daysAgo(Math.floor((g / total) * daysSpread), Math.floor(Math.random() * 36))
     ).sort((a, b) => a.getTime() - b.getTime());
 
     for (let g = 0; g < total; g++) {
         const gameId = crypto.randomUUID();
-        const playerCount = Math.floor(Math.random() * (players.length - 1)) + 2;
+        const cap = Math.min(maxPlayers, players.length);
+        const playerCount = Math.floor(Math.random() * (cap - 1)) + 2;
         const participants = shufflePlayers(players).slice(0, playerCount);
 
-        const bots = maybeBots(() => Math.floor(Math.random() * 275) + 100, 2);
+        const bots = maybeBots(scoreGen, maxBots);
         const vsBot = bots.length > 0;
 
         const ranked = participants
-            .map(player => ({ player, score: Math.floor(Math.random() * 275) + 100 }))
+            .map(player => ({ player, score: scoreGen() }))
             .sort((a, b) => b.score - a.score);
 
+        postRank?.(ranked);
         if (vsBot) assignBotPlacements(bots, ranked.map(r => r.score));
 
         for (let p = 0; p < ranked.length; p++) {
@@ -269,16 +283,26 @@ export async function seedYahtzeeAttempts(prisma: PrismaClient, players: UserLik
             await prisma.attempt.create({
                 data: {
                     userId: ranked[p].player.id, score: ranked[p].score,
-                    gameType: 'YAHTZEE', placement: p + 1,
+                    gameType: gameType as any, placement: p + 1,
                     gameId, quizId: null, trapScore: 0, abandon, afk, vsBot,
                     ...(vsBot && p === 0 ? { botScores: bots } : {}),
                     createdAt: new Date(dates[g].getTime() + p * 1000),
                 },
             });
         }
-        console.log(`  ✅ Yahtzee ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
+        console.log(`  ✅ ${label} ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
     }
-    console.log(`✅ ${total} parties Yahtzee créées`);
+    console.log(`✅ ${total} parties ${label} créées`);
+}
+
+// ─── YAHTZEE ──────────────────────────────────────────────────────────────────
+
+export async function seedYahtzeeAttempts(prisma: PrismaClient, players: UserLike[]) {
+    await seedRankedAttempts(prisma, players, {
+        gameType: 'YAHTZEE', label: 'Yahtzee', total: 50, daysSpread: 100,
+        maxPlayers: players.length,
+        scoreGen: () => Math.floor(Math.random() * 275) + 100,
+    });
 }
 
 // ─── PUISSANCE 4 ──────────────────────────────────────────────────────────────
@@ -431,44 +455,12 @@ export async function seedBattleshipAttempts(prisma: PrismaClient, players: User
 // ─── DIAMANT ──────────────────────────────────────────────────────────────────
 
 export async function seedDiamantAttempts(prisma: PrismaClient, players: UserLike[]) {
-    console.log('\n💎 Création des parties Diamant...');
-    const total = 40;
-
-    for (let g = 0; g < total; g++) {
-        const gameId = crypto.randomUUID();
-        const playerCount = Math.min(Math.floor(Math.random() * 5) + 2, players.length);
-        const participants = shufflePlayers(players).slice(0, playerCount);
-
-        const bots = maybeBots(
-            () => Math.floor(Math.random() * 45) + (Math.random() < 0.3 ? Math.floor(Math.random() * 3) * 5 : 0),
-            2,
-        );
-        const vsBot = bots.length > 0;
-
-        const ranked = participants
-            .map(player => ({
-                player,
-                score: Math.floor(Math.random() * 45) + (Math.random() < 0.3 ? Math.floor(Math.random() * 3) * 5 : 0),
-            }))
-            .sort((a, b) => b.score - a.score);
-
-        if (vsBot) assignBotPlacements(bots, ranked.map(r => r.score));
-
-        for (let p = 0; p < ranked.length; p++) {
-            const { abandon, afk } = randomLeaveFlags(p === 0);
-            await prisma.attempt.create({
-                data: {
-                    userId: ranked[p].player.id, score: ranked[p].score,
-                    gameType: 'DIAMANT', placement: p + 1,
-                    gameId, quizId: null, trapScore: 0, abandon, afk, vsBot,
-                    ...(vsBot && p === 0 ? { botScores: bots } : {}),
-                    createdAt: daysAgo(Math.floor((g / total) * 70), Math.floor(Math.random() * 24)),
-                },
-            });
-        }
-        console.log(`  ✅ Diamant ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
-    }
-    console.log(`✅ ${total} parties Diamant créées`);
+    const scoreGen = () => Math.floor(Math.random() * 45) + (Math.random() < 0.3 ? Math.floor(Math.random() * 3) * 5 : 0);
+    await seedRankedAttempts(prisma, players, {
+        gameType: 'DIAMANT', label: 'Diamant', total: 40, daysSpread: 70,
+        maxPlayers: 6,
+        scoreGen,
+    });
 }
 
 // ─── IMPOSTOR ─────────────────────────────────────────────────────────────────
@@ -631,45 +623,12 @@ export async function seedPacmanAttempts(prisma: PrismaClient, players: UserLike
 // ─── LUDO ─────────────────────────────────────────────────────────────────────
 
 export async function seedLudoAttempts(prisma: PrismaClient, players: UserLike[]) {
-    console.log('\n🎯 Création des parties Ludo...');
-    const total = 40;
-
-    const dates = Array.from({ length: total }, (_, g) =>
-        daysAgo(Math.floor((g / total) * 70), Math.floor(Math.random() * 36))
-    ).sort((a, b) => a.getTime() - b.getTime());
-
-    for (let g = 0; g < total; g++) {
-        const gameId = crypto.randomUUID();
-        const playerCount = Math.min(Math.floor(Math.random() * 3) + 2, players.length); // 2-4 players
-        const participants = shufflePlayers(players).slice(0, playerCount);
-
-        const bots = maybeBots(() => Math.floor(Math.random() * 30) + 10, 2);
-        const vsBot = bots.length > 0;
-
-        // Score = pawns that reached home (0-4), winner has most
-        const ranked = participants
-            .map(player => ({ player, score: Math.floor(Math.random() * 4) + 1 }))
-            .sort((a, b) => b.score - a.score);
-        // Winner always gets 4 (all pawns home)
-        ranked[0].score = 4;
-
-        if (vsBot) assignBotPlacements(bots, ranked.map(r => r.score));
-
-        for (let p = 0; p < ranked.length; p++) {
-            const { abandon, afk } = randomLeaveFlags(p === 0);
-            await prisma.attempt.create({
-                data: {
-                    userId: ranked[p].player.id, score: ranked[p].score,
-                    gameType: 'LUDO', placement: p + 1,
-                    gameId, quizId: null, trapScore: 0, abandon, afk, vsBot,
-                    ...(vsBot && p === 0 ? { botScores: bots } : {}),
-                    createdAt: new Date(dates[g].getTime() + p * 1000),
-                },
-            });
-        }
-        console.log(`  ✅ Ludo ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
-    }
-    console.log(`✅ ${total} parties Ludo créées`);
+    await seedRankedAttempts(prisma, players, {
+        gameType: 'LUDO', label: 'Ludo', total: 40, daysSpread: 70,
+        maxPlayers: 4,
+        scoreGen: () => Math.floor(Math.random() * 4) + 1,
+        postRank: ranked => { ranked[0].score = 4; }, // winner always finishes all pawns
+    });
 }
 
 // ─── BREAKOUT ─────────────────────────────────────────────────────────────────
