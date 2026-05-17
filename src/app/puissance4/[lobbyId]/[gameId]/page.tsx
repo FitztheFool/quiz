@@ -18,9 +18,9 @@ import { TrophyIcon, XCircleIcon, CpuChipIcon, ScaleIcon } from '@heroicons/reac
 const ROWS = 6;
 const COLS = 7;
 
-const PLAYER_COLORS: Record<0 | 1, { ring: string; bg: string; text: string; glow: string; emoji: string }> = {
-    0: { ring: 'ring-red-500', bg: 'bg-red-500', text: 'text-red-500', glow: 'shadow-red-500/60', emoji: '🔴' },
-    1: { ring: 'ring-yellow-400', bg: 'bg-yellow-400', text: 'text-yellow-400', glow: 'shadow-yellow-400/60', emoji: '🟡' },
+const PLAYER_COLORS: Record<0 | 1, { ring: string; bg: string; text: string; glow: string }> = {
+    0: { ring: 'ring-red-500', bg: 'bg-red-500', text: 'text-red-500', glow: 'shadow-red-500/60' },
+    1: { ring: 'ring-yellow-400', bg: 'bg-yellow-400', text: 'text-yellow-400', glow: 'shadow-yellow-400/60' },
 };
 
 function CellPiece({ value, isWin }: { value: Cell; isWin: boolean }) {
@@ -36,7 +36,7 @@ function CellPiece({ value, isWin }: { value: Cell; isWin: boolean }) {
 
 function BotBadge() {
     return (
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 leading-none">
+        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 leading-none">
             BOT
         </span>
     );
@@ -46,7 +46,7 @@ function PlayerLabel({ player, active, vsBot: _vsBot, inactivityEndsAt }: { play
     const bot = isBot(player);
     return (
         <span className={`flex items-center gap-1.5 transition-all ${active ? 'font-bold' : 'font-normal opacity-60'}`}>
-            {PLAYER_COLORS[player.colorIndex].emoji}
+            <span className={`inline-block w-3 h-3 rounded-full ${PLAYER_COLORS[player.colorIndex].bg} align-middle`} />
             {player.username}
             {bot && <BotBadge />}
             {inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
@@ -81,8 +81,7 @@ export default function Puissance4Page() {
     const player0 = players.find(p => p.colorIndex === 0);
     const player1 = players.find(p => p.colorIndex === 1);
 
-    // En mode solo vs bot, le surrender n'a pas de sens (on peut juste quitter)
-    const showSurrender = gameState.status === 'playing' && !vsBot;
+    const showSurrender = gameState.status === 'playing';
 
     return (
         <>
@@ -92,8 +91,8 @@ export default function Puissance4Page() {
           to   { transform: translateY(0);     opacity: 1; }
         }
         @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.1); }
-          50%       { box-shadow: 0 0 24px 6px rgba(255,255,255,0.15); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+          50%       { box-shadow: 0 0 24px 6px rgba(59,130,246,0.45); }
         }
         .col-hover { animation: pulse-glow 1.5s ease-in-out infinite; }
       `}</style>
@@ -101,7 +100,7 @@ export default function Puissance4Page() {
             <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
                 <GamePageHeader
-                    left={<><GameIcon gameType="puissance4" className="w-5 h-5 text-gray-700 dark:text-gray-300" /><span className="font-bold">Puissance 4{vsBot && <span className="ml-2 text-xs font-normal text-indigo-400">vs Bot</span>}</span></>}
+                    left={<><GameIcon gameType="puissance4" className="w-5 h-5 text-gray-700 dark:text-gray-300" /><span className="font-bold">Puissance 4{vsBot && <span className="ml-2 text-xs font-normal text-indigo-600 dark:text-indigo-400">vs Bot</span>}</span></>}
                     center={
                         <div className="flex items-center gap-2 text-sm">
                             {players.length === 2 && player0 && player1 ? (
@@ -145,11 +144,8 @@ export default function Puissance4Page() {
                         )}
 
                         <div
-                            className="rounded-2xl p-3 gap-2 grid"
+                            className="rounded-2xl p-3 gap-2 grid bg-blue-600 dark:bg-[#0f1e50]/95 backdrop-blur-md border-2 border-blue-700 dark:border-[#1e3c8c]/80"
                             style={{
-                                background: 'rgba(15,30,80,0.95)',
-                                backdropFilter: 'blur(12px)',
-                                border: '2px solid rgba(30,60,140,0.8)',
                                 gridTemplateColumns: `repeat(${COLS}, 56px)`,
                                 gridTemplateRows: `repeat(${ROWS}, 56px)`,
                             }}
@@ -165,7 +161,9 @@ export default function Puissance4Page() {
                                             key={`${row}-${col}`}
                                             className={`relative rounded-full transition-all duration-150
                                                 ${isMyTurn && !colFull ? 'cursor-pointer' : 'cursor-default'}
-                                                ${colHovered && isMyTurn && !colFull ? 'col-hover bg-white/10' : 'bg-black/60'}
+                                                ${colHovered && isMyTurn && !colFull
+                                                    ? 'col-hover bg-blue-200 dark:bg-white/10'
+                                                    : 'bg-white dark:bg-black/60'}
                                             `}
                                             onClick={() => drop(col)}
                                             onMouseEnter={() => isMyTurn && setHoverCol(col)}
@@ -184,8 +182,8 @@ export default function Puissance4Page() {
                                     onMouseEnter={() => isMyTurn && setHoverCol(col)}
                                     className={`w-14 text-center text-xs font-semibold rounded transition-colors duration-150
                                         ${isMyTurn
-                                            ? 'cursor-pointer text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                                            : 'text-gray-300 dark:text-gray-700 cursor-default'}`}
+                                            ? 'cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                                            : 'text-gray-400 dark:text-gray-500 cursor-default'}`}
                                 >
                                     {col + 1}
                                 </div>
@@ -210,7 +208,7 @@ export default function Puissance4Page() {
                             gameState.reason === 'surrender' ? 'Abandon'
                                 : gameState.reason === 'afk' ? 'AFK'
                                     : winnerPlayer && gameState.winner !== 'draw'
-                                        ? `${PLAYER_COLORS[winnerPlayer.colorIndex].emoji} 4 en ligne !`
+                                        ? '4 en ligne !'
                                         : undefined
                         }
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}

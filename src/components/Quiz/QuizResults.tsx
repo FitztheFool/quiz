@@ -175,7 +175,7 @@ function QuestionCard({ result, index, leaderboard, currentUserId }: {
                     <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 font-medium">{result.points} pts</span>
                 </div>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                    ✅ <span className="font-medium">{result.correctAnswerText}</span>
+                    <CheckCircleIcon className="inline-block w-3.5 h-3.5 align-text-bottom mr-1" /><span className="font-medium">{result.correctAnswerText}</span>
                 </p>
             </div>
 
@@ -192,7 +192,7 @@ function QuestionCard({ result, index, leaderboard, currentUserId }: {
                                 ? (gotPoints ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400')
                                 : 'text-gray-300 dark:text-gray-600'
                                 }`}>
-                                {playerResult ? (gotPoints ? '✓' : '✗') : '—'}
+                                {playerResult ? (gotPoints ? <CheckIcon className="w-5 h-5 inline-block" /> : <XMarkIcon className="w-5 h-5 inline-block" />) : '—'}
                             </span>
                             <span className="font-medium text-gray-700 dark:text-gray-200 text-sm min-w-0 w-24 shrink-0 flex items-center gap-1">
                                 <span className="truncate">{entry.username}</span>

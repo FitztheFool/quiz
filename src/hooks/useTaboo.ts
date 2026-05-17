@@ -59,7 +59,6 @@ export function useTaboo({
 }) {
     const socketRef = useRef<ReturnType<typeof getTabooSocket>>(null);
     const joinedRef = useRef(false);
-    const isHostRef = useRef(false);
     const startGameSentRef = useRef(false);
 
     const [game, setGame] = useState<TabooState | null>(null);
@@ -68,11 +67,12 @@ export function useTaboo({
     // Host auto-start: start trap once both words are set
     useEffect(() => {
         if (!socketRef.current || !game) return;
-        if (game.phase === 'trap' && !game.trapStarted && game.team0Word && game.team1Word && isHostRef.current) {
+        const isHost = game.hostId === userId;
+        if (game.phase === 'trap' && !game.trapStarted && game.team0Word && game.team1Word && isHost) {
             socketRef.current.emit('taboo:startTrap', { lobbyId });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [game?.phase, game?.trapStarted, game?.team0Word, game?.team1Word]);
+    }, [game?.phase, game?.trapStarted, game?.team0Word, game?.team1Word, game?.hostId, userId]);
 
     // Reset startGameSent on new round
     useEffect(() => {
@@ -82,6 +82,7 @@ export function useTaboo({
     // Host auto-start: start round once trap timer ends
     useEffect(() => {
         if (!socketRef.current || !game) return;
+        const isHost = game.hostId === userId;
         if (
             game.phase === 'trap' &&
             game.trapStarted &&
@@ -89,7 +90,7 @@ export function useTaboo({
             game.team1Word &&
             game.trapTimeLeft !== null &&
             game.trapTimeLeft <= 0 &&
-            isHostRef.current &&
+            isHost &&
             !startGameSentRef.current
         ) {
             startGameSentRef.current = true;
@@ -98,11 +99,6 @@ export function useTaboo({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [game?.trapTimeLeft]);
-
-    // Track isHost in ref for use in effects
-    useEffect(() => {
-        isHostRef.current = !!game && game.hostId === userId;
-    }, [game?.hostId, userId]);
 
     useEffect(() => {
         if (!lobbyId || !userId) return;

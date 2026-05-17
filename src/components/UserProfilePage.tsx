@@ -9,7 +9,7 @@ import QuizCard from '@/components/Quiz/QuizCard';
 import Pagination from '@/components/Pagination';
 import UserStats from '@/components/UserStats';
 import { MembersOnlyBanner } from '@/components/MembersOnlyBanner';
-import { ChartBarIcon, BookOpenIcon, Cog6ToothIcon, PencilSquareIcon, SparklesIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, BookOpenIcon, Cog6ToothIcon, PencilSquareIcon, SparklesIcon, EnvelopeIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 // ── Bloc finaliser le compte ───────────────────────────────────────────────────
 
@@ -134,7 +134,7 @@ function ClaimAccountBlock({ currentUsername, isPendingVerification = false }: {
                 <div className="mt-3 flex items-center gap-3">
                     {resendCooldown > 0 ? (
                         <p className="text-xs text-blue-600 dark:text-blue-400">
-                            {resendRateLimited ? 'Trop de tentatives —' : 'Lien envoyé ✓ —'} Renvoi possible dans{' '}
+                            {resendRateLimited ? 'Trop de tentatives —' : <>Lien envoyé <CheckIcon className="w-3.5 h-3.5 inline-block text-green-500 align-middle" /> —</>} Renvoi possible dans{' '}
                             <span className="font-semibold">{Math.floor(resendCooldown / 60)}:{String(resendCooldown % 60).padStart(2, '0')}</span>
                         </p>
                     ) : (
@@ -275,7 +275,7 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
                         {/* Nom */}
                         <div className="flex-1 min-w-0">
                             <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight truncate">
-                                {isOwnProfile ? `Bonjour, ${displayName}` : displayName}
+                                {displayName}
                             </h1>
                             <p className="text-xs text-gray-400 dark:text-gray-500">
                                 Profil joueur

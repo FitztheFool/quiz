@@ -11,6 +11,8 @@ import QuizFilters from '@/components/Quiz/QuizFilters';
 import Pagination from '@/components/Pagination';
 import ScoreList from '@/components/ScoreList';
 import type { TabType } from '@/types/dashboard';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 const PAGE_SIZE = 6;
 
@@ -314,7 +316,7 @@ export default function DashboardPage() {
                                     <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">{plural(myScores.length, 'Quiz complété', 'Quizzes complétés')}</p>
                                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{myScores.length}</p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-xl shadow-inner">✅</div>
+                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 shadow-inner"><CheckCircleIcon className="w-6 h-6 text-green-500" /></div>
                             </div>
                             <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Nombre de quiz terminés avec un score enregistré</p>
                         </div>
@@ -324,7 +326,7 @@ export default function DashboardPage() {
                                     <p className="text-xs font-semibold tracking-wide text-violet-700 uppercase">{plural(myQuizzesTotal, 'Quiz créé', 'Quizzes créés')}</p>
                                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{myQuizzesTotal}</p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-xl shadow-inner">✍️</div>
+                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 shadow-inner"><PencilSquareIcon className="w-6 h-6 text-violet-600" /></div>
                             </div>
                             <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Tes quiz publiés ou conservés dans ton espace</p>
                         </div>

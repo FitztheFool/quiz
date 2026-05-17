@@ -1,5 +1,6 @@
 // src/components/QuizSearch.tsx
 import { useRef, useState } from "react";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
 function QuizSearch({ isHost, onSelect, selectedId }: { isHost: boolean; onSelect: (id: string, title: string) => void; selectedId?: string }) {
     const [query, setQuery] = useState('');
@@ -45,7 +46,7 @@ function QuizSearch({ isHost, onSelect, selectedId }: { isHost: boolean; onSelec
                 </div>
             )}
             {selectedId && selectedTitle && (
-                <p className="text-xs text-green-400 mt-1">✅ {selectedTitle}</p>
+                <p className="text-xs text-green-400 mt-1"><CheckCircleIcon className="inline-block w-3.5 h-3.5 align-text-bottom mr-1" />{selectedTitle}</p>
             )}
         </div>
     );

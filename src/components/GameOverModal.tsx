@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { TrophyIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface GameOverModalProps {
     icon?: React.ReactNode;
@@ -27,8 +28,15 @@ export default function GameOverModal({
     lobbyLabel,
     asModal = false,
 }: GameOverModalProps) {
+    const trapRef = useFocusTrap<HTMLDivElement>(asModal, onClose);
     const card = (
-        <div className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-2xl space-y-4">
+        <div
+            ref={asModal ? trapRef : undefined}
+            role={asModal ? 'dialog' : undefined}
+            aria-modal={asModal ? true : undefined}
+            aria-label={title}
+            className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-2xl space-y-4"
+        >
             {onClose && (
                 <button
                     onClick={onClose}

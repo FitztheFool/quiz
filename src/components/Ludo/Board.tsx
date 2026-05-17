@@ -13,6 +13,7 @@ import {
     pawnCoord,
 } from './boardLayout';
 import type { LudoPlayer } from '@/hooks/useLudo';
+import { StarIcon } from '@heroicons/react/24/solid';
 
 interface BoardProps {
     players: LudoPlayer[];
@@ -168,7 +169,7 @@ function CellTile({ row, col, meta }: { row: number; col: number; meta?: { kind:
         const color = meta.color !== undefined ? COLOR_CLASSES[meta.color] : null;
         return (
             <div className={`flex items-center justify-center border border-gray-200 dark:border-gray-700 ${color ? color.soft : 'bg-white dark:bg-gray-900'}`}>
-                {meta.isSafe && <span className="text-xs text-gray-400 dark:text-gray-500 select-none">★</span>}
+                {meta.isSafe && <StarIcon className="w-3 h-3 text-gray-400 dark:text-gray-500 select-none" />}
             </div>
         );
     }

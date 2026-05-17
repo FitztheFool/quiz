@@ -66,7 +66,7 @@ export default function LudoPage() {
     );
 
     const vsBot = state.players.some(p => isBot(p) && p.userId !== me.userId);
-    const showSurrender = state.phase !== 'finished' && !vsBot;
+    const showSurrender = state.phase !== 'finished';
 
     // Game over computation
     const winnerLabel = (() => {

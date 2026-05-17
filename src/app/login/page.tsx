@@ -8,7 +8,7 @@ import Link from 'next/link';
 import DiscordButton from '@/components/DiscordButton';
 import GoogleButton from '@/components/GoogleButton';
 import GuestLoginButton from '@/components/GuestLoginButton';
-import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon, LockClosedIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 function LoginForm() {
     const { status } = useSession();
@@ -171,20 +171,20 @@ function LoginForm() {
 
                     {callbackUrl !== '/dashboard' && (
                         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 rounded-lg">
-                            <p className="text-sm">🔒 Vous devez être connecté pour accéder à cette page</p>
+                            <p className="text-sm flex items-center gap-1.5"><LockClosedIcon className="w-4 h-4" />Vous devez être connecté pour accéder à cette page</p>
                         </div>
                     )}
 
                     {verified && (
                         <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-sm text-green-700 dark:text-green-300">
-                            <p className="font-semibold">Email confirmé ✓</p>
+                            <p className="font-semibold flex items-center gap-1.5">Email confirmé <CheckIcon className="w-4 h-4 text-green-500" /></p>
                             <p className="mt-1">Votre compte est activé. Vous pouvez vous connecter.</p>
                         </div>
                     )}
 
                     {passwordReset && (
                         <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-sm text-green-700 dark:text-green-300">
-                            <p className="font-semibold">Mot de passe modifié ✓</p>
+                            <p className="font-semibold flex items-center gap-1.5">Mot de passe modifié <CheckIcon className="w-4 h-4 text-green-500" /></p>
                             <p className="mt-1">Vous pouvez vous connecter.</p>
                         </div>
                     )}
@@ -201,7 +201,7 @@ function LoginForm() {
                             <p className="mt-1">Un lien d'activation a été envoyé à votre adresse email. Cliquez dessus pour activer votre compte.</p>
                             {resendCooldown > 0 ? (
                                 <p className="mt-2 text-xs">
-                                    {resendRateLimited ? 'Trop de tentatives —' : 'Lien envoyé ✓ —'} Renvoi possible dans <span className="font-semibold">{Math.floor(resendCooldown / 60)}:{String(resendCooldown % 60).padStart(2, '0')}</span>
+                                    {resendRateLimited ? 'Trop de tentatives —' : <>Lien envoyé <CheckIcon className="w-3.5 h-3.5 text-green-500 inline-block align-middle" /> —</>} Renvoi possible dans <span className="font-semibold">{Math.floor(resendCooldown / 60)}:{String(resendCooldown % 60).padStart(2, '0')}</span>
                                 </p>
                             ) : (
                                 <button onClick={handleResend} disabled={resendLoading} className="mt-2 text-xs font-semibold underline hover:no-underline disabled:opacity-50">
@@ -217,7 +217,7 @@ function LoginForm() {
                             <p className="mt-1">Vérifiez votre boîte mail et cliquez sur le lien d'activation.</p>
                             {resendCooldown > 0 ? (
                                 <p className="mt-2 text-xs">
-                                    {resendRateLimited ? 'Trop de tentatives —' : 'Lien envoyé ✓ —'} Renvoi possible dans <span className="font-semibold">{Math.floor(resendCooldown / 60)}:{String(resendCooldown % 60).padStart(2, '0')}</span>
+                                    {resendRateLimited ? 'Trop de tentatives —' : <>Lien envoyé <CheckIcon className="w-3.5 h-3.5 text-green-500 inline-block align-middle" /> —</>} Renvoi possible dans <span className="font-semibold">{Math.floor(resendCooldown / 60)}:{String(resendCooldown % 60).padStart(2, '0')}</span>
                                 </p>
                             ) : (
                                 <button

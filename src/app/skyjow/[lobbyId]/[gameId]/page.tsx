@@ -14,7 +14,8 @@ import { useGamePage } from '@/hooks/useGamePage';
 import { useSkyjow } from '@/hooks/useSkyjow';
 
 import type { CardState, PlayerPublic, Phase } from '@/hooks/useSkyjow';
-import { ChartBarIcon, ClockIcon, NoSymbolIcon, ExclamationTriangleIcon, BoltIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, ClockIcon, NoSymbolIcon, ExclamationTriangleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { BoltIcon } from '@heroicons/react/24/solid';
 
 // ── Helpers visuels ───────────────────────────────────────────────────────────
 
@@ -556,7 +557,7 @@ export default function skyjowGamePage() {
                                             onClick={() => setDrawnAction('discard_flip')}
                                             className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${drawnAction === 'discard_flip' ? 'bg-amber-600 border-amber-400 text-white' : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-500'}`}
                                         >
-                                            🗑 Jeter & retourner
+                                            <span className="inline-flex items-center justify-center gap-1.5"><TrashIcon className="w-4 h-4" />Jeter & retourner</span>
                                         </button>
                                     </div>
                                     {drawnAction === 'swap' && <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2">Clique sur n'importe quelle carte pour l'échanger</p>}
@@ -575,7 +576,7 @@ export default function skyjowGamePage() {
                             )}
                             {phase === 'last_round' && isCurrent && (
                                 <div className="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/50 rounded-xl px-5 py-3 mt-2">
-                                    <p className="text-red-700 dark:text-red-300 font-bold">⚡ Dernier tour !</p>
+                                    <p className="text-red-700 dark:text-red-300 font-bold flex items-center gap-1.5"><BoltIcon className="w-4 h-4 text-yellow-500" />Dernier tour !</p>
                                     <p className="text-red-600 dark:text-red-400 text-sm mt-1">C'est encore ton tour — joue normalement</p>
                                 </div>
                             )}

@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AI_MODELS, DEFAULT_MODEL_ID, type ModelId } from '@/lib/aiModels';
+import { SparklesIcon, PlayIcon, ExclamationTriangleIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 interface Category {
     id: string;
@@ -13,9 +14,9 @@ interface Category {
 }
 
 const DIFFICULTIES = [
-    { value: 'facile', label: '🟢 Facile', desc: 'Questions simples, accessibles à tous' },
-    { value: 'normal', label: '🟡 Normal', desc: 'Questions de niveau intermédiaire' },
-    { value: 'difficile', label: '🔴 Difficile', desc: 'Questions pointues pour experts' },
+    { value: 'facile', label: 'Facile', dotClass: 'bg-green-500', desc: 'Questions simples, accessibles à tous' },
+    { value: 'normal', label: 'Normal', dotClass: 'bg-yellow-400', desc: 'Questions de niveau intermédiaire' },
+    { value: 'difficile', label: 'Difficile', dotClass: 'bg-red-500', desc: 'Questions pointues pour experts' },
 ];
 
 export default function GenerateQuizPage() {
@@ -138,7 +139,7 @@ export default function GenerateQuizPage() {
     return (
         <div className="flex-1 flex items-center justify-center px-4 py-8">
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 w-full max-w-md">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">✨ Générer un quiz</h1>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2"><SparklesIcon className="w-6 h-6 text-amber-400" /> Générer un quiz</h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">L'IA crée un quiz que vous pourrez modifier avant de publier.</p>
 
                 {error && (
@@ -176,7 +177,7 @@ export default function GenerateQuizPage() {
                                         : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
                                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                                 >
-                                    {d.label}
+                                    <span className="inline-flex items-center gap-1.5"><span className={`inline-block w-2.5 h-2.5 rounded-full ${d.dotClass}`} />{d.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -247,10 +248,11 @@ export default function GenerateQuizPage() {
                                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                                     Génération en cours...
                                 </span>
-                            ) : '🎮 Générer et jouer'}
+                            ) : (<span className="inline-flex items-center justify-center gap-2"><PlayIcon className="w-4 h-4" />Générer et jouer</span>)}
                         </button>
                         <p className="text-xs text-gray-400 dark:text-gray-500 text-center -mt-1">
-                            ⚠️ Le quiz ne vous appartiendra pas. Utilisez <span className="font-medium">Générer et modifier</span> pour en être propriétaire.
+                            <ExclamationTriangleIcon className="inline-block w-3.5 h-3.5 text-amber-500 align-text-bottom mr-1" />
+                            Le quiz ne vous appartiendra pas. Utilisez <span className="font-medium">Générer et modifier</span> pour en être propriétaire.
                         </p>
                         <button
                             onClick={() => handleGenerate('edit')}
@@ -265,7 +267,7 @@ export default function GenerateQuizPage() {
                                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent" />
                                     Génération en cours...
                                 </span>
-                            ) : '✏️ Générer et modifier'}
+                            ) : (<span className="inline-flex items-center justify-center gap-2"><PencilIcon className="w-4 h-4" />Générer et modifier</span>)}
                         </button>
                     </div>
                 </div>

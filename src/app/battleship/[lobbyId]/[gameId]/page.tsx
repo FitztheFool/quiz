@@ -17,7 +17,8 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
-import { TrophyIcon, XCircleIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, XCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { BoltIcon } from '@heroicons/react/24/solid';
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ export default function BattleshipPage() {
                 </header>
                 <main className="flex-1 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 flex flex-col items-center gap-4 text-center max-w-sm w-full">
-                        <div className="text-3xl">👁️</div>
+                        <EyeIcon className="w-10 h-10 text-gray-500" />
                         <p className="font-semibold text-gray-700 dark:text-gray-200">
                             {p0?.username ?? '?'} <span className="text-gray-400">vs</span> {p1?.username ?? '?'}
                         </p>
@@ -108,11 +109,11 @@ export default function BattleshipPage() {
                 center={
                     <div className="flex items-center gap-2 text-sm">
                         <span className={`${state.phase === 'playing' && isMyTurn ? 'font-bold text-gray-900 dark:text-white' : 'font-normal text-gray-500 dark:text-gray-400'}`}>
-                            {me?.username ?? 'Vous'}{state.phase === 'playing' && isMyTurn && ' ⚡'}
+                            {me?.username ?? 'Vous'}{state.phase === 'playing' && isMyTurn && <BoltIcon className="w-3.5 h-3.5 inline-block align-middle ml-1 text-yellow-500" />}
                         </span>
                         <span className="text-gray-400 dark:text-gray-600">vs</span>
                         <span className={`flex items-center gap-1 ${state.phase === 'playing' && !isMyTurn ? 'font-bold text-gray-900 dark:text-white' : 'font-normal text-gray-500 dark:text-gray-400'}`}>
-                            {opponent?.username ?? 'Adversaire'}{state.phase === 'playing' && !isMyTurn && ' ⚡'}
+                            {opponent?.username ?? 'Adversaire'}{state.phase === 'playing' && !isMyTurn && <BoltIcon className="w-3.5 h-3.5 inline-block align-middle ml-1 text-yellow-500" />}
                             {inactivityUserId === opponent?.userId && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
                         </span>
                     </div>

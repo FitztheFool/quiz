@@ -71,11 +71,11 @@ export const HOME_ZONES: Record<number, { row: number; col: number }> = {
 };
 
 // Tailwind color classes per color index.
-export const COLOR_CLASSES: Record<number, { bg: string; border: string; ring: string; text: string; soft: string; emoji: string; name: string }> = {
-    0: { bg: 'bg-red-500',    border: 'border-red-500',    ring: 'ring-red-500',    text: 'text-red-500',    soft: 'bg-red-100 dark:bg-red-900/30',    emoji: '🔴', name: 'Rouge' },
-    1: { bg: 'bg-green-500',  border: 'border-green-500',  ring: 'ring-green-500',  text: 'text-green-500',  soft: 'bg-green-100 dark:bg-green-900/30',  emoji: '🟢', name: 'Vert' },
-    2: { bg: 'bg-yellow-400', border: 'border-yellow-500', ring: 'ring-yellow-400', text: 'text-yellow-500', soft: 'bg-yellow-100 dark:bg-yellow-900/30', emoji: '🟡', name: 'Jaune' },
-    3: { bg: 'bg-blue-500',   border: 'border-blue-500',   ring: 'ring-blue-500',   text: 'text-blue-500',   soft: 'bg-blue-100 dark:bg-blue-900/30',   emoji: '🔵', name: 'Bleu' },
+export const COLOR_CLASSES: Record<number, { bg: string; border: string; ring: string; text: string; soft: string; name: string }> = {
+    0: { bg: 'bg-red-500',    border: 'border-red-500',    ring: 'ring-red-500',    text: 'text-red-500',    soft: 'bg-red-100 dark:bg-red-900/30',    name: 'Rouge' },
+    1: { bg: 'bg-green-500',  border: 'border-green-500',  ring: 'ring-green-500',  text: 'text-green-500',  soft: 'bg-green-100 dark:bg-green-900/30',  name: 'Vert' },
+    2: { bg: 'bg-yellow-400', border: 'border-yellow-500', ring: 'ring-yellow-400', text: 'text-yellow-500', soft: 'bg-yellow-100 dark:bg-yellow-900/30', name: 'Jaune' },
+    3: { bg: 'bg-blue-500',   border: 'border-blue-500',   ring: 'ring-blue-500',   text: 'text-blue-500',   soft: 'bg-blue-100 dark:bg-blue-900/30',   name: 'Bleu' },
 };
 
 /** Returns (row, col) for a pawn given its color and progress (0..57). */

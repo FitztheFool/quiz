@@ -10,7 +10,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameIcon from '@/components/GameIcon';
 import SurrenderButton from '@/components/SurrenderButton';
-import { NoSymbolIcon, TrophyIcon } from '@heroicons/react/24/outline';
+import { NoSymbolIcon, TrophyIcon, ArrowPathIcon, EyeIcon, ExclamationTriangleIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 type CardColor = 'red' | 'green' | 'blue' | 'yellow' | 'wild';
 type Card = { id: string; color: CardColor; value: string };
@@ -69,12 +70,18 @@ const COLOR_MAP: Record<string, string> = {
     wild: 'bg-gray-700 dark:bg-gray-800',
 };
 
-const COLOR_TEXT: Record<string, string> = {
-    red: '🔴', green: '🟢', blue: '🔵', yellow: '🟡',
+const COLOR_DOT_CLASS: Record<string, string> = {
+    red: 'bg-red-500', green: 'bg-green-500', blue: 'bg-blue-500', yellow: 'bg-yellow-400',
 };
 
+function ColorDot({ color, className = 'w-6 h-6' }: { color: string; className?: string }) {
+    const cls = COLOR_DOT_CLASS[color];
+    if (!cls) return null;
+    return <span className={`inline-block rounded-full ${cls} ${className} align-middle`} />;
+}
+
 const VALUE_LABEL: Record<string, ReactNode> = {
-    skip: <NoSymbolIcon className="w-5 h-5" />, reverse: '🔄', draw2: '+2', wild: '🌈', wild4: '+4',
+    skip: <NoSymbolIcon className="w-5 h-5" />, reverse: <ArrowPathIcon className="w-5 h-5" />, draw2: '+2', wild: '🌈', wild4: '+4',
 };
 
 function RankBadge({ rank }: { rank: number }) {
@@ -115,6 +122,7 @@ export default function UnoPage() {
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [selectedCard, setSelectedCard] = useState<Card | null>(null);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const colorPickerRef = useFocusTrap<HTMLDivElement>(showColorPicker);
 
     const [inactivitySeconds, setInactivitySeconds] = useState<number | null>(null);
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
@@ -280,16 +288,20 @@ export default function UnoPage() {
                         <p>0–9 = valeur faciale · Skip/Reverse/+2 = 20 pts · Wild/+4 = 50 pts</p>
                     </div>
 
-                    <button
-                        onClick={() => router.push(`/lobby/create/${lobbyId}`)}
-                        className="mt-5 w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 transition">
-                        🔄 Retour au lobby
-                    </button>
-                    <button
-                        onClick={() => router.push('/dashboard')}
-                        className="mt-3 w-full py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-                        🏠 Retour au dashboard
-                    </button>
+                    <div className="flex gap-3 pt-2 mt-5">
+                        <button
+                            onClick={() => router.push(`/lobby/create/${lobbyId}`)}
+                            className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all"
+                        >
+                            Retour au lobby
+                        </button>
+                        <button
+                            onClick={() => router.push('/')}
+                            className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-sm font-semibold hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
+                        >
+                            Quitter
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -314,13 +326,20 @@ export default function UnoPage() {
 
             {showColorPicker && !gameState.spectator && (
                 <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-xl">
+                    <div
+                        ref={colorPickerRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Choisir une couleur"
+                        className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-xl"
+                    >
                         <h2 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">Choisir une couleur</h2>
                         <div className="grid grid-cols-2 gap-3">
                             {['red', 'green', 'blue', 'yellow'].map(c => (
                                 <button key={c} onClick={() => handleColorChoice(c)}
-                                    className={`w-20 h-20 rounded-xl ${COLOR_MAP[c]} text-3xl hover:scale-110 transition-transform`}>
-                                    {COLOR_TEXT[c]}
+                                    aria-label={`Choisir la couleur ${c}`}
+                                    className={`w-20 h-20 rounded-xl ${COLOR_MAP[c]} hover:scale-110 transition-transform flex items-center justify-center`}>
+                                    <ColorDot color={c} className="w-10 h-10 border-2 border-white/40" />
                                 </button>
                             ))}
                         </div>
@@ -334,7 +353,7 @@ export default function UnoPage() {
                     <span className="flex items-center gap-2 font-bold text-lg"><GameIcon gameType="uno" className="w-5 h-5" /> UNO</span>
                     {gameState.spectator && (
                         <span className="text-xs bg-purple-500/20 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-semibold">
-                            👁 Spectateur
+                            <EyeIcon className="w-3.5 h-3.5 inline-block align-middle" /> Spectateur
                         </span>
                     )}
                     {gameState.drawStack > 0 && (
@@ -388,6 +407,7 @@ export default function UnoPage() {
                                 <span className="text-xs text-gray-500 dark:text-gray-400">{p.cardCount} carte{p.cardCount > 1 ? 's' : ''}</span>
                                 {p.cardCount === 1 && !p.saidUno && !gameState.spectator && (
                                     <button onClick={() => socket?.emit('uno:callUno', { targetId: p.userId })}
+                                        aria-label={`Appeler UNO sur ${p.username}`}
                                         className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-400 transition">
                                         UNO !
                                     </button>
@@ -428,8 +448,8 @@ export default function UnoPage() {
                 {!gameState.spectator && gameState.isMyTurn ? (
                     <span className={`font-bold ${isMeInactive ? 'text-orange-400 animate-pulse' : 'text-yellow-500 dark:text-yellow-400 animate-pulse'}`}>
                         {isMeInactive
-                            ? `⚠️ Joue vite ! exclusion dans ${inactivitySeconds}s`
-                            : '✨ À toi de jouer !'}
+                            ? (<><ExclamationTriangleIcon className="w-4 h-4 inline-block align-middle text-amber-500" /> Joue vite ! exclusion dans {inactivitySeconds}s</>)
+                            : (<><SparklesIcon className="w-4 h-4 inline-block align-middle text-amber-400" /> À toi de jouer !</>)}
                     </span>
                 ) : (
                     <span className="text-gray-500 dark:text-gray-400 text-sm">
@@ -463,7 +483,7 @@ export default function UnoPage() {
                                 selected={selectedCard?.id === card.id}
                                 onClick={() => handleCardClick(card)} />
                         ))}
-                        {gameState.hand.length === 0 && <p className="text-gray-400 text-sm py-4">Aucune carte 🎉</p>}
+                        {gameState.hand.length === 0 && <p className="text-gray-400 text-sm py-4">Aucune carte</p>}
                     </div>
                 </div>
             )}

@@ -6,7 +6,8 @@ import GameOverModal from '@/components/GameOverModal';
 import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
-import { NoSymbolIcon } from '@heroicons/react/24/outline';
+import { NoSymbolIcon, CpuChipIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import AfkCountdown from '@/components/AfkCountdown';
 import { useState } from 'react';
 import { notFound } from 'next/navigation';
@@ -277,11 +278,11 @@ export default function YahtzeePage() {
                 center={
                     <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isMyTurn ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' : isBotTurn ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-gray-400 dark:text-gray-500'}`}>
                         {isMyTurn ? '🎯 À vous de jouer !'
-                            : isBotTurn ? '🤖 Le bot joue…'
+                            : isBotTurn ? (<><CpuChipIcon className="w-4 h-4 inline-block align-middle text-indigo-500" /> Le bot joue…</>)
                                 : `⏳ Tour de ${currentPlayer?.username}`}
                     </span>
                 }
-                right={game?.phase !== 'ended' && !vsBot && <SurrenderButton onSurrender={surrender} />}
+                right={game?.phase !== 'ended' && <SurrenderButton onSurrender={surrender} />}
             />
 
             {game?.phase !== 'ended' && (
@@ -328,13 +329,13 @@ export default function YahtzeePage() {
                                 </div>
                             )}
                             {isBotTurn && (
-                                <p className="text-center text-sm text-indigo-400 mt-3 font-semibold animate-pulse">🤖 Le bot réfléchit…</p>
+                                <p className="text-center text-sm text-indigo-400 mt-3 font-semibold animate-pulse"><CpuChipIcon className="inline-block w-4 h-4 text-indigo-500 align-text-bottom mr-1" />Le bot réfléchit…</p>
                             )}
                             {isMyTurn && myPlayer && myPlayer.rollsLeft < 3 && myPlayer.rollsLeft > 0 && (
                                 <p className="text-center text-xs text-gray-500 mt-3">Cliquez sur un dé pour le garder, puis relancez ou marquez des points.</p>
                             )}
                             {isMyTurn && game.phase === 'scoring' && (
-                                <p className="text-center text-sm text-amber-500 dark:text-amber-400 mt-3 font-semibold">✍️ Choisissez une catégorie à scorer ci-dessous</p>
+                                <p className="text-center text-sm text-amber-500 dark:text-amber-400 mt-3 font-semibold"><PencilSquareIcon className="inline-block w-4 h-4 align-text-bottom mr-1" />Choisissez une catégorie à scorer ci-dessous</p>
                             )}
                         </div>
 
@@ -357,7 +358,7 @@ export default function YahtzeePage() {
                                         </div>
                                     </div>
                                 )}
-                                {myPlayer?.upperBonus === 35 && <div className="px-3 py-1.5 text-center text-xs text-green-500 dark:text-green-400 font-bold">✅ Bonus +35 débloqué !</div>}
+                                {myPlayer?.upperBonus === 35 && <div className="px-3 py-1.5 text-center text-xs text-green-500 dark:text-green-400 font-bold"><CheckCircleIcon className="inline-block w-4 h-4 align-text-bottom mr-1" />Bonus +35 débloqué !</div>}
                             </div>
                             <div className="mt-3">
                                 <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Section basse</div>

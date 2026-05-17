@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { MagnifyingGlassIcon, TagIcon } from '@heroicons/react/24/outline';
 
 interface Category {
   id: string;
@@ -67,7 +68,7 @@ export default function QuizFilters({
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 flex flex-wrap gap-3 items-end">
       <div className="flex-1 min-w-[180px]">
-        <label className="block text-xs font-medium text-gray-500 mb-1">🔍 Recherche</label>
+        <label className="block text-xs font-medium text-gray-500 mb-1"><MagnifyingGlassIcon className="inline-block w-3.5 h-3.5 align-text-bottom mr-1" />Recherche</label>
         <input
           type="text"
           placeholder="Rechercher par titre..."
@@ -78,7 +79,7 @@ export default function QuizFilters({
       </div>
 
       <div className="flex-1 min-w-[160px]">
-        <label className="block text-xs font-medium text-gray-500 mb-1">🏷️ Catégorie</label>
+        <label className="block text-xs font-medium text-gray-500 mb-1"><TagIcon className="inline-block w-3.5 h-3.5 align-text-bottom mr-1" />Catégorie</label>
         <select
           value={categoryId}
           onChange={(e) => onCategoryChange(e.target.value)}

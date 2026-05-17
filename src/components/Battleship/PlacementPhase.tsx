@@ -3,6 +3,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { PlacedShip } from '@/hooks/useBattleship';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, BoltIcon } from '@heroicons/react/24/solid';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -303,7 +305,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Placez votre flotte</h2>
                 <p className="text-gray-500 dark:text-white/50 text-sm mt-1">
                     {confirmed
-                        ? opponentReady ? '✅ Les deux joueurs sont prêts !' : '✅ Prêt — en attente de l\'adversaire…'
+                        ? opponentReady ? (<><CheckCircleIcon className="inline-block w-4 h-4 text-green-500 align-text-bottom mr-1" />Les deux joueurs sont prêts !</>) : (<><CheckCircleIcon className="inline-block w-4 h-4 text-green-500 align-text-bottom mr-1" />Prêt — en attente de l'adversaire…</>)
                         : selected
                             ? `Cliquez sur la grille pour placer ${selected}`
                             : 'Cliquez sur un navire pour le sélectionner, puis sur la grille pour le placer.'}
@@ -316,7 +318,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                     <span className={`font-mono font-bold ${timerColor}`}>⏱ {timeLeft}s</span>
                 )}
                 {opponentReady && !confirmed && (
-                    <span className="text-green-600 dark:text-green-400 text-xs">⚡ L'adversaire est prêt</span>
+                    <span className="text-green-600 dark:text-green-400 text-xs inline-flex items-center gap-1.5"><BoltIcon className="w-3.5 h-3.5 text-yellow-500" /> L'adversaire est prêt</span>
                 )}
             </div>
 
@@ -384,7 +386,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                             onClick={rotateSelected}
                             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 text-gray-600 dark:text-white/60 text-sm hover:border-gray-400 dark:hover:border-white/40 hover:text-gray-900 dark:hover:text-white transition-all"
                         >
-                            🔄 Pivoter
+                            <span className="inline-flex items-center gap-1.5"><ArrowPathIcon className="w-4 h-4" /> Pivoter</span>
                         </button>
                     )}
                     <button
@@ -397,7 +399,7 @@ export default function PlacementPhase({ onConfirm, placementEndsAt, opponentRea
                         onClick={handleConfirm}
                         className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-500/20"
                     >
-                        ✅ Confirmer
+                        <span className="inline-flex items-center gap-1.5"><CheckCircleIcon className="w-4 h-4" /> Confirmer</span>
                     </button>
                 </div>
             )}

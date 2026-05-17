@@ -3,6 +3,7 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { PlacedShip } from '@/hooks/useBattleship';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const GRID_SIZE = 10;
 const COL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
@@ -103,7 +104,7 @@ function Grid({ ships, receivedShots, hitShots, showShips, onShoot, label, highl
         if (isShot) {
             const isActualHit = (showShips && !!entry) || isHit;
             shotOverlay = isActualHit
-                ? <span className="relative z-10 text-gray-700 dark:text-white text-xs font-bold drop-shadow-md">✕</span>
+                ? <XMarkIcon className="relative z-10 w-3 h-3 text-gray-700 dark:text-white drop-shadow-md" />
                 : <span className="relative z-10 text-blue-500 dark:text-blue-300 text-xs drop-shadow">●</span>;
         }
 

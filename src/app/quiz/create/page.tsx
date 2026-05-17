@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import QuizForm from '@/components/Quiz/QuizForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { AI_MODELS } from '@/lib/aiModels';
+import { CpuChipIcon } from '@heroicons/react/24/outline';
 
 export default function NewQuizPage() {
     const { data: session, status } = useSession();
@@ -48,7 +49,7 @@ export default function NewQuizPage() {
             {initialData && (
                 <div className="max-w-4xl mx-auto px-4 pt-6">
                     <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded-lg px-4 py-2 text-sm">
-                        🤖 Quiz généré
+                        <CpuChipIcon className="w-4 h-4 text-indigo-500" /> Quiz généré
                         {generatedModel && (
                             <> par <span className="font-semibold ml-1">{generatedModel.badge} — {generatedModel.label}</span></>
                         )}

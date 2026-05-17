@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { CheckIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 /**
  * TrapPhase
@@ -296,7 +297,7 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
             {myTeam !== null && wordToPiege ? (
                 <div className="mb-5 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                     <p className="text-xs text-gray-500 dark:text-white/40 uppercase tracking-widest mb-1">
-                        Mot à piéger — pour l'équipe {myTeam === 0 ? 'rouge 🔴' : 'bleue 🔵'}
+                        Mot à piéger — pour l'équipe {myTeam === 0 ? <>rouge <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 align-middle" /></> : <>bleue <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 align-middle" /></>}
                     </p>
                     <p style={{ fontFamily: "'Bebas Neue', cursive" }}
                         className="text-2xl sm:text-3xl md:text-4xl tracking-wider break-words leading-tight text-yellow-400">
@@ -317,7 +318,7 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
                         {pending.approvals.length}/{game.players.filter(p => p.team === myTeam).length} approbation(s)
                     </p>
                     {iHaveApproved ? (
-                        <p className="text-xs text-green-400">✓ Vous avez approuvé — en attente des coéquipiers</p>
+                        <p className="text-xs text-green-400"><CheckIcon className="inline-block w-3.5 h-3.5 align-text-bottom mr-1" />Vous avez approuvé — en attente des coéquipiers</p>
                     ) : (
                         <button onClick={handleApprove}
                             className="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors">
@@ -347,7 +348,7 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
                 <div className="space-y-2 text-left">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-xs text-gray-400 dark:text-white/30">
-                            ✏️ Pièges de l'équipe
+                            <PencilIcon className="inline-block w-3.5 h-3.5 align-text-bottom mr-1" />Pièges de l'équipe
                         </p>
                         {rich && teammates.length > 0 && (
                             <div className="flex gap-1.5">

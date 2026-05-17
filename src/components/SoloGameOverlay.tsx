@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { Session } from 'next-auth';
 import type { Phase, SubmitState } from '@/hooks/useSoloGame';
+import { CheckIcon } from '@heroicons/react/24/outline';
 
 interface SoloGameOverlayProps {
     phase: Phase;
@@ -56,7 +57,7 @@ export default function SoloGameOverlay({
             {session?.user ? (
                 <div className="text-xs text-gray-400 dark:text-gray-500 h-4">
                     {submitState === 'loading' && 'Sauvegarde…'}
-                    {submitState === 'done' && '✓ Score sauvegardé'}
+                    {submitState === 'done' && <span><CheckIcon className="inline-block w-3.5 h-3.5 text-green-500 align-text-bottom mr-1" />Score sauvegardé</span>}
                     {submitState === 'error' && 'Erreur de sauvegarde'}
                 </div>
             ) : displayScore > 0 ? (

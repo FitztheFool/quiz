@@ -77,6 +77,8 @@ function SectionToggle({ Icon, label, isActive, isOpen, collapsed, onClick }: {
 }) {
     return (
         <button onClick={onClick} title={label}
+            aria-label={collapsed ? label : undefined}
+            aria-expanded={isOpen}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${isActive ? ACTIVE_STYLE : INACTIVE}`}
         >
             <Icon className="w-5 h-5 flex-shrink-0" />
@@ -105,6 +107,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, isAuthenticated, userRole, userName, userEmail, isAnonymous }: SidebarProps) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(true);
+    const [hydrated, setHydrated] = useState(false);
     const [quizMenuOpen, setQuizMenuOpen] = useState(false);
     const [lobbyMenuOpen, setLobbyMenuOpen] = useState(false);
     const [lobbyCode, setLobbyCode] = useState('');
@@ -121,9 +124,30 @@ export default function Sidebar({ isOpen, isAuthenticated, userRole, userName, u
     }, [quizSectionActive, lobbySectionActive]);
 
     useEffect(() => {
-        const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-        if (isDesktop && pathname.startsWith('/dashboard')) setCollapsed(false);
+        const stored = localStorage.getItem('sidebar:collapsed');
+        if (stored !== null) {
+            setCollapsed(stored === '1');
+        } else {
+            const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+            if (isDesktop && pathname.startsWith('/dashboard')) setCollapsed(false);
+        }
+        setHydrated(true);
     }, [pathname]);
+
+    const toggleCollapsed = () => {
+        setCollapsed(prev => {
+            const next = !prev;
+            if (hydrated) localStorage.setItem('sidebar:collapsed', next ? '1' : '0');
+            return next;
+        });
+    };
+
+    const openIfCollapsed = () => {
+        if (collapsed) {
+            setCollapsed(false);
+            if (hydrated) localStorage.setItem('sidebar:collapsed', '0');
+        }
+    };
 
     return (
         <aside className={`
@@ -151,9 +175,11 @@ export default function Sidebar({ isOpen, isAuthenticated, userRole, userName, u
                     </div>
                 )}
                 <button
-                    onClick={() => setCollapsed(prev => !prev)}
+                    onClick={toggleCollapsed}
                     className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 dark:text-gray-500 flex-shrink-0"
                     title={collapsed ? 'Ouvrir' : 'Réduire'}
+                    aria-label={collapsed ? 'Ouvrir la barre latérale' : 'Réduire la barre latérale'}
+                    aria-expanded={!collapsed}
                 >
                     {collapsed
                         ? <ChevronRightIcon className="w-4 h-4" />
@@ -172,7 +198,7 @@ export default function Sidebar({ isOpen, isAuthenticated, userRole, userName, u
                             Icon={SignalIcon} label="Lobby"
                             isActive={lobbySectionActive} isOpen={lobbyMenuOpen}
                             collapsed={collapsed} color="green"
-                            onClick={() => { if (collapsed) setCollapsed(false); else setLobbyMenuOpen(prev => !prev); }}
+                            onClick={() => { if (collapsed) openIfCollapsed(); else setLobbyMenuOpen(prev => !prev); }}
                         />
                         {!collapsed && lobbyMenuOpen && (
                             <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-gray-100 dark:border-gray-700 pl-3">
@@ -189,7 +215,7 @@ export default function Sidebar({ isOpen, isAuthenticated, userRole, userName, u
                         Icon={QuestionMarkCircleIcon} label="Quiz"
                         isActive={quizSectionActive} isOpen={quizMenuOpen}
                         collapsed={collapsed} color="blue"
-                        onClick={() => { if (collapsed) setCollapsed(false); else setQuizMenuOpen(prev => !prev); }}
+                        onClick={() => { if (collapsed) openIfCollapsed(); else setQuizMenuOpen(prev => !prev); }}
                     />
                     {!collapsed && quizMenuOpen && (
                         <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-gray-100 dark:border-gray-700 pl-3">

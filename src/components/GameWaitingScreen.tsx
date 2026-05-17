@@ -36,7 +36,7 @@ export default function GameWaitingScreen({ gameType, gameName, lobbyId, players
     const displayPlayers = players.length > 0 ? players : cachedPlayers;
 
     return (
-        <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
+        <div className="min-h-dvh flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white overflow-hidden">
             {/* Header */}
             <header className="shrink-0 h-14 border-b border-gray-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-6 flex items-center justify-between">
                 <div className="flex items-center gap-2">

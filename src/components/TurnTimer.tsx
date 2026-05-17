@@ -48,7 +48,15 @@ export default function TurnTimer({ endsAt, duration, label, paused }: Props) {
             <span className={`text-sm font-bold tabular-nums w-12 shrink-0 text-right ${urgent ? 'text-red-500 dark:text-red-400 animate-pulse' : 'text-gray-600 dark:text-gray-400'}`}>
                 {display}
             </span>
-            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+                className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+                role="progressbar"
+                aria-label={label ? `Temps restant: ${label}` : 'Temps restant'}
+                aria-valuenow={secs}
+                aria-valuemin={0}
+                aria-valuemax={duration}
+                aria-valuetext={display}
+            >
                 <div
                     ref={barRef}
                     className={`h-full bg-gradient-to-r ${color} rounded-full`}

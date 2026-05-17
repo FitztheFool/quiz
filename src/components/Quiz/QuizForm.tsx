@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 type QuestionType = 'TRUE_FALSE' | 'MCQ' | 'TEXT' | 'MULTI_TEXT' | 'MCQ_UNIQUE';
 
@@ -638,7 +639,7 @@ export default function QuizForm({
                     >
                         {hasQuestionErrors(qi) && (
                             <div className="mb-4 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-medium">
-                                ⚠️ Cette question contient des erreurs à corriger
+                                <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />Cette question contient des erreurs à corriger
                             </div>
                         )}
 

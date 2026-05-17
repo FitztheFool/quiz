@@ -12,7 +12,13 @@ import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
 import { useTaboo } from '@/hooks/useTaboo';
 import { TrapPhase } from '@/components/TrapPhase';
-import { NoSymbolIcon } from '@heroicons/react/24/outline';
+import { NoSymbolIcon, FlagIcon, EyeIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
+
+function TeamDot({ team, className = 'w-3 h-3' }: { team: '0' | '1' | 0 | 1; className?: string }) {
+    const isBlue = String(team) === '0';
+    return <span className={`inline-block rounded-full ${className} ${isBlue ? 'bg-blue-500' : 'bg-red-500'} align-middle`} />;
+}
 
 import { useChat } from '@/context/ChatContext';
 import { plural } from '@/lib/utils';
@@ -28,15 +34,13 @@ function ScoreBar({ scores, myTeam, currentTeam }: {
 }) {
     const myT = myTeam !== null ? String(myTeam) : '0';
     const advT = myTeam !== null ? String(1 - myTeam) : '1';
-    const myIcon = myT === '0' ? '🔵' : '🔴';
-    const advIcon = advT === '0' ? '🔵' : '🔴';
     const myActive = String(currentTeam) === myT;
     const advActive = String(currentTeam) === advT;
 
     return (
         <div className="flex items-center gap-2 justify-center">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">vous</span>
-            <span className="text-base leading-none">{myIcon}</span>
+            <TeamDot team={myT as '0' | '1'} className="w-4 h-4" />
             <span className={`text-2xl font-bold leading-none transition-colors ${myActive ? (myT === '0' ? 'text-blue-500' : 'text-red-500') : 'text-gray-900 dark:text-white'}`}>
                 {scores[myT] ?? 0}
             </span>
@@ -44,7 +48,7 @@ function ScoreBar({ scores, myTeam, currentTeam }: {
             <span className={`text-2xl font-bold leading-none transition-colors ${advActive ? (advT === '0' ? 'text-blue-500' : 'text-red-500') : 'text-gray-900 dark:text-white'}`}>
                 {scores[advT] ?? 0}
             </span>
-            <span className="text-base leading-none">{advIcon}</span>
+            <TeamDot team={advT as '0' | '1'} className="w-4 h-4" />
             <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">adv</span>
         </div>
     );
@@ -152,8 +156,8 @@ export default function TabooGamePage() {
                                 onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                                 className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                             >
-                                <span className="hidden sm:inline">🏳️ Abandonner</span>
-                                <span className="sm:hidden">🏳️</span>
+                                <span className="hidden sm:inline-flex items-center gap-1.5"><FlagIcon className="w-4 h-4" />Abandonner</span>
+                                <FlagIcon className="w-4 h-4 sm:hidden" />
                             </button>
                         </div>
                     }
@@ -179,12 +183,12 @@ export default function TabooGamePage() {
     if (game.phase === 'recap') {
         const teamWhoJustPlayed = game.currentTeam;
         const teamColor = teamWhoJustPlayed === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400';
-        const teamLabel = teamWhoJustPlayed === 0 ? '🔵 Équipe Bleue' : '🔴 Équipe Rouge';
+        const teamLabel = teamWhoJustPlayed === 0 ? (<><TeamDot team="0" className="w-4 h-4" /> Équipe Bleue</>) : (<><TeamDot team="1" className="w-4 h-4" /> Équipe Rouge</>);
 
         const resultLabel = game.lastTurnResult === 'validated'
-            ? '✅ Mot trouvé !'
+            ? (<><CheckCircleIcon className="w-5 h-5 inline-block align-middle text-green-500" /> Mot trouvé !</>)
             : game.lastTurnResult === 'fail'
-                ? '❌ Mot interdit !'
+                ? (<><XCircleIcon className="w-5 h-5 inline-block align-middle text-red-500" /> Mot interdit !</>)
                 : '⏱ Temps écoulé';
         const resultColor = game.lastTurnResult === 'validated'
             ? 'text-green-600 dark:text-green-400'
@@ -208,8 +212,8 @@ export default function TabooGamePage() {
                                 onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                                 className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                             >
-                                <span className="hidden sm:inline">🏳️ Abandonner</span>
-                                <span className="sm:hidden">🏳️</span>
+                                <span className="hidden sm:inline-flex items-center gap-1.5"><FlagIcon className="w-4 h-4" />Abandonner</span>
+                                <FlagIcon className="w-4 h-4 sm:hidden" />
                             </button>
                         </div>
                     }
@@ -222,7 +226,7 @@ export default function TabooGamePage() {
                         <p className="text-gray-400 dark:text-white/30 text-xs text-center">Round {game.round}/{game.totalRounds}</p>
 
                         <div className="rounded-2xl border-2 border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/5 p-4 text-center">
-                            <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest mb-1">Mot mystère 👁</p>
+                            <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest mb-1 inline-flex items-center justify-center gap-1.5">Mot mystère <EyeIcon className="w-3.5 h-3.5" /></p>
                             <p className="text-2xl sm:text-3xl md:text-4xl tracking-wider break-words leading-tight text-yellow-600 dark:text-yellow-300">
                                 {wordJustPlayed ?? '???'}
                             </p>
@@ -251,7 +255,7 @@ export default function TabooGamePage() {
                         {isHost ? (
                             <button onClick={() => socketRef.current?.emit('taboo:nextTurn', { lobbyId })}
                                 className="mt-2 w-full px-8 py-4 rounded-2xl bg-green-600 hover:bg-green-500 font-bold text-lg text-white transition-all shadow-lg shadow-green-500/20">
-                                ➡ Tour suivant
+                                <span className="inline-flex items-center justify-center gap-2"><ArrowRightIcon className="w-5 h-5" /> Tour suivant</span>
                             </button>
                         ) : (
                             <p className="mt-2 text-center text-sm text-gray-400 dark:text-white/40 italic">En attente de l'hôte…</p>
@@ -267,7 +271,7 @@ export default function TabooGamePage() {
         const currentOratorName = currentOratorId
             ? (game.players.find(p => p.userId === currentOratorId)?.username ?? '?')
             : '?';
-        const teamLabel = game.currentTeam === 0 ? '🔵 Équipe Bleue' : '🔴 Équipe Rouge';
+        const teamLabel = game.currentTeam === 0 ? (<><TeamDot team="0" className="w-4 h-4" /> Équipe Bleue</>) : (<><TeamDot team="1" className="w-4 h-4" /> Équipe Rouge</>);
         const teamColor = game.currentTeam === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400';
         const playingTeamPlayers = game.players.filter(p => p.team === game.currentTeam);
         const guessers = playingTeamPlayers.filter(p => p.userId !== currentOratorId);
@@ -286,8 +290,8 @@ export default function TabooGamePage() {
                                 onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                                 className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                             >
-                                <span className="hidden sm:inline">🏳️ Abandonner</span>
-                                <span className="sm:hidden">🏳️</span>
+                                <span className="hidden sm:inline-flex items-center gap-1.5"><FlagIcon className="w-4 h-4" />Abandonner</span>
+                                <FlagIcon className="w-4 h-4 sm:hidden" />
                             </button>
                         </div>
                     }
@@ -331,7 +335,7 @@ export default function TabooGamePage() {
                         {isAdversary && (
                             <>
                                 <div className="rounded-2xl border-2 border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/5 p-4 text-center">
-                                    <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest mb-2">Mot mystère 👁</p>
+                                    <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest mb-2 inline-flex items-center justify-center gap-1.5">Mot mystère <EyeIcon className="w-3.5 h-3.5" /></p>
                                     <p className="text-2xl sm:text-3xl md:text-4xl tracking-wider break-words leading-tight text-yellow-600 dark:text-yellow-300">
                                         {game.currentWord ?? '???'}
                                     </p>
@@ -402,7 +406,7 @@ export default function TabooGamePage() {
                             </button>
                         ) : (
                             <p className="text-gray-400 dark:text-white/30 text-sm mt-2 text-center">
-                                {isAdversary ? '👀 Préparez-vous à surveiller !' : `En attente de ${currentOratorName}…`}
+                                {isAdversary ? (<><EyeIcon className="w-4 h-4 inline-block align-middle" /> Préparez-vous à surveiller !</>) : `En attente de ${currentOratorName}…`}
                             </p>
                         )}
                     </div>
@@ -430,7 +434,7 @@ export default function TabooGamePage() {
                             onClick={() => { if (confirm('Abandonner la partie ?')) { socketRef.current?.emit('taboo:surrender'); router.push('/'); } }}
                             className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 px-3 py-1.5 rounded-lg transition-all"
                         >
-                            🏳️ <span className="hidden sm:inline">Abandonner</span>
+                            <FlagIcon className="w-4 h-4 inline-block align-middle" /> <span className="hidden sm:inline">Abandonner</span>
                         </button>
                     </div>
                 }
@@ -508,7 +512,7 @@ export default function TabooGamePage() {
                     <div className="w-full max-w-sm space-y-3">
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
                             <div className="rounded-3xl border-2 border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/5 p-6 text-center">
-                                <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest mb-2">Mot mystère 👁</p>
+                                <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest mb-2 inline-flex items-center justify-center gap-1.5">Mot mystère <EyeIcon className="w-3.5 h-3.5" /></p>
                                 <p className="text-3xl sm:text-4xl md:text-5xl tracking-wider break-words leading-tight text-yellow-600 dark:text-yellow-300">
                                     {game.currentWord ?? '???'}
                                 </p>
@@ -541,7 +545,7 @@ export default function TabooGamePage() {
                             </button>
                             <button onClick={() => socketRef.current?.emit('taboo:fail', { lobbyId })}
                                 className="px-6 py-2 rounded-xl bg-red-500/80 hover:bg-red-500 font-bold text-sm transition-colors text-white">
-                                ❌ Mot interdit !
+                                <span className="inline-flex items-center justify-center gap-1.5"><XCircleIcon className="w-4 h-4" />Mot interdit !</span>
                             </button>
                         </div>
                     </div>
@@ -559,7 +563,7 @@ export default function TabooGamePage() {
                 return (
                     <GameOverModal
                         title="Fin de partie !"
-                        subtitle={isDraw ? 'Égalité !' : `Victoire de l'équipe ${winner[0] === '0' ? '🔵 Bleue' : '🔴 Rouge'} !`}
+                        subtitle={isDraw ? 'Égalité !' : `Victoire de l'équipe ${winner[0] === '0' ? 'Bleue' : 'Rouge'} !`}
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                         onLeave={() => router.push('/')}
                         asModal
@@ -567,7 +571,7 @@ export default function TabooGamePage() {
                         <div className="flex gap-4 justify-center">
                             {scores.map(([team, pts], i) => (
                                 <div key={team} className={`flex-1 text-center px-6 py-5 rounded-2xl border ${i === 0 ? 'bg-yellow-500/10 border-yellow-500/40' : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10'}`}>
-                                    <div className="text-3xl mb-1">{team === '0' ? '🔵' : '🔴'}</div>
+                                    <div className="flex justify-center mb-1"><TeamDot team={team as '0' | '1'} className="w-8 h-8" /></div>
                                     <div className={`text-4xl font-black ${i === 0 ? 'text-yellow-400' : 'text-gray-500 dark:text-white/50'}`}>{pts}</div>
                                     <div className="text-xs text-gray-400 dark:text-white/30 mt-1">point{pts > 1 ? 's' : ''}</div>
                                 </div>

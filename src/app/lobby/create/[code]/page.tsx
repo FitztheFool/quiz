@@ -12,7 +12,8 @@ import { useServerWarmup } from '@/hooks/useServerWarmup';
 import { useChat } from '@/context/ChatContext';
 import { Badge } from '@/components/SoloBadge';
 import GameIcon from '@/components/GameIcon';
-import { StarIcon, UserIcon, GlobeAltIcon, LockClosedIcon, ArrowsRightLeftIcon, CheckIcon, CheckCircleIcon, ExclamationTriangleIcon, CpuChipIcon, XMarkIcon, ShieldCheckIcon, PlayIcon, ClockIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+import { StarIcon, UserIcon, GlobeAltIcon, LockClosedIcon, ArrowsRightLeftIcon, CheckIcon, ExclamationTriangleIcon, CpuChipIcon, XMarkIcon, ShieldCheckIcon, PlayIcon, ClockIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 import {
     GAME_CONFIG,
@@ -234,7 +235,7 @@ function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, selectedQuest
                 {isSelected && (
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none flex items-center gap-1">
                         {selectedQuestionCount !== undefined && <span className="text-gray-400 dark:text-gray-500">({selectedQuestionCount})</span>}
-                        <span>✅</span>
+                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
                     </span>
                 )}
                 {open && results.length > 0 && (
@@ -928,15 +929,15 @@ export default function LobbyCodePage() {
                                         <div className="flex rounded-xl border border-gray-200 dark:border-gray-700/50 overflow-hidden h-[42px]">
                                             <button onClick={() => { setIsPublicState(true); socket?.emit('lobby:setMeta', { isPublic: true }); }}
                                                 className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${isPublic ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}>
-                                                🌍 Public
+                                                <GlobeAltIcon className="w-4 h-4" /> Public
                                             </button>
                                             <button onClick={() => { setIsPublicState(false); socket?.emit('lobby:setMeta', { isPublic: false }); }}
                                                 className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold transition-all border-l border-gray-200 dark:border-gray-700/50 ${!isPublic ? 'bg-indigo-600 text-white' : 'bg-gray-50 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}>
-                                                🔒 Privé
+                                                <LockClosedIcon className="w-4 h-4" /> Privé
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/30 rounded-xl px-4 py-2.5 text-gray-700 dark:text-gray-300 text-sm">{isPublic ? '🌍 Public' : '🔒 Privé'}</div>
+                                        <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/30 rounded-xl px-4 py-2.5 text-gray-700 dark:text-gray-300 text-sm inline-flex items-center gap-1.5">{isPublic ? (<><GlobeAltIcon className="w-4 h-4" /> Public</>) : (<><LockClosedIcon className="w-4 h-4" /> Privé</>)}</div>
                                     )}
                                 </div>
                             </div>
