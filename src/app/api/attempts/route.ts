@@ -89,6 +89,8 @@ export async function POST(req: NextRequest) {
         const validScores = scores.filter(s => validUserIds.has(s.userId));
 
         if (validScores.length === 0) {
+            const invalidIds = scores.map(s => s.userId).filter(id => !validUserIds.has(id));
+            console.warn(`[POST /api/attempts] ${gameType} ${gameId}: 0 valid users (unknown ids: ${invalidIds.join(',')})`);
             return NextResponse.json({ ok: true, saved: 0 });
         }
 

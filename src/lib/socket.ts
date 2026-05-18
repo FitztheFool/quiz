@@ -38,6 +38,7 @@ let impostorSocket: Socket | null = null;
 let diamantSocket: Socket | null = null;
 let battleshipSocket: Socket | null = null;
 let ludoSocket: Socket | null = null;
+let perudoSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -144,4 +145,11 @@ export function getLudoSocket(): Socket | null {
     if (!ludoSocket) ludoSocket = createSocket(process.env.NEXT_PUBLIC_LUDO_SERVER_URL ?? "http://localhost:10011", "Ludo Socket");
     connectIfAuth(ludoSocket);
     return ludoSocket;
+}
+
+export function getPerudoSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!perudoSocket) perudoSocket = createSocket(process.env.NEXT_PUBLIC_PERUDO_SERVER_URL ?? "http://localhost:10012", "Perudo Socket");
+    connectIfAuth(perudoSocket);
+    return perudoSocket;
 }

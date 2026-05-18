@@ -37,6 +37,7 @@ const GAME_SERVER_URL_BY_TYPE: Partial<Record<GameType, string | undefined>> = {
     diamant:    process.env.NEXT_PUBLIC_DIAMANT_SERVER_URL,
     impostor:   process.env.NEXT_PUBLIC_IMPOSTOR_SERVER_URL,
     ludo:       process.env.NEXT_PUBLIC_LUDO_SERVER_URL,
+    perudo:     process.env.NEXT_PUBLIC_PERUDO_SERVER_URL,
 };
 
 type Player = { userId: string; username: string };
@@ -54,6 +55,7 @@ type LobbyMeta = {
     battleshipOptions?: { gridSize: number; turnTime: number };
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
+    perudoOptions?: { initialDice: number };
 };
 
 
@@ -73,6 +75,7 @@ type LobbyState = {
     battleshipOptions?: { gridSize: number; turnTime: number };
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
+    perudoOptions?: { initialDice: number };
     timeMode?: string;
     timePerQuestion?: number;
     quizId?: string | null;
@@ -312,6 +315,7 @@ export default function LobbyCodePage() {
     const [ludoBonusOn6, setLudoBonusOn6] = useState<'unlimited' | 'triple_lose' | 'none'>('unlimited');
     const [ludoWinMode, setLudoWinMode] = useState<'first_done' | 'full_ranking'>('first_done');
     const [ludoTeamMode, setLudoTeamMode] = useState<'none' | '2v2'>('none');
+    const [perudoInitialDice, setPerudoInitialDice] = useState<number>(5);
     const [botCount, setBotCount] = useState(0);
     const [botSlots, setBotSlots] = useState<Array<{ userId: string; username: string }>>([]);
     const { setLobbyId } = useChat();
@@ -398,6 +402,7 @@ export default function LobbyCodePage() {
                 skyjowOptions: state.skyjowOptions ?? prev?.skyjowOptions,
                 battleshipOptions: state.battleshipOptions ?? prev?.battleshipOptions,
                 ludoOptions: state.ludoOptions ?? prev?.ludoOptions,
+                perudoOptions: (state as { perudoOptions?: { initialDice: number } }).perudoOptions ?? prev?.perudoOptions,
                 quizOptions: state.timeMode
                     ? { timeMode: state.timeMode, timePerQuestion: state.timePerQuestion ?? 15 }
                     : prev?.quizOptions,
@@ -435,6 +440,10 @@ export default function LobbyCodePage() {
                 setLudoBonusOn6(state.ludoOptions.bonusOn6 ?? 'unlimited');
                 setLudoWinMode(state.ludoOptions.winMode ?? 'first_done');
                 setLudoTeamMode(state.ludoOptions.teamMode ?? 'none');
+            }
+            if ((state as { perudoOptions?: { initialDice?: number } }).perudoOptions) {
+                const opt = (state as { perudoOptions?: { initialDice?: number } }).perudoOptions!;
+                setPerudoInitialDice(opt.initialDice ?? 5);
             }
             setBotCount(state.bots ?? 0);
             setBotSlots(Array.isArray(state.botSlots) ? state.botSlots : []);
@@ -521,6 +530,7 @@ export default function LobbyCodePage() {
                 if (m.battleshipOptions) { setGridSize(m.battleshipOptions.gridSize); setTurnTime(m.battleshipOptions.turnTime); }
                 if (m.impostorOptions) { setImpostorRounds(m.impostorOptions.rounds ?? 1); setImpostorTime(m.impostorOptions.timePerRound ?? 60); setImpostorMisterWhite(m.impostorOptions.misterWhite ?? false); }
                 if (m.ludoOptions) { setLudoPawnExit(m.ludoOptions.pawnExit); setLudoBonusOn6(m.ludoOptions.bonusOn6); setLudoWinMode(m.ludoOptions.winMode); setLudoTeamMode(m.ludoOptions.teamMode); }
+                if (m.perudoOptions) setPerudoInitialDice(m.perudoOptions.initialDice ?? 5);
             }
             socket.emit('lobby:join', { lobbyId, userId: meUserId, username: meUsername, title: m?.title, description: m?.description, maxPlayers: m?.maxPlayers, isPublic: m?.isPublic });
             const gameFromUrl = searchParams.get('game');
@@ -532,6 +542,7 @@ export default function LobbyCodePage() {
             if (m?.battleshipOptions) setTimeout(() => socket.emit('lobby:setBattleshipOptions', m!.battleshipOptions), 400);
             if (m?.impostorOptions) setTimeout(() => socket.emit('lobby:setImpostorOptions', m!.impostorOptions), 400);
             if (m?.ludoOptions) setTimeout(() => socket.emit('lobby:setLudoOptions', m!.ludoOptions), 400);
+            if (m?.perudoOptions) setTimeout(() => socket.emit('lobby:setPerudoOptions', m!.perudoOptions), 400);
             if (m?.quizOptions) setTimeout(() => socket.emit('lobby:setQuizOptions', m!.quizOptions), 400);
         }
 
@@ -900,6 +911,26 @@ export default function LobbyCodePage() {
                                     <OptionSelect value={ludoWinMode} onChange={v => { setLudoWinMode(v as 'first_done' | 'full_ranking'); socket?.emit('lobby:setLudoOptions', { winMode: v }); }}
                                         options={[{ v: 'first_done', label: 'Premier arrivé' }, { v: 'full_ranking', label: 'Classement complet' }]} disabled={!isHost} />
                                 </OptionRow>
+                            </div>
+                        )}
+
+                        {gameType === 'perudo' && (
+                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Perudo</p>
+                                <OptionRow label="Dés par joueur au départ">
+                                    <OptionSelect
+                                        value={String(perudoInitialDice)}
+                                        onChange={v => { const n = Number(v); setPerudoInitialDice(n); socket?.emit('lobby:setPerudoOptions', { initialDice: n }); }}
+                                        options={[
+                                            { v: '3', label: '3 dés (court)' },
+                                            { v: '4', label: '4 dés' },
+                                            { v: '5', label: '5 dés (standard)' },
+                                            { v: '6', label: '6 dés (long)' },
+                                        ]}
+                                        disabled={!isHost}
+                                    />
+                                </OptionRow>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 italic">Les 1 sont wild (comptent pour n'importe quelle face). Si quelqu'un bid sur les 1, ils redeviennent normaux pour le round.</p>
                             </div>
                         )}
 

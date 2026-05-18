@@ -45,6 +45,21 @@ function LudoIcon({ className }: { className?: string }) {
     );
 }
 
+function PerudoIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <rect x="3" y="9" width="11" height="11" rx="2" />
+            <circle cx="6.5" cy="12.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="10.5" cy="16.5" r="1" fill="currentColor" stroke="none" />
+            <rect x="10" y="3" width="11" height="11" rx="2" />
+            <circle cx="13.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="13.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="17.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
 function BreakoutIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -72,6 +87,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     DIAMANT:    SparklesIcon,
     IMPOSTOR:   EyeSlashIcon,
     LUDO:       LudoIcon,
+    PERUDO:     PerudoIcon,
     SNAKE:      SnakeIcon,
     PACMAN:     PacmanIcon,
     BREAKOUT:   BreakoutIcon,
@@ -87,6 +103,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     diamant:    SparklesIcon,
     impostor:   EyeSlashIcon,
     ludo:       LudoIcon,
+    perudo:     PerudoIcon,
     snake:      SnakeIcon,
     pacman:     PacmanIcon,
     breakout:   BreakoutIcon,

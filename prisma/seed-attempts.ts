@@ -644,6 +644,57 @@ export async function seedLudoAttempts(prisma: PrismaClient, players: UserLike[]
     });
 }
 
+// ─── PERUDO ───────────────────────────────────────────────────────────────────
+
+export async function seedPerudoAttempts(prisma: PrismaClient, players: UserLike[]) {
+    console.log('\n🎲 Création des parties Perudo...');
+    const total = 40;
+
+    const dates = Array.from({ length: total }, (_, g) =>
+        daysAgo(Math.floor((g / total) * 80), Math.floor(Math.random() * 36))
+    ).sort((a, b) => a.getTime() - b.getTime());
+
+    for (let g = 0; g < total; g++) {
+        const gameId = crypto.randomUUID();
+        const cap = Math.min(6, players.length);
+        const playerCount = Math.floor(Math.random() * (cap - 1)) + 2;
+        const participants = shufflePlayers(players).slice(0, playerCount);
+        const ranked = shufflePlayers(participants);
+
+        const bots = maybeBots(() => 0, 2);
+        const vsBot = bots.length > 0;
+
+        // Combined ranking (humans + bots) so placements reflect bot positions.
+        // Winner = first ranked human (score 1); losers score 0. Bots interleaved randomly.
+        const humanCount = ranked.length;
+        const totalCount = humanCount + bots.length;
+        const positions = [...Array(totalCount).keys()].sort(() => Math.random() - 0.5);
+        const humanPositions = positions.slice(0, humanCount);
+        const botPositions = positions.slice(humanCount);
+
+        bots.forEach((b, i) => { b.placement = botPositions[i] + 1; b.score = botPositions[i] === 0 ? 1 : 0; });
+
+        for (let p = 0; p < ranked.length; p++) {
+            const placement = humanPositions[p] + 1;
+            const isWinner = placement === 1;
+            const { abandon, afk } = randomLeaveFlags(isWinner);
+            await prisma.attempt.create({
+                data: {
+                    userId: ranked[p].id,
+                    score: isWinner ? 1 : 0,
+                    gameType: 'PERUDO', placement,
+                    gameId, quizId: null, trapScore: 0,
+                    abandon, afk, vsBot,
+                    ...(vsBot && p === 0 ? { botScores: bots } : {}),
+                    createdAt: new Date(dates[g].getTime() + p * 1000),
+                },
+            });
+        }
+        console.log(`  ✅ Perudo ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
+    }
+    console.log(`✅ ${total} parties Perudo créées`);
+}
+
 // ─── BREAKOUT ─────────────────────────────────────────────────────────────────
 
 export async function seedBreakoutAttempts(prisma: PrismaClient, players: UserLike[]) {

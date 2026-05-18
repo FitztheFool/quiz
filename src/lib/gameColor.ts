@@ -139,4 +139,24 @@ export const GAME_COLOR: Record<string, {
             label: 'text-indigo-700 dark:text-indigo-400'
         }
     },
+    LUDO: {
+        selected: 'border-lime-500 bg-lime-500/10 text-lime-600 dark:text-lime-300',
+        badge: 'bg-lime-100 dark:bg-lime-900/40 text-lime-700 dark:text-lime-400',
+        badgeActive: 'bg-lime-600 text-white border-lime-600',
+        card: {
+            border: 'border-lime-200 dark:border-lime-800/60',
+            bg: 'bg-lime-50 dark:bg-lime-900/15',
+            label: 'text-lime-700 dark:text-lime-400'
+        }
+    },
+    PERUDO: {
+        selected: 'border-fuchsia-500 bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300',
+        badge: 'bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-400',
+        badgeActive: 'bg-fuchsia-600 text-white border-fuchsia-600',
+        card: {
+            border: 'border-fuchsia-200 dark:border-fuchsia-800/60',
+            bg: 'bg-fuchsia-50 dark:bg-fuchsia-900/15',
+            label: 'text-fuchsia-700 dark:text-fuchsia-400'
+        }
+    },
 };
