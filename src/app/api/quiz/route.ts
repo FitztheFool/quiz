@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         category: q.category ?? null,
         creator: {
           id: q.creator.id,
-          name: q.creator.username || q.creator.email?.split('@')[0] || 'Anonyme',
+          username: q.creator.username || q.creator.email?.split('@')[0] || 'Anonyme',
         },
         _count: {
           questions: q._count.questions,

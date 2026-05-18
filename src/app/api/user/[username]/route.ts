@@ -44,6 +44,7 @@ export async function GET(
             title: true,
             description: true,
             isPublic: true,
+            imageUrl: true,
             createdAt: true,
             creatorId: true,
             category: { select: { name: true } },

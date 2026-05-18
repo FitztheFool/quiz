@@ -66,7 +66,7 @@ export async function GET(
       creatorId: quiz.creatorId,
       creator: {
         id: quiz.creator.id,
-        name: quiz.creator.username || quiz.creator.email?.split('@')[0] || 'Utilisateur anonyme',
+        username: quiz.creator.username || quiz.creator.email?.split('@')[0] || 'Utilisateur anonyme',
       },
       questions: quiz.questions.map((q) => {
         if (q.type === 'TEXT') {

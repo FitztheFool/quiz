@@ -132,7 +132,7 @@ export default function QuizCard({
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           <UserIcon className="w-3 h-3 inline mr-1" />Créé par{' '}
           <Link
-            href={currentUserId === quiz.creator.id ? '/dashboard' : `/user/${quiz.creator.username}`}
+            href={currentUserId === quiz.creator.id ? '/dashboard#stats' : `/user/${quiz.creator.username}#stats`}
             className="font-semibold text-blue-600 hover:underline transition-colors"
           >
             {quiz.creator.username}
