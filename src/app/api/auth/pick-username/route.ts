@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         if (existing) {
             await prisma.user.update({
                 where: { id: entry.userId },
-                data: { username },
+                data: { username, status: 'ACTIVE' },
             });
         } else {
             await prisma.user.create({
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
                     name: meta?.name ?? null,
                     image: meta?.image ?? null,
                     username,
+                    status: 'ACTIVE',
                 },
             });
         }

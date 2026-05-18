@@ -172,9 +172,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
-                    select: { role: true, username: true, image: true, email: true, isAnonymous: true, status: true },
+                    select: { role: true, username: true, image: true, email: true, isAnonymous: true, status: true, passwordHash: true },
                 });
                 if (dbUser) {
+                    // OAuth users (no passwordHash) stuck in PENDING — race between events.createUser
+                    // and JWT generation, or pre-existing PENDING user that signIn callback missed.
+                    if (dbUser.status === 'PENDING' && !dbUser.passwordHash && !dbUser.isAnonymous) {
+                        await prisma.user.update({
+                            where: { id: token.id as string },
+                            data: { status: 'ACTIVE' },
+                        });
+                        dbUser.status = 'ACTIVE';
+                    }
                     token.role = dbUser.role;
                     if (dbUser.username) token.username = dbUser.username;
                     if (dbUser.image) token.image = dbUser.image;
