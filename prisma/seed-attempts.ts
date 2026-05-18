@@ -162,10 +162,15 @@ export async function seedSkyjowAttempts(prisma: PrismaClient, players: UserLike
         const vsBot = bots.length > 0;
         if (vsBot) assignBotPlacements(bots, scores, true);
 
+        // Combined ranking (humans + bots, low score wins) so human placement reflects bot scores.
+        const combined = [
+            ...scores.map((s, i) => ({ score: s, isBot: false, idx: i })),
+            ...bots.map(b => ({ score: b.score, isBot: true, idx: -1 })),
+        ].sort((a, b) => a.score - b.score);
         const rankOf = new Array(participants.length);
-        [...scores.keys()].sort((a, b) => scores[a] - scores[b]).forEach((origIdx, rank) => {
-            rankOf[origIdx] = rank + 1;
-        });
+        for (let i = 0; i < participants.length; i++) {
+            rankOf[i] = combined.findIndex(c => !c.isBot && c.idx === i) + 1;
+        }
 
         for (let p = 0; p < participants.length; p++) {
             const { abandon, afk } = randomLeaveFlags(rankOf[p] === 1);
@@ -278,12 +283,20 @@ async function seedRankedAttempts(prisma: PrismaClient, players: UserLike[], cfg
         postRank?.(ranked);
         if (vsBot) assignBotPlacements(bots, ranked.map(r => r.score));
 
+        // Combined ranking (humans + bots) so human placement reflects bot scores.
+        const combined = [
+            ...ranked.map(r => ({ score: r.score, isBot: false, idx: ranked.indexOf(r) })),
+            ...bots.map(b => ({ score: b.score, isBot: true, idx: -1 })),
+        ].sort((a, b) => b.score - a.score);
+        const humanPlacement = (humanIdx: number) =>
+            combined.findIndex(c => !c.isBot && c.idx === humanIdx) + 1;
+
         for (let p = 0; p < ranked.length; p++) {
             const { abandon, afk } = randomLeaveFlags(p === 0);
             await prisma.attempt.create({
                 data: {
                     userId: ranked[p].player.id, score: ranked[p].score,
-                    gameType: gameType as any, placement: p + 1,
+                    gameType: gameType as any, placement: humanPlacement(p),
                     gameId, quizId: null, trapScore: 0, abandon, afk, vsBot,
                     ...(vsBot && p === 0 ? { botScores: bots } : {}),
                     createdAt: new Date(dates[g].getTime() + p * 1000),

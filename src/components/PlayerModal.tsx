@@ -34,14 +34,24 @@ export default function PlayerModal({ gameId, players, onClose }: PlayerModalPro
     // Règle : même score = même rang, le rang suivant est sauté (1, 1, 3...)
     const activePlayers = players.filter(x => !x.abandon && !x.afk && x.placement != null);
 
-    const playersWithRank = players.map((p) => {
-        if (p.abandon || p.afk || p.placement == null) return p;
+    const playersWithRank = players
+        .map((p) => {
+            if (p.abandon || p.afk || p.placement == null) return p;
 
-        // Rang = nombre de joueurs actifs avec un score strictement supérieur + 1
-        const rank = activePlayers.filter(x => x.score > p.score).length + 1;
+            // Rang = nombre de joueurs actifs avec un score strictement supérieur + 1
+            const rank = activePlayers.filter(x => x.score > p.score).length + 1;
 
-        return { ...p, placement: rank };
-    });
+            return { ...p, placement: rank };
+        })
+        .sort((a, b) => {
+            const aOut = a.abandon || a.afk;
+            const bOut = b.abandon || b.afk;
+            if (aOut !== bOut) return aOut ? 1 : -1;
+            const ap = a.placement ?? Number.MAX_SAFE_INTEGER;
+            const bp = b.placement ?? Number.MAX_SAFE_INTEGER;
+            if (ap !== bp) return ap - bp;
+            return b.score - a.score;
+        });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>

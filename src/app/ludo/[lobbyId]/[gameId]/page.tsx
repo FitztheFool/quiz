@@ -178,21 +178,34 @@ export default function LudoPage() {
                     <GameScoreLeaderboard
                         myUserId={me.userId}
                         entries={state.players
-                            .map(p => ({ p, rank: state.ranking.indexOf(state.players.indexOf(p)) }))
-                            .sort((a, b) => {
-                                const ra = a.rank === -1 ? 9999 : a.rank;
-                                const rb = b.rank === -1 ? 9999 : b.rank;
-                                return ra - rb;
-                            })
-                            .map(({ p }, _i) => {
+                            .map((p, idx) => {
                                 const finishedCount = p.pawns.filter(pn => pn.progress >= 57).length;
+                                const rank = state.ranking.indexOf(idx);
+                                const abandoned = state.surrenderedIdxs.includes(idx) || state.afkIdxs.includes(idx);
+                                return { p, idx, finishedCount, rank, abandoned };
+                            })
+                            .sort((a, b) => {
+                                // Finished players (in ranking) come first, in ranking order.
+                                if (a.rank !== -1 && b.rank !== -1) return a.rank - b.rank;
+                                if (a.rank !== -1) return -1;
+                                if (b.rank !== -1) return 1;
+                                // Then by finished pion count desc.
+                                if (a.finishedCount !== b.finishedCount) return b.finishedCount - a.finishedCount;
+                                // Tie-break: abandoners last.
+                                if (a.abandoned !== b.abandoned) return a.abandoned ? 1 : -1;
+                                return a.idx - b.idx;
+                            })
+                            .map(({ p, finishedCount, abandoned }) => {
                                 const bot = isBot(p);
+                                const badges: string[] = [];
+                                if (bot) badges.push('Bot');
+                                if (abandoned) badges.push('Abandon');
                                 return {
                                     userId: p.userId,
                                     username: p.username,
                                     score: `${finishedCount}/4 pions`,
-                                    badges: bot ? ['Bot'] : [],
-                                    disqualified: false,
+                                    badges,
+                                    disqualified: abandoned,
                                 };
                             })}
                     />

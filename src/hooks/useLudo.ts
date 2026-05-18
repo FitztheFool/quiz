@@ -29,6 +29,8 @@ export interface LudoState {
     movablePawns: number[];
     lastMove: { playerIdx: number; pawnIdx: number; captured: { playerIdx: number; pawnIdx: number }[] } | null;
     ranking: number[];
+    surrenderedIdxs: number[];
+    afkIdxs: number[];
     winner: number | 'team0' | 'team1' | null;
     turnStartedAt: number | null;
     turnDuration: number;
