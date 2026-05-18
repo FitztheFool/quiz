@@ -131,8 +131,8 @@ export default function PerudoPage() {
 
             {state.phase === 'bidding' && (
                 <TimerBar
-                    endsAt={null}
-                    duration={60}
+                    endsAt={state.turnStartedAt ? state.turnStartedAt + state.turnDuration * 1000 : null}
+                    duration={state.turnDuration}
                     label={
                         isMyTurn ? 'À vous de jouer'
                             : currentIsBot ? 'Le bot réfléchit…'
@@ -197,7 +197,10 @@ export default function PerudoPage() {
                 {/* My dice */}
                 {myPlayer && myPlayer.alive && myPlayer.dice && (
                     <div className="flex flex-col items-center gap-2">
-                        <span className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500">Vos dés</span>
+                        <span className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-2">
+                            Vos dés
+                            {inactivityUserId === me.userId && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
+                        </span>
                         <div className="flex gap-2">
                             {myPlayer.dice.map((d, i) => (
                                 <Die key={i} value={d} size={48} />

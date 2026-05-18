@@ -103,10 +103,10 @@ export default function BidInput({ lastBid, pacosWild, totalDice, disabled, onBi
                             type="button"
                             onClick={() => setFace(f)}
                             disabled={disabled}
-                            className={`rounded-lg border transition-all
+                            className={`rounded-lg transition-all
                                 ${face === f
-                                    ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-500/50 bg-blue-50 dark:bg-blue-900/30'
-                                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-400'}
+                                    ? 'ring-2 ring-blue-500 dark:ring-blue-400'
+                                    : 'hover:opacity-80'}
                                 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                             aria-label={`Face ${f}`}
                         >

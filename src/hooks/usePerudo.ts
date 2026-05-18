@@ -48,6 +48,8 @@ export interface PerudoState {
     totalDice: number;
     aliveCount: number;
     lastReveal: RevealResult | null;
+    turnStartedAt: number | null;
+    turnDuration: number;
     players: PerudoPlayerView[];
     spectator: boolean;
 }

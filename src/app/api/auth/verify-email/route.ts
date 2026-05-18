@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     await Promise.all([
         prisma.user.updateMany({
             where: { email: record.identifier, status: 'PENDING' },
-            data: { status: 'ACTIVE', isAnonymous: false, emailVerifiedAt: new Date() },
+            data: { status: 'ACTIVE', isAnonymous: false, emailVerified: new Date() },
         }),
         prisma.verificationToken.delete({ where: { token } }),
     ]);

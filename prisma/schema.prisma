@@ -93,7 +93,7 @@ model User {
   name          String?
   username      String?   @unique
   email         String    @unique
-  emailVerifiedAt DateTime?
+  emailVerified DateTime? @map("emailVerifiedAt")
   image           String?
   passwordHash    String?
   role            Role      @default(USER)
