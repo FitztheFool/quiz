@@ -139,11 +139,17 @@ function LoginForm() {
             });
 
             if (result?.error) {
-                if (result.error === 'AccountPending') {
+                const code = result.code;
+                if (code === 'account_pending') {
                     setPendingEmail(identifier);
                     setError('AccountPending');
-                } else if (result.error === 'deactivated') setError('Votre compte a été banni.');
-                else setError('Email ou mot de passe incorrect');
+                } else if (code === 'account_banned') {
+                    setError('Votre compte a été banni.');
+                } else if (code === 'missing_fields') {
+                    setError('Email/pseudo et mot de passe requis.');
+                } else {
+                    setError('Email ou mot de passe incorrect');
+                }
             } else {
                 router.push(callbackUrl);  // ← supprimer result?.url
                 router.refresh();

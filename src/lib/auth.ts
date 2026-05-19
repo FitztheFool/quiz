@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth, { CredentialsSignin } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import Credentials from 'next-auth/providers/credentials';
 import Discord from 'next-auth/providers/discord';
@@ -6,6 +6,11 @@ import Google from 'next-auth/providers/google';
 import { compare } from 'bcryptjs';
 import prisma from './prisma';
 import { createPending, getPending, deletePending } from './oauthPendingStore';
+
+class InvalidCredentialsError extends CredentialsSignin { code = 'invalid_credentials'; }
+class AccountBannedError extends CredentialsSignin { code = 'account_banned'; }
+class AccountPendingError extends CredentialsSignin { code = 'account_pending'; }
+class MissingFieldsError extends CredentialsSignin { code = 'missing_fields'; }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(prisma as any),
@@ -73,7 +78,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             },
             async authorize(credentials) {
                 if (!credentials?.identifier || !credentials?.password) {
-                    throw new Error('Email/pseudo et mot de passe requis');
+                    throw new MissingFieldsError();
                 }
                 const user = await prisma.user.findFirst({
                     where: {
@@ -83,11 +88,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                         ],
                     },
                 });
-                if (!user || !user.passwordHash) throw new Error('Identifiants incorrects');
-                if (user.status === 'BANNED') throw new Error('AccountBanned');
-                if (user.status === 'PENDING') throw new Error('AccountPending');
+                if (!user || !user.passwordHash) throw new InvalidCredentialsError();
+                if (user.status === 'BANNED') throw new AccountBannedError();
                 const isPasswordValid = await compare(credentials.password as string, user.passwordHash);
-                if (!isPasswordValid) throw new Error('Identifiants incorrects');
+                if (!isPasswordValid) throw new InvalidCredentialsError();
+                if (user.status === 'PENDING') throw new AccountPendingError();
                 if (user.status === 'DEACTIVATED') {
                     await prisma.user.update({ where: { id: user.id }, data: { status: 'ACTIVE', deactivatedAt: null } });
                 }
