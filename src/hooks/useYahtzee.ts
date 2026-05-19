@@ -55,6 +55,8 @@ export function useYahtzee({
     const socket = useMemo(() => getYahtzeeSocket(), []);
     const joinedRef = useRef(false);
     const toastIdRef = useRef(0);
+    const rollStartRef = useRef<number | null>(null);
+    const ROLL_MIN_MS = 700;
 
     const [game, setGame] = useState<GameState | null>(null);
     const [results, setResults] = useState<ResultEntry[] | null>(null);
@@ -89,7 +91,14 @@ export function useYahtzee({
 
         const onState = (state: GameState) => {
             setGame(state);
-            setRolling(false);
+            const elapsed = rollStartRef.current ? Date.now() - rollStartRef.current : ROLL_MIN_MS;
+            const remaining = Math.max(0, ROLL_MIN_MS - elapsed);
+            if (remaining > 0) {
+                setTimeout(() => setRolling(false), remaining);
+            } else {
+                setRolling(false);
+            }
+            rollStartRef.current = null;
             setTimerEndsAt(Date.now() + 60 * 1000);
         };
         const onResults = ({ results }: { results: ResultEntry[] }) => setResults(results);
@@ -142,6 +151,7 @@ export function useYahtzee({
     }, [socket, lobbyId, userId]);
 
     const roll = useCallback(() => {
+        rollStartRef.current = Date.now();
         setRolling(true);
         socket?.emit('yahtzee:roll', { lobbyId, userId });
     }, [socket, lobbyId, userId]);

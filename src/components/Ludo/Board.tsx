@@ -24,7 +24,9 @@ interface BoardProps {
     highlightedPlayer?: number;       // player index whose movable pawns to highlight
 }
 
-const CELL = 36; // px
+// Cell size is a CSS var so the board scales with viewport on small screens.
+// Max 36px, min 18px, otherwise (viewport - paddings) / 15.
+const CELL_CSS = 'min(36px, max(18px, calc((100vw - 2rem) / 15)))';
 
 export default function LudoBoard({ players, movablePawns, currentTurn, canMove, onPawnClick, highlightedPlayer }: BoardProps) {
     // Build cell type map: 'base' | 'track' | 'home' | 'center' | 'safe' | 'empty', keyed by `${r},${c}`.
@@ -74,10 +76,13 @@ export default function LudoBoard({ players, movablePawns, currentTurn, canMove,
     }, [players]);
 
     return (
-        <div className="relative inline-block rounded-2xl p-2 bg-gray-200 dark:bg-gray-800 shadow-xl">
+        <div
+            className="relative inline-block rounded-2xl p-2 bg-gray-200 dark:bg-gray-800 shadow-xl"
+            style={{ ['--ludo-cell' as string]: CELL_CSS }}
+        >
             <div
                 className="grid bg-white dark:bg-gray-900 rounded-lg overflow-hidden"
-                style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, ${CELL}px)`, gridTemplateRows: `repeat(${BOARD_SIZE}, ${CELL}px)` }}
+                style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, var(--ludo-cell))`, gridTemplateRows: `repeat(${BOARD_SIZE}, var(--ludo-cell))` }}
             >
                 {Array.from({ length: BOARD_SIZE }, (_, r) =>
                     Array.from({ length: BOARD_SIZE }, (_, c) => {
@@ -90,10 +95,10 @@ export default function LudoBoard({ players, movablePawns, currentTurn, canMove,
                 <div
                     className="absolute pointer-events-none"
                     style={{
-                        left: 2 + 6 * CELL,
-                        top: 2 + 6 * CELL,
-                        width: 3 * CELL,
-                        height: 3 * CELL,
+                        left: `calc(0.5rem + 6 * var(--ludo-cell))`,
+                        top: `calc(0.5rem + 6 * var(--ludo-cell))`,
+                        width: `calc(3 * var(--ludo-cell))`,
+                        height: `calc(3 * var(--ludo-cell))`,
                     }}
                 >
                     <div className="w-full h-full grid grid-cols-2 grid-rows-2 rotate-45 origin-center" style={{ transform: 'rotate(45deg) scale(0.7)' }}>
@@ -112,10 +117,10 @@ export default function LudoBoard({ players, movablePawns, currentTurn, canMove,
                             key={key}
                             className="absolute flex items-center justify-center gap-0.5 pointer-events-none"
                             style={{
-                                left: 2 + c * CELL,
-                                top: 2 + r * CELL,
-                                width: CELL,
-                                height: CELL,
+                                left: `calc(0.5rem + ${c} * var(--ludo-cell))`,
+                                top: `calc(0.5rem + ${r} * var(--ludo-cell))`,
+                                width: `var(--ludo-cell)`,
+                                height: `var(--ludo-cell)`,
                             }}
                         >
                             {group.map(({ player, pawnIdx, playerIdx }) => {
@@ -123,7 +128,7 @@ export default function LudoBoard({ players, movablePawns, currentTurn, canMove,
                                 const isCurrent = playerIdx === currentTurn;
                                 const isMovable = canMove && playerIdx === currentTurn && movablePawns.includes(pawnIdx);
                                 const isHighlight = highlightedPlayer === playerIdx;
-                                const size = group.length > 2 ? 14 : group.length > 1 ? 18 : 22;
+                                const ratio = group.length > 2 ? 0.4 : group.length > 1 ? 0.5 : 0.62;
                                 return (
                                     <button
                                         key={`${player.userId}-${pawnIdx}`}
@@ -134,7 +139,7 @@ export default function LudoBoard({ players, movablePawns, currentTurn, canMove,
                                             ${isMovable ? 'cursor-pointer hover:scale-125 ring-2 ring-offset-1 ring-white animate-pulse pointer-events-auto' : ''}
                                             ${isHighlight && !isMovable ? 'ring-2 ring-yellow-300' : ''}
                                             ${isCurrent ? 'shadow-lg' : ''}`}
-                                        style={{ width: size, height: size }}
+                                        style={{ width: `calc(var(--ludo-cell) * ${ratio})`, height: `calc(var(--ludo-cell) * ${ratio})` }}
                                         title={`${player.username} — pion ${pawnIdx + 1}`}
                                     />
                                 );
@@ -160,7 +165,7 @@ function CellTile({ row, col, meta }: { row: number; col: number; meta?: { kind:
         const isOuter = row === zone.row || row === zone.row + 5 || col === zone.col || col === zone.col + 5;
         return (
             <div className={`flex items-center justify-center border border-gray-200/40 dark:border-gray-700/40 ${isOuter ? color.bg : 'bg-white dark:bg-gray-900'}`}>
-                {isSlot && <div className={`w-7 h-7 rounded-full border-2 ${color.border} bg-white dark:bg-gray-800`} />}
+                {isSlot && <div className={`rounded-full border-2 ${color.border} bg-white dark:bg-gray-800`} style={{ width: 'calc(var(--ludo-cell) * 0.78)', height: 'calc(var(--ludo-cell) * 0.78)' }} />}
             </div>
         );
     }

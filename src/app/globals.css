@@ -38,3 +38,34 @@ h5,
 h6 {
   font-family: var(--font-heading), sans-serif;
 }
+
+@keyframes dice-tumble {
+  0%   { transform: translateY(0)     rotate(0deg)   scale(1); }
+  15%  { transform: translateY(-14px) rotate(110deg) scale(1.08); }
+  30%  { transform: translateY(-22px) rotate(220deg) scale(1.12); }
+  45%  { transform: translateY(-16px) rotate(330deg) scale(1.06); }
+  60%  { transform: translateY(-4px)  rotate(440deg) scale(0.98); }
+  75%  { transform: translateY(-10px) rotate(540deg) scale(1.04); }
+  88%  { transform: translateY(0)     rotate(620deg) scale(0.95); }
+  100% { transform: translateY(0)     rotate(720deg) scale(1); }
+}
+
+@keyframes dice-land {
+  0%   { transform: scale(1.18); }
+  40%  { transform: scale(0.92); }
+  70%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.dice-rolling {
+  animation: dice-tumble 0.55s cubic-bezier(.45,.05,.2,1) infinite;
+  will-change: transform;
+}
+
+.dice-landed {
+  animation: dice-land 0.35s cubic-bezier(.34,1.56,.64,1);
+}
+
+.dice-shadow {
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.18));
+}
