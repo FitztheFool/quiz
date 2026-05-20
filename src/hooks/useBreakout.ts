@@ -30,6 +30,8 @@ export function useBreakout(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
     const stateRef = useRef<GameState>(makeInitialState(1));
     const rafRef = useRef<number | null>(null);
+    const lastTimeRef = useRef<number | null>(null);
+    const accumulatorRef = useRef(0);
 
     // Input refs (updated every frame, no re-renders)
     const paddleTargetXRef = useRef<number | null>(null);
@@ -76,51 +78,79 @@ export function useBreakout(canvasRef: React.RefObject<HTMLCanvasElement | null>
             drawBreakout(canvasRef.current, state, isDark);
         }
 
-        const loop = () => {
+        const FIXED_DT = 1000 / 60;
+        const MAX_STEPS_PER_FRAME = 5;
+        lastTimeRef.current = null;
+        accumulatorRef.current = 0;
+
+        const loop = (now: number) => {
             if (phaseRef.current !== 'playing') return;
 
-            const fire = fireRef.current;
-            fireRef.current = false;
+            if (lastTimeRef.current === null) lastTimeRef.current = now;
+            let delta = now - lastTimeRef.current;
+            lastTimeRef.current = now;
+            // Clamp delta to avoid huge jumps after tab unfocus / breakpoint.
+            if (delta > 250) delta = FIXED_DT;
+            accumulatorRef.current += delta;
 
-            const result = stepGame(stateRef.current, paddleTargetXRef.current, fire);
-            stateRef.current = result.state;
+            let steps = 0;
+            let finished = false;
 
-            setDisplayScore(result.state.score);
-            setDisplayLives(result.state.lives);
+            while (accumulatorRef.current >= FIXED_DT && steps < MAX_STEPS_PER_FRAME && !finished) {
+                const fire = fireRef.current;
+                fireRef.current = false;
+
+                const result = stepGame(stateRef.current, paddleTargetXRef.current, fire);
+                stateRef.current = result.state;
+
+                if (result.state.dead) {
+                    endGame(result.state.score, result.state.level);
+                    finished = true;
+                    break;
+                }
+
+                if (result.levelComplete) {
+                    const nextLevel = result.state.level + 1;
+                    const newBricks = buildLevel(nextLevel);
+                    stateRef.current = {
+                        ...result.state,
+                        bricks: newBricks,
+                        level: nextLevel,
+                        balls: [{
+                            x: result.state.paddleX + result.state.paddleW / 2,
+                            y: 490,
+                            vx: 0,
+                            vy: 0,
+                            stuck: true,
+                        }],
+                        lasers: [],
+                        fallingPowers: [],
+                        activeEffects: [],
+                        laserMode: false,
+                        stickyMode: false,
+                    };
+                    setDisplayLevel(nextLevel);
+                }
+
+                accumulatorRef.current -= FIXED_DT;
+                steps += 1;
+            }
+
+            if (finished) return;
+
+            // If accumulator still huge (slow device), drop the surplus instead of spiraling.
+            if (accumulatorRef.current > FIXED_DT * MAX_STEPS_PER_FRAME) {
+                accumulatorRef.current = 0;
+            }
+
+            const cur = stateRef.current;
+            setDisplayScore(cur.score);
+            setDisplayLives(cur.lives);
 
             if (canvasRef.current) {
                 const isDark = document.documentElement.classList.contains('dark');
-                drawBreakout(canvasRef.current, result.state, isDark);
+                drawBreakout(canvasRef.current, cur, isDark);
             }
-
-            if (result.state.dead) {
-                endGame(result.state.score, result.state.level);
-                return;
-            }
-
-            if (result.levelComplete) {
-                const nextLevel = result.state.level + 1;
-                const newBricks = buildLevel(nextLevel);
-                stateRef.current = {
-                    ...result.state,
-                    bricks: newBricks,
-                    level: nextLevel,
-                    balls: [{
-                        x: result.state.paddleX + result.state.paddleW / 2,
-                        y: 490,
-                        vx: 0,
-                        vy: 0,
-                        stuck: true,
-                    }],
-                    lasers: [],
-                    fallingPowers: [],
-                    activeEffects: [],
-                    laserMode: false,
-                    stickyMode: false,
-                };
-                setDisplayLevel(nextLevel);
-            }
-
             rafRef.current = requestAnimationFrame(loop);
         };
 

@@ -147,7 +147,7 @@ export default function BidInput({ lastBid, pacosWild, totalDice, disabled, onBi
                     type="button"
                     onClick={onDudo}
                     disabled={disabled || !canDudo}
-                    className="flex-1 py-3 rounded-xl border-2 border-red-500 text-red-600 dark:text-red-400 font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-all shadow-lg shadow-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
                 >
                     Mentir ! (Dudo)
                 </button>

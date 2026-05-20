@@ -21,15 +21,15 @@ import { BoltIcon } from '@heroicons/react/24/solid';
 
 function cardColor(value: number | null, revealed: boolean, removed: boolean): string {
     if (removed) return 'bg-transparent border-transparent';
-    if (!revealed) return 'bg-slate-400 dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:bg-slate-500 dark:hover:bg-slate-600 cursor-pointer text-slate-200 dark:text-slate-400';
-    if (value === null) return 'bg-slate-400 dark:bg-slate-700 border-slate-300 dark:border-slate-600';
-    if (value === -2) return 'bg-blue-400 dark:bg-blue-900 border-blue-300 dark:border-blue-800 text-white';
-    if (value === -1) return 'bg-blue-500 dark:bg-blue-600 border-blue-400 dark:border-blue-500 text-white';
-    if (value === 0) return 'bg-cyan-400 border-cyan-300 text-slate-900';
-    if (value <= 3) return 'bg-emerald-400 border-emerald-300 text-slate-900';
-    if (value <= 6) return 'bg-yellow-300 border-yellow-200 text-slate-900';
-    if (value <= 9) return 'bg-orange-400 border-orange-300 text-slate-900';
-    return 'bg-red-500 border-red-400 text-white';
+    if (!revealed) return 'bg-gradient-to-br from-slate-600 to-slate-800 border-slate-500 hover:from-slate-500 hover:to-slate-700 cursor-pointer text-slate-300';
+    if (value === null) return 'bg-gradient-to-br from-slate-500 to-slate-700 border-slate-400';
+    if (value === -2) return 'bg-gradient-to-br from-blue-500 to-blue-800 border-blue-400 text-white';
+    if (value === -1) return 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300 text-white';
+    if (value === 0) return 'bg-gradient-to-br from-cyan-300 to-cyan-500 border-cyan-200 text-slate-900';
+    if (value <= 3) return 'bg-gradient-to-br from-emerald-300 to-emerald-500 border-emerald-200 text-slate-900';
+    if (value <= 6) return 'bg-gradient-to-br from-yellow-300 to-amber-400 border-yellow-200 text-slate-900';
+    if (value <= 9) return 'bg-gradient-to-br from-orange-400 to-orange-600 border-orange-300 text-white';
+    return 'bg-gradient-to-br from-red-500 to-red-700 border-red-400 text-white';
 }
 
 function cardLabel(value: number | null, revealed: boolean, removed: boolean): string {
@@ -66,11 +66,11 @@ function Card({ card, onClick, highlight, selectable, size = 'md' }: CardProps) 
             onClick={selectable ? onClick : undefined}
             className={[
                 sizeClass,
-                'border-2 flex items-center justify-center font-bold transition-all duration-200 select-none',
+                'border-2 flex items-center justify-center font-black transition-all duration-200 select-none shadow-md shadow-black/40',
                 cardColor(card.value, card.revealed, card.removed),
-                selectable && !card.revealed ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-white dark:ring-offset-slate-900 scale-105' : '',
-                highlight ? 'ring-2 ring-gray-400 dark:ring-white ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : '',
-                selectable && !card.removed ? 'cursor-pointer hover:scale-110 active:scale-95' : '',
+                selectable && !card.revealed ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-emerald-900 scale-105' : '',
+                highlight ? 'ring-2 ring-white ring-offset-1 ring-offset-emerald-900' : '',
+                selectable && !card.removed ? 'cursor-pointer hover:scale-110 hover:-translate-y-0.5 active:scale-95' : '',
             ].join(' ')}
         >
             {card.revealed ? cardLabel(card.value, card.revealed, card.removed) : (
@@ -316,7 +316,7 @@ export default function skyjowGamePage() {
     // ── Interface principale ───────────────────────────────────────────────────
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+        <div className="flex-1 flex flex-col overflow-hidden casino-felt text-gray-100" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
 
             {/* ── Notification ── */}
             {notification && (
@@ -360,19 +360,19 @@ export default function skyjowGamePage() {
             <main className="flex-1 flex flex-col lg:flex-row gap-0 lg:min-h-0 lg:overflow-hidden">
 
                 {/* ── Zone adversaires ── (passe en second sur mobile) */}
-                <div className="lg:w-72 bg-white dark:bg-gray-900 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 p-3 lg:overflow-y-auto lg:shrink-0 order-3 lg:order-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-3 tracking-wider">Adversaires</p>
+                <div className="lg:w-72 bg-black/30 backdrop-blur-sm border-b lg:border-b-0 lg:border-r border-black/40 p-3 lg:overflow-y-auto lg:shrink-0 order-3 lg:order-1">
+                    <p className="text-xs text-emerald-100 uppercase font-bold mb-3 tracking-wider">Adversaires</p>
                     <div className="space-y-4">
                         {otherPlayers.map((p) => {
                             const isTurn = p.userId === currentPlayerId;
                             const pScore = p.liveScore ?? scores.find(s => s.userId === p.userId)?.totalScore ?? 0;
                             return (
                                 <div key={p.userId}
-                                    className={`rounded-xl p-3 border transition-all ${isTurn ? 'bg-gray-50 dark:bg-gray-800 border-green-500 dark:border-green-600 shadow-lg shadow-green-900/10' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                                    className={`rounded-xl p-3 border transition-all ${isTurn ? 'bg-emerald-900/40 border-yellow-400 shadow-lg shadow-yellow-400/20' : 'bg-emerald-900/30 border-emerald-700/40'}`}>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
                                             {isTurn && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
-                                            <span className="font-semibold text-sm text-gray-800 dark:text-gray-200">{p.username}</span>
+                                            <span className="font-semibold text-sm text-white">{p.username}</span>
                                         </div>
                                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pScore >= 80 ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400' : pScore >= 50 ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                                             {pScore} pts
@@ -393,7 +393,7 @@ export default function skyjowGamePage() {
                                     <div className="flex items-center gap-1.5">
                                         {scores.find(s => s.userId === p.userId)?.afk ? <ClockIcon className="w-3.5 h-3.5 text-gray-400" /> : <NoSymbolIcon className="w-3.5 h-3.5 text-gray-400" />}
 
-                                        <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 line-through">{p.username}</span>
+                                        <span className="font-semibold text-sm text-white/70 line-through">{p.username}</span>
                                     </div>
                                     <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
                                         {scores.find(s => s.userId === p.userId)?.afk ? 'AFK' : 'Abandon'}
@@ -458,7 +458,7 @@ export default function skyjowGamePage() {
                         <div className="flex items-center gap-8">
                             {/* Pioche */}
                             <div className="flex flex-col items-center gap-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pioche</p>
+                                <p className="text-xs text-emerald-100 uppercase tracking-wider font-bold">Pioche</p>
                                 <button
                                     onClick={drawDeck}
                                     disabled={!isCurrent || drawnCard !== null}
@@ -496,7 +496,7 @@ export default function skyjowGamePage() {
 
                             {/* Défausse */}
                             <div className="flex flex-col items-center gap-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Défausse</p>
+                                <p className="text-xs text-emerald-100 uppercase tracking-wider font-bold">Défausse</p>
                                 <button
                                     onClick={takeDiscard}
                                     disabled={!isCurrent || drawnCard !== null || discardTop === null}

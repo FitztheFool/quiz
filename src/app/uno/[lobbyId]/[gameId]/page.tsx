@@ -70,6 +70,14 @@ const COLOR_MAP: Record<string, string> = {
     wild: 'bg-gray-700 dark:bg-gray-800',
 };
 
+const CARD_GRADIENT: Record<string, string> = {
+    red:    'bg-gradient-to-br from-red-500 to-red-700',
+    green:  'bg-gradient-to-br from-green-500 to-green-700',
+    blue:   'bg-gradient-to-br from-blue-500 to-blue-700',
+    yellow: 'bg-gradient-to-br from-yellow-400 to-amber-600',
+    wild:   'bg-black',
+};
+
 const COLOR_DOT_CLASS: Record<string, string> = {
     red: 'bg-red-500', green: 'bg-green-500', blue: 'bg-blue-500', yellow: 'bg-yellow-400',
 };
@@ -95,16 +103,22 @@ function UnoCard({ card, playable, selected, onClick }: {
     card: Card; playable?: boolean; selected?: boolean; onClick?: () => void;
 }) {
     const label = VALUE_LABEL[card.value] ?? card.value;
-    const bg = COLOR_MAP[card.color] ?? 'bg-gray-400';
+    const gradient = CARD_GRADIENT[card.color] ?? 'bg-gray-400';
     return (
         <div onClick={onClick} className={`
-            w-16 h-24 ${bg} rounded-xl border-4 border-white shadow-md
-            flex items-center justify-center font-bold text-white text-2xl
-            select-none transition-all duration-150
-            ${playable ? 'cursor-pointer hover:-translate-y-3 hover:shadow-xl ring-2 ring-white' : 'opacity-60 cursor-default'}
-            ${selected ? '-translate-y-4 ring-4 ring-yellow-300 shadow-2xl' : ''}
+            relative w-16 h-24 ${gradient} rounded-xl border-[3px] border-white shadow-lg
+            flex items-center justify-center font-black text-white
+            select-none transition-all duration-200 overflow-hidden
+            ${playable ? 'cursor-pointer hover:-translate-y-3 hover:shadow-2xl hover:scale-105 ring-2 ring-white/60' : 'opacity-60 cursor-default'}
+            ${selected ? '-translate-y-4 ring-4 ring-yellow-300 shadow-yellow-300/40 shadow-2xl scale-105' : ''}
         `}>
-            {label}
+            {/* Oval white center for classic UNO look */}
+            <span className="absolute inset-2 rounded-full bg-white/10 -rotate-[20deg] pointer-events-none" />
+            {/* Corner labels */}
+            <span className="absolute top-1 left-1.5 text-[10px] font-black leading-none">{label}</span>
+            <span className="absolute bottom-1 right-1.5 text-[10px] font-black leading-none rotate-180">{label}</span>
+            {/* Center value */}
+            <span className="relative z-10 text-2xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">{label}</span>
         </div>
     );
 }
@@ -237,8 +251,8 @@ export default function UnoPage() {
     if (gameState?.status === 'FINISHED') {
         const scores = gameState.finalScores ?? [];
         return (
-            <div className="flex-1 bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md text-gray-900 dark:text-white text-center shadow-lg">
+            <div className="flex-1 casino-felt flex items-center justify-center p-4">
+                <div className="casino-tile rounded-2xl p-8 w-full max-w-md text-gray-900 dark:text-white text-center shadow-lg">
                     <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 mb-2 mx-auto">
                         <TrophyIcon className="w-8 h-8 text-amber-500 dark:text-amber-400" />
                     </div>
@@ -322,7 +336,7 @@ export default function UnoPage() {
     const isMeInactive = inactivityUserId === me.userId;
 
     return (
-        <div className="flex-1 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex flex-col select-none">
+        <div className="flex-1 casino-felt text-gray-900 dark:text-white flex flex-col select-none">
 
             {showColorPicker && !gameState.spectator && (
                 <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
@@ -385,8 +399,8 @@ export default function UnoPage() {
                     const isActive = gameState.players[gameState.currentPlayerIndex]?.userId === p.userId;
                     const isInactive = inactivityUserId === p.userId && inactivitySeconds !== null;
                     return (
-                        <div key={p.userId} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all
-                            ${isActive ? 'bg-yellow-500/20 ring-2 ring-yellow-400' : 'bg-white dark:bg-gray-800'}
+                        <div key={p.userId} className={`casino-tile flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all
+                            ${isActive ? 'ring-2 ring-yellow-400' : ''}
                             ${isInactive ? 'ring-2 ring-orange-400' : ''}`}>
                             <div className="flex items-center gap-1.5">
                                 <span className="text-sm font-semibold">{p.username}</span>
@@ -418,7 +432,7 @@ export default function UnoPage() {
                     );
                 })}
                 {kickedPlayers.filter(k => k.userId !== me.userId).map(p => (
-                    <div key={p.userId} className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 opacity-50">
+                    <div key={p.userId} className="casino-tile flex flex-col items-center gap-1 px-3 py-2 rounded-xl opacity-50">
                         <span className="text-sm font-semibold line-through text-gray-400">{p.username}</span>
                     </div>
                 ))}
@@ -429,11 +443,12 @@ export default function UnoPage() {
                 <div className="flex flex-col items-center gap-2">
                     <div
                         onClick={!gameState.spectator && gameState.isMyTurn ? () => socket?.emit('uno:drawCard') : undefined}
-                        className={`w-16 h-24 bg-red-700 rounded-xl border-4 border-white shadow-lg flex items-center justify-center text-white font-bold text-2xl
-                            ${!gameState.spectator && gameState.isMyTurn ? 'cursor-pointer hover:bg-red-600 hover:scale-105 transition-all' : 'opacity-60 cursor-default'}`}>
-                        🃏
+                        className={`relative w-16 h-24 bg-gradient-to-br from-red-600 to-red-900 rounded-xl border-[3px] border-white shadow-2xl flex items-center justify-center text-white font-black text-3xl overflow-hidden
+                            ${!gameState.spectator && gameState.isMyTurn ? 'cursor-pointer hover:scale-110 hover:-translate-y-1 transition-all ring-2 ring-white/40' : 'opacity-70 cursor-default'}`}>
+                        <span className="absolute inset-2 rounded-full bg-white/10 -rotate-[20deg]" />
+                        <span className="relative z-10 italic tracking-tight">UNO</span>
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-amber-100/90 font-semibold">
                         {gameState.drawStack > 0 ? `Piocher +${gameState.drawStack}` : 'Piocher'}
                     </span>
                 </div>
@@ -466,9 +481,9 @@ export default function UnoPage() {
 
             {/* Main — masquée pour les spectateurs */}
             {!gameState.spectator && (
-                <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-4">
+                <div className="casino-tile border-t border-amber-900/30 px-4 py-4">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Ma main ({gameState.hand.length} cartes)</span>
+                        <span className="text-sm text-emerald-100 font-bold">Ma main ({gameState.hand.length} cartes)</span>
                         {gameState.hand.length === 1 && (
                             <button onClick={() => socket?.emit('uno:sayUno')}
                                 className="text-xs bg-yellow-400 text-gray-900 px-3 py-1 rounded-full font-bold hover:bg-yellow-300 transition animate-bounce">

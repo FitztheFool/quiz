@@ -144,7 +144,7 @@ export default function TabooGamePage() {
     // ── Phase trap ────────────────────────────────────────────────────────────
     if (game.phase === 'trap') {
         return (
-            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col mystery-table text-white">
                 
                 <GamePageHeader
                     left={TABOO_LEFT}
@@ -200,7 +200,7 @@ export default function TabooGamePage() {
         const trapsUsed = game.currentTraps.filter(t => t);
 
         return (
-            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col mystery-table text-white">
                 
                 <GamePageHeader
                     left={TABOO_LEFT}
@@ -278,7 +278,7 @@ export default function TabooGamePage() {
         const myTeamPlayers = game.players.filter(p => p.team === myTeam);
 
         return (
-            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col mystery-table text-white">
                 
                 <GamePageHeader
                     left={TABOO_LEFT}
@@ -421,7 +421,7 @@ export default function TabooGamePage() {
         : '?';
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col mystery-table text-white">
             
 
             <GamePageHeader

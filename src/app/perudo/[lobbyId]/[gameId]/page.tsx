@@ -14,6 +14,9 @@ import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
 import Die from '@/components/Perudo/Die';
 import BidInput from '@/components/Perudo/BidInput';
+import PlayerChip from '@/components/Perudo/PlayerChip';
+import RoundRecap from '@/components/Perudo/RoundRecap';
+import { colorForIndex } from '@/components/Perudo/colors';
 import { TrophyIcon, XCircleIcon, CpuChipIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 function BotBadge() {
@@ -25,7 +28,7 @@ function BotBadge() {
 }
 
 export default function PerudoPage() {
-    const { status, router, me, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
+    const { status, router, me, lobbyId, isNotFound, setIsNotFound } = useGamePage();
 
     const {
         state, finished, me: myPlayer, isMyTurn, vsBot,
@@ -36,7 +39,6 @@ export default function PerudoPage() {
         userId: me.userId,
         username: me.username ?? '',
         onNotFound: () => setIsNotFound(true),
-        onModalReset: () => setModalDismissed(false),
     });
 
     if (status === 'loading') return <LoadingSpinner message="Vérification de la session..." />;
@@ -102,7 +104,7 @@ export default function PerudoPage() {
     })();
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col wood-table text-gray-900 dark:text-white">
             <GamePageHeader
                 left={
                     <>
@@ -141,100 +143,112 @@ export default function PerudoPage() {
                 />
             )}
 
-            <main className="flex-1 flex flex-col items-center gap-6 p-4 md:p-6">
-                {/* Other players */}
-                <div className="flex flex-wrap justify-center gap-3 w-full max-w-4xl">
+            <main className="flex-1 flex flex-col items-center gap-4 p-3 md:p-6">
+                {/* Opponents — wood-tile cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 w-full max-w-5xl">
                     {state.players
-                        .filter(p => p.userId !== me.userId)
-                        .map(p => {
+                        .map((p, idx) => ({ p, idx }))
+                        .filter(({ p }) => p.userId !== me.userId)
+                        .map(({ p, idx }) => {
                             const isCurrent = currentPlayer?.userId === p.userId;
+                            const color = colorForIndex(idx);
                             return (
                                 <div
                                     key={p.userId}
-                                    className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all
-                                        ${p.alive ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700' : 'bg-gray-100 dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800/60 opacity-50'}
-                                        ${isCurrent && p.alive ? 'ring-2 ring-yellow-400 shadow-md' : ''}`}
+                                    className={`wood-tile rounded-xl px-3 py-2.5 transition-all
+                                        ${!p.alive ? 'opacity-40 grayscale' : ''}
+                                        ${isCurrent && p.alive ? 'ring-4 ring-yellow-300/80 shadow-yellow-200/40' : ''}`}
                                 >
-                                    <div className="flex items-center gap-1.5 text-xs font-semibold">
-                                        <span>{p.username}</span>
-                                        {isBot(p) && <BotBadge />}
-                                        {inactivityUserId === p.userId && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
-                                    </div>
-                                    <div className="flex gap-1">
-                                        {Array.from({ length: p.diceCount }).map((_, i) => (
-                                            <Die
-                                                key={i}
-                                                value={state.phase === 'reveal' && p.dice ? (p.dice[i] ?? 0) : 0}
-                                                size={28}
-                                                hidden={state.phase !== 'reveal' && !p.dice}
-                                            />
-                                        ))}
-                                        {!p.alive && <span className="text-xs text-gray-400 dark:text-gray-500">éliminé</span>}
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className={`flex items-center gap-1.5 font-extrabold ${color.text} drop-shadow-sm`}>
+                                            <span className="truncate max-w-[110px]">{p.username}</span>
+                                            {isBot(p) && <BotBadge />}
+                                            {inactivityUserId === p.userId && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
+                                        </div>
+                                        {state.phase === 'reveal' && p.dice ? (
+                                            <div className="flex gap-1">
+                                                {p.dice.map((v, i) => (
+                                                    <Die key={i} value={v} size={26} />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5 font-mono text-base font-bold text-gray-800">
+                                                <span>{p.diceCount}</span>
+                                                <PlayerChip color={color} dimmed={!p.alive} />
+                                            </div>
+                                        )}
+                                        {!p.alive && <span className="text-[10px] uppercase tracking-wider text-gray-600 font-semibold">Éliminé</span>}
                                     </div>
                                 </div>
                             );
                         })}
                 </div>
 
-                {/* Last bid */}
-                {state.lastBid && (
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-3 shadow-sm flex items-center gap-3">
-                        <span className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500">Annonce</span>
-                        <span className="font-mono text-lg font-bold">{state.lastBid.count}</span>
-                        <span className="text-gray-400 dark:text-gray-500">×</span>
+                {/* Last bid — center plaque (hidden during reveal — recap shows full info) */}
+                {state.lastBid && state.phase !== 'reveal' && (
+                    <div className="wood-tile rounded-2xl px-5 py-3 flex items-center gap-3">
+                        <span className="text-[10px] uppercase tracking-widest text-gray-700 font-bold">Annonce</span>
+                        <span className="font-mono text-lg font-black text-gray-900">{state.lastBid.count}</span>
+                        <span className="text-gray-600">×</span>
                         <Die value={state.lastBid.face} size={36} />
-                        {state.lastReveal && state.phase === 'reveal' && (
-                            <span className="ml-3 text-sm">
-                                Réel : <span className="font-bold">{state.lastReveal.actualCount}</span>
-                                <span className={`ml-2 text-xs font-semibold ${state.lastReveal.actualCount >= state.lastReveal.bid.count ? 'text-green-500' : 'text-red-500'}`}>
-                                    {state.lastReveal.actualCount >= state.lastReveal.bid.count ? 'Annonce tenue !' : 'Bluff démasqué !'}
-                                </span>
-                            </span>
-                        )}
                     </div>
                 )}
 
-                {/* My dice */}
-                {myPlayer && myPlayer.alive && myPlayer.dice && (
-                    <div className="flex flex-col items-center gap-2">
-                        <span className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-2">
-                            Vos dés
-                            {inactivityUserId === me.userId && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
-                        </span>
-                        <div className="flex gap-2">
-                            {myPlayer.dice.map((d, i) => (
-                                <Die key={i} value={d} size={48} />
-                            ))}
+                {/* Bottom row: my cup + bid input */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl mt-2">
+                    {/* Mon gobelet */}
+                    {myPlayer && myPlayer.alive && myPlayer.dice && (() => {
+                        const myIdx = state.players.findIndex(pp => pp.userId === me.userId);
+                        const myColor = myIdx >= 0 ? colorForIndex(myIdx) : colorForIndex(0);
+                        return (
+                            <div className="wood-tile rounded-2xl px-5 py-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h2 className={`font-extrabold text-lg ${myColor.text}`}>Mon gobelet</h2>
+                                    {inactivityUserId === me.userId && inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
+                                </div>
+                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 justify-items-center">
+                                    {myPlayer.dice.map((d, i) => (
+                                        <Die key={i} value={d} size={56} />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
+                    {myPlayer && !myPlayer.alive && state.phase !== 'ended' && (
+                        <div className="wood-tile rounded-2xl px-5 py-4 text-sm text-gray-700 inline-flex items-center gap-2">
+                            <ExclamationTriangleIcon className="w-4 h-4 text-amber-700" />
+                            Vous êtes éliminé — observez la fin de la partie.
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {myPlayer && !myPlayer.alive && state.phase !== 'ended' && (
-                    <div className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-5 py-3 text-sm text-gray-500 dark:text-gray-400 inline-flex items-center gap-2">
-                        <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
-                        Vous êtes éliminé — observez la fin de la partie.
-                    </div>
-                )}
+                    {/* Faites votre proposition */}
+                    {state.phase === 'bidding' && myPlayer?.alive && (
+                        <div className="wood-tile rounded-2xl px-5 py-4">
+                            <h2 className="font-extrabold text-lg text-gray-900 mb-3">Faites votre proposition</h2>
+                            <BidInput
+                                lastBid={state.lastBid}
+                                pacosWild={state.pacosWild}
+                                totalDice={state.totalDice}
+                                disabled={!isMyTurn}
+                                onBid={(count, face) => bid(count, face)}
+                                onDudo={dudo}
+                                canDudo={isMyTurn && !!state.lastBid}
+                            />
+                        </div>
+                    )}
 
-                {/* Bid controls */}
-                {state.phase === 'bidding' && myPlayer?.alive && (
-                    <BidInput
-                        lastBid={state.lastBid}
-                        pacosWild={state.pacosWild}
-                        totalDice={state.totalDice}
-                        disabled={!isMyTurn}
-                        onBid={(count, face) => bid(count, face)}
-                        onDudo={dudo}
-                        canDudo={isMyTurn && !!state.lastBid}
-                    />
-                )}
+                </div>
 
+                {state.phase === 'reveal' && state.lastReveal && (
+                    <RoundRecap state={state} />
+                )}
                 {state.phase === 'reveal' && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">Préparation du round suivant…</p>
+                    <p className="text-xs text-gray-200/80 font-semibold animate-pulse">Préparation du round suivant…</p>
                 )}
             </main>
 
-            {finished && !modalDismissed && (
+            {finished && (
                 <GameOverModal
                     icon={
                         isWinner ? <TrophyIcon className="w-8 h-8 text-amber-500" />
@@ -249,7 +263,6 @@ export default function PerudoPage() {
                     subtitle={isWinner ? 'Dernier joueur avec des dés' : undefined}
                     onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                     onLeave={() => router.push('/')}
-                    onClose={() => setModalDismissed(true)}
                     asModal
                 >
                     <GameScoreLeaderboard

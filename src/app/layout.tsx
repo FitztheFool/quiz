@@ -7,6 +7,8 @@ import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 import AppLayout from '@/components/Layout/AppLayout';
 import { ChatProvider } from '@/context/ChatContext';
+import { CommandPaletteProvider } from '@/context/CommandPaletteContext';
+import CommandPalette from '@/components/CommandPalette';
 import FloatingChat from '@/components/Chat/FloatingChat';
 
 const barlow = Barlow({
@@ -41,10 +43,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body className={dmSans.className}>
                 <Providers>
                     <ChatProvider>
-                        <Header />
-                        <AppLayout>{children}</AppLayout>
-                        <Footer />
-                        <FloatingChat />
+                        <CommandPaletteProvider>
+                            <Header />
+                            <AppLayout>{children}</AppLayout>
+                            <Footer />
+                            <FloatingChat />
+                            <CommandPalette />
+                        </CommandPaletteProvider>
                     </ChatProvider>
                 </Providers>
             </body>

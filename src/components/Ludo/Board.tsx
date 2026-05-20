@@ -77,7 +77,7 @@ export default function LudoBoard({ players, movablePawns, currentTurn, canMove,
 
     return (
         <div
-            className="relative inline-block rounded-2xl p-2 bg-gray-200 dark:bg-gray-800 shadow-xl"
+            className="relative inline-block rounded-2xl p-3 wood-tile shadow-2xl"
             style={{ ['--ludo-cell' as string]: CELL_CSS }}
         >
             <div

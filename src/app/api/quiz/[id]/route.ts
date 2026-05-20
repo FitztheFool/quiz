@@ -163,7 +163,7 @@ export async function PUT(
           description,
           isPublic,
           randomizeQuestions: randomizeQuestions ?? false,
-          imageUrl: body.imageUrl ?? null,
+          imageUrl: body.imageUrl || '/quiz/default-cover.svg',
         },
       });
 

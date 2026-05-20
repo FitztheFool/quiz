@@ -42,7 +42,7 @@ export default function Dice({ value, canRoll, isRolling, onRoll, label }: DiceP
                 disabled={!canRoll}
                 title={canRoll ? 'Lancer le dé' : 'Dé'}
             />
-            {label && <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>}
+            {label && <span className="text-xs text-amber-100 font-semibold drop-shadow">{label}</span>}
         </div>
     );
 }

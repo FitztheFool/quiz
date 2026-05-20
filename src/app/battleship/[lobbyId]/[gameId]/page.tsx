@@ -66,7 +66,7 @@ export default function BattleshipPage() {
         const currentTurnPlayer = state.players.find(p => p?.userId === state.currentTurnUserId);
         const winnerPlayer = state.players.find(p => p?.userId === state.winnerUserId);
         return (
-            <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="flex-1 flex flex-col naval-table text-gray-100">
                 <header className="shrink-0 h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center gap-2">
                     <span className="text-xl">⚓</span>
                     <h1 className="text-sm font-bold tracking-tight">Bataille Navale</h1>
@@ -102,7 +102,7 @@ export default function BattleshipPage() {
     const me = state.players.find((p) => p?.userId === myUserId) ?? null;
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col naval-table text-gray-100">
 
             <GamePageHeader
                 left={<><GameIcon gameType="battleship" className="w-5 h-5 text-gray-700 dark:text-gray-300" /><h1 className="text-sm font-bold tracking-tight">Bataille Navale</h1></>}
@@ -162,7 +162,7 @@ export default function BattleshipPage() {
                     {state.phase === 'playing' && (
                         <div className="flex flex-col items-center gap-4 w-full">
                             {/* Board */}
-                            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+                            <div className="naval-tile rounded-xl p-4">
                                 <BattleshipBoard
                                     myShips={state.myShips}
                                     myReceivedShots={state.myReceivedShots}
@@ -183,7 +183,7 @@ export default function BattleshipPage() {
                     {/* Finished */}
                     {state.phase === 'finished' && (
                         <div className="w-full max-w-4xl">
-                            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+                            <div className="naval-tile rounded-xl p-4">
                                 <BattleshipBoard
                                     myShips={state.myShips}
                                     myReceivedShots={state.myReceivedShots}

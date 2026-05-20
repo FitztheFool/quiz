@@ -129,33 +129,32 @@ function ExpeditionCard({
 
 function PlayerRow({ player, isMe, inactivityEndsAt }: { player: PlayerInfo; isMe: boolean; inactivityEndsAt?: number | null }) {
     return (
-        <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border  transition-all
-            ${isMe ? 'border-amber-400 dark:border-amber-600/50 bg-amber-100 dark:bg-amber-950/30' : ''}
-            ${!isMe && player.inCave ? 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40' : ''}
-            ${!isMe && !player.inCave ? 'border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900/40' : ''}
+        <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all backdrop-blur-sm
+            ${isMe ? 'border-amber-400 bg-amber-500/20 shadow-lg shadow-amber-500/10' : 'border-emerald-700/40 bg-emerald-900/30'}
+            ${!player.inCave ? 'opacity-60' : ''}
         `}>
             {/* Status indicator */}
             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${player.inCave ? 'bg-green-500 dark:bg-green-400 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />
 
             {/* Name */}
-            <span className={`text-sm font-semibold flex-1 flex items-center gap-1.5 ${player.surrendered ? 'line-through text-gray-400 dark:text-gray-600' : isMe ? 'text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300'}`}>
+            <span className={`text-sm font-bold flex-1 flex items-center gap-1.5 ${player.surrendered ? 'line-through text-white/40' : isMe ? 'text-amber-200' : 'text-white'}`}>
                 {player.username}
-                {isMe && <span className="text-gray-400 dark:text-gray-500 text-xs font-normal">(moi)</span>}
+                {isMe && <span className="text-white/60 text-xs font-normal">(moi)</span>}
                 {inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
             </span>
 
             {/* Cave status */}
             {player.inCave ? (
-                <span className="text-xs text-gray-400 dark:text-gray-500">
-                    {player.hasDecided ? <span className="flex items-center gap-0.5"><CheckCircleIcon className="w-3.5 h-3.5 text-green-500" />décidé</span> : <span className="flex items-center gap-0.5"><ClockIcon className="w-3.5 h-3.5" />réfléchit…</span>}
+                <span className="text-xs text-emerald-100">
+                    {player.hasDecided ? <span className="flex items-center gap-0.5"><CheckCircleIcon className="w-3.5 h-3.5 text-green-300" />décidé</span> : <span className="flex items-center gap-0.5"><ClockIcon className="w-3.5 h-3.5" />réfléchit…</span>}
                 </span>
             ) : (
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">🏕️ au camp</span>
+                <span className="text-xs text-amber-200 font-medium">🏕️ au camp</span>
             )}
 
             {/* Hand diamant (only for me) */}
             {isMe && player.inCave && (
-                <div className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 font-bold">
+                <div className="flex items-center gap-1 text-sm text-amber-200 font-bold">
                     <SparklesIcon className="w-4 h-4" />
                     <span>{player.handDiamants}</span>
                 </div>
@@ -163,9 +162,9 @@ function PlayerRow({ player, isMe, inactivityEndsAt }: { player: PlayerInfo; isM
 
             {/* Safe total (only for me) */}
             {isMe && (
-                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                    <LockClosedIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
+                <div className="flex items-center gap-1 text-xs text-white/80">
+                    <LockClosedIcon className="w-4 h-4 text-white/60 flex-shrink-0" />
+                    <span className="flex items-center gap-0.5 text-amber-200 font-bold">
                         <SparklesIcon className="w-3.5 h-3.5" />
                         {player.safeDiamants}
                     </span>
@@ -210,7 +209,7 @@ export default function DiamantPage() {
     );
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col casino-felt text-gray-100">
             <GamePageHeader
                 left={<><GameIcon gameType="diamant" className="shrink-0 w-5 h-5 text-amber-700 dark:text-amber-300" /><h1 className="hidden sm:block text-base font-black tracking-tight text-amber-800 dark:text-amber-100">Diamant</h1></>}
                 center={<>
@@ -224,7 +223,7 @@ export default function DiamantPage() {
                 </>}
                 right={<>
                     {me && (
-                        <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 sm:px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap">
+                        <div className="flex items-center gap-1 sm:gap-1.5 bg-emerald-900/40 backdrop-blur-sm border border-emerald-700/40 text-emerald-100 rounded-xl px-2 sm:px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap">
                             <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
                                 <SparklesIcon className="w-3.5 h-3.5" />
                                 {me.safeDiamants ?? 0}

@@ -11,36 +11,38 @@ import { getQuizSocket } from '@/lib/socket';
 import { TrophyIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 function RankBadge({ rank }: { rank: number }) {
-    if (rank === 1) return <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-lg font-bold">1</span>;
-    if (rank === 2) return <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-lg font-bold">2</span>;
-    return <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-700 dark:bg-orange-800 text-orange-50 dark:text-orange-100 text-lg font-bold">3</span>;
+    if (rank === 1) return <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-300 text-amber-900 text-lg font-black shadow-md">1</span>;
+    if (rank === 2) return <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-300 text-slate-800 text-lg font-black shadow-md">2</span>;
+    return <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-400 text-orange-950 text-lg font-black shadow-md">3</span>;
 }
 
+// Consistent medal palette (gold / silver / bronze) — independent of light/dark mode
+// so the row keeps the same color whether the row belongs to "me" or not.
 const rankStyle = (i: number) => ({
     border:
         i === 0
-            ? 'border-yellow-400 dark:border-yellow-600'
+            ? 'border-amber-400'
             : i === 1
-                ? 'border-gray-300 dark:border-gray-600'
-                : 'border-amber-500/40 dark:border-amber-700/40',
+                ? 'border-slate-400'
+                : 'border-orange-400',
     bg:
         i === 0
-            ? 'bg-yellow-50 dark:bg-yellow-900/20'
+            ? 'bg-amber-200/40'
             : i === 1
-                ? 'bg-gray-50 dark:bg-gray-800'
-                : 'bg-amber-50/50 dark:bg-amber-900/10',
+                ? 'bg-slate-200/40'
+                : 'bg-orange-200/40',
     text:
         i === 0
-            ? 'text-yellow-800 dark:text-yellow-300'
+            ? 'text-amber-950'
             : i === 1
-                ? 'text-gray-700 dark:text-gray-200'
-                : 'text-amber-800 dark:text-amber-300',
+                ? 'text-slate-900'
+                : 'text-orange-950',
     score:
         i === 0
-            ? 'text-yellow-700 dark:text-yellow-400'
+            ? 'text-amber-900'
             : i === 1
-                ? 'text-gray-600 dark:text-gray-300'
-                : 'text-amber-700 dark:text-amber-400',
+                ? 'text-slate-800'
+                : 'text-orange-900',
 });
 
 function MeTag() {
@@ -112,9 +114,9 @@ export default function QuizResultPage() {
         : leaderboard;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900">
+        <div className="min-h-screen wood-table">
             <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-                <div className="mb-8 rounded-xl bg-white p-8 shadow-2xl dark:bg-gray-900">
+                <div className="mb-8 rounded-xl wood-tile p-8 shadow-2xl">
                     <div className="mb-6 text-center">
                         <div className="mb-3 flex justify-center"><TrophyIcon className="w-16 h-16 text-amber-500" /></div>
                         <h1 className="mb-1 text-3xl font-bold text-gray-800 dark:text-gray-100">
@@ -239,9 +241,9 @@ function LobbyWaitingRoom({
     );
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 dark:from-gray-950 dark:to-gray-900">
+        <div className="flex min-h-screen items-center justify-center wood-table p-4">
             <div className="w-full max-w-lg">
-                <div className="mb-4 flex items-center justify-between rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
+                <div className="mb-4 flex items-center justify-between rounded-xl wood-tile p-6 shadow-lg">
                     <div>
                         <p className="font-bold text-gray-800 dark:text-gray-100">Quiz terminé !</p>
                         <p className="text-sm text-gray-400 dark:text-gray-500">
@@ -257,7 +259,7 @@ function LobbyWaitingRoom({
                     </span>
                 </div>
 
-                <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
+                <div className="rounded-xl wood-tile p-6 shadow-lg">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-bold text-gray-800 dark:text-gray-100">Joueurs</h2>
                         <span className="text-sm text-gray-500 dark:text-gray-400">

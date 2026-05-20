@@ -1,14 +1,19 @@
 // src/lib/prompt.ts
 import { ModelId } from './aiModels';
 
-const POINTS_BY_DIFFICULTY: Record<
+export const POINTS_BY_DIFFICULTY: Record<
   string,
-  { mcq: number; mcq_unique: number; true_false: number; text: number }
+  { MCQ: number; MCQ_UNIQUE: number; TRUE_FALSE: number; TEXT: number }
 > = {
-  facile: { mcq: 1, mcq_unique: 1, true_false: 1, text: 2 },
-  normal: { mcq: 2, mcq_unique: 2, true_false: 1, text: 3 },
-  difficile: { mcq: 3, mcq_unique: 3, true_false: 2, text: 5 },
+  facile:    { MCQ: 1, MCQ_UNIQUE: 1, TRUE_FALSE: 1, TEXT: 2 },
+  normal:    { MCQ: 2, MCQ_UNIQUE: 2, TRUE_FALSE: 1, TEXT: 3 },
+  difficile: { MCQ: 3, MCQ_UNIQUE: 3, TRUE_FALSE: 2, TEXT: 5 },
 };
+
+export function pointsFor(difficulty: string, type: string): number {
+  const table = POINTS_BY_DIFFICULTY[difficulty] ?? POINTS_BY_DIFFICULTY.normal;
+  return table[type as keyof typeof table] ?? 1;
+}
 
 export function buildPrompt(
   subject: string,
@@ -48,6 +53,12 @@ ${jsonInstruction}
 - MCQ_UNIQUE  : ${mcqUniqueCount}
 - TRUE_FALSE  : ${tfCount}
 - TEXT        : ${textCount}
+
+**Points par question (OBLIGATOIRE — n'utilise JAMAIS 10)** :
+- MCQ         : ${pts.MCQ}
+- MCQ_UNIQUE  : ${pts.MCQ_UNIQUE}
+- TRUE_FALSE  : ${pts.TRUE_FALSE}
+- TEXT        : ${pts.TEXT}
 
 **RÈGLES TRÈS STRICTES** :
 

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClientForModel } from '@/lib/openai';
 import { AI_MODELS, DEFAULT_MODEL_ID, ModelId } from '@/lib/aiModels';
-import { buildPrompt } from '@/lib/prompt';
+import { buildPrompt, pointsFor } from '@/lib/prompt';
 import { requireRegistered } from '@/lib/authGuard';
 
 function validateQuizJSON(json: any): string | null {
@@ -46,6 +46,8 @@ function isUnsplashUrl(url: unknown): url is string {
         return false;
     }
 }
+
+export const DEFAULT_QUIZ_COVER = '/quiz/default-cover.svg';
 
 async function fetchCoverImage(query: string): Promise<string | null> {
     const key = process.env.UNSPLASH_ACCESS_KEY;
@@ -116,6 +118,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `Données invalides : ${validationError}` }, { status: 500 });
         }
 
+        // Enforce server-side points by difficulty/type — model often defaults to 10.
+        for (const q of json.questions) {
+            q.points = pointsFor(difficulty, q.type);
+        }
+
         // Fetch images for questions that have an imageQuery
         const questionsWithIndex = json.questions
             .map((q: any, i: number) => ({ q, i }))
@@ -134,7 +141,8 @@ export async function POST(req: NextRequest) {
         }
 
         const selectedModel = AI_MODELS.find(m => m.id === modelId)!;
-        return NextResponse.json({ ...json, imageUrl, provider: selectedModel.provider, model: modelId });
+        const finalImageUrl = imageUrl ?? DEFAULT_QUIZ_COVER;
+        return NextResponse.json({ ...json, imageUrl: finalImageUrl, provider: selectedModel.provider, model: modelId });
 
     } catch (e: any) {
         console.error('Erreur génération Groq:', e?.message ?? e);

@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         description: description ?? '',
         isPublic: isPublic ?? false,
         randomizeQuestions: randomizeQuestions ?? false,
-        imageUrl: imageUrl ?? null,
+        imageUrl: imageUrl || '/quiz/default-cover.svg',
         creatorId,
         categoryId: categoryId ?? null,
         questions: {

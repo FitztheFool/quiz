@@ -359,7 +359,8 @@ export default function LobbyCodePage() {
             .then(data => {
                 if (data?.title) setSelectedQuizTitle(data.title);
                 if (data?.category?.id) setSelectedQuizCategoryId(data.category.id);
-                if (data?._count?.questions !== undefined) setSelectedQuizQuestionCount(data._count.questions);
+                const qCount = data?._count?.questions ?? (Array.isArray(data?.questions) ? data.questions.length : undefined);
+                if (qCount !== undefined) setSelectedQuizQuestionCount(qCount);
             })
             .catch(() => { });
     }, [selectedQuizId]);

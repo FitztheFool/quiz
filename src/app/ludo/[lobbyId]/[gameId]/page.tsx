@@ -85,7 +85,7 @@ export default function LudoPage() {
     const currentIsBot = isBot(currentTurnPlayer);
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex-1 flex flex-col wood-table text-gray-900 dark:text-white">
             <GamePageHeader
                 left={
                     <>
@@ -153,7 +153,7 @@ export default function LudoPage() {
                         </div>
                     )}
 
-                    <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col gap-1 text-xs text-amber-100 font-semibold drop-shadow">
                         <div>Sortie : {state.options.pawnExit === '6' ? '6' : state.options.pawnExit === '6_or_1' ? '6 ou 1' : 'tout score'}</div>
                         <div>Bonus 6 : {state.options.bonusOn6 === 'unlimited' ? 'illimité' : state.options.bonusOn6 === 'triple_lose' ? 'triple = perdu' : 'aucun'}</div>
                         {state.options.teamMode === '2v2' && <div className="font-semibold text-blue-500">Mode 2v2</div>}
@@ -181,8 +181,10 @@ export default function LudoPage() {
                             .map((p, idx) => {
                                 const finishedCount = p.pawns.filter(pn => pn.progress >= 57).length;
                                 const rank = state.ranking.indexOf(idx);
-                                const abandoned = state.surrenderedIdxs.includes(idx) || state.afkIdxs.includes(idx);
-                                return { p, idx, finishedCount, rank, abandoned };
+                                const surrendered = state.surrenderedIdxs.includes(idx);
+                                const afk = state.afkIdxs.includes(idx);
+                                const abandoned = surrendered || afk;
+                                return { p, idx, finishedCount, rank, abandoned, surrendered, afk };
                             })
                             .sort((a, b) => {
                                 // Finished players (in ranking) come first, in ranking order.
@@ -195,11 +197,12 @@ export default function LudoPage() {
                                 if (a.abandoned !== b.abandoned) return a.abandoned ? 1 : -1;
                                 return a.idx - b.idx;
                             })
-                            .map(({ p, finishedCount, abandoned }) => {
+                            .map(({ p, finishedCount, abandoned, surrendered, afk }) => {
                                 const bot = isBot(p);
                                 const badges: string[] = [];
                                 if (bot) badges.push('Bot');
-                                if (abandoned) badges.push('Abandon');
+                                if (surrendered) badges.push('Abandon');
+                                else if (afk) badges.push('AFK');
                                 return {
                                     userId: p.userId,
                                     username: p.username,

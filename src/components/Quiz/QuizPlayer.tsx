@@ -70,7 +70,7 @@ function AnswerOption({ label, text, isSelected, showCorrect, showWrong, disable
             ? 'border-red-400 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
             : isSelected
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
-                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer';
+                : 'border-amber-700/30 bg-amber-900/20 text-amber-900 dark:text-amber-100 hover:border-amber-700/60 hover:bg-amber-900/30 cursor-pointer';
 
     const badgeCls = showCorrect
         ? 'bg-green-500 text-white'
@@ -78,7 +78,7 @@ function AnswerOption({ label, text, isSelected, showCorrect, showWrong, disable
             ? 'bg-red-400 text-white'
             : isSelected
                 ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400';
+                : 'bg-amber-900/30 text-amber-900 dark:text-amber-100';
 
     return (
         <button
@@ -119,7 +119,7 @@ function TrueFalseOptions({ question, selectedAnswer, feedback, showFeedback, on
                                     ? 'border-red-400 bg-red-50 dark:bg-red-900/25 text-red-700 dark:text-red-300'
                                     : isSelected
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 scale-[1.02]'
-                                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 text-gray-700 dark:text-gray-200 cursor-pointer'
+                                        : 'border-amber-700/30 bg-amber-900/20 text-amber-900 dark:text-amber-100 hover:border-amber-700/60 hover:bg-amber-900/30 cursor-pointer'
                             }`}
                     >
                         {showCorrect ? <CheckIcon className="w-5 h-5" /> : showWrong ? <XMarkIcon className="w-5 h-5" /> : answer.text}
@@ -147,12 +147,12 @@ function TextInput({ value, onChange, disabled, feedback, showFeedback }: {
                 onChange={e => onChange(e.target.value)}
                 disabled={disabled}
                 placeholder="Votre réponse..."
-                className={`w-full px-4 py-3.5 rounded-xl border-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none transition-colors disabled:opacity-60
+                className={`w-full px-4 py-3.5 rounded-xl border-2 text-amber-950 dark:text-amber-100 placeholder-amber-700/50 dark:placeholder-amber-200/40 focus:outline-none transition-colors disabled:opacity-60
                     ${showFeedback
                         ? feedback?.isCorrect
                             ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                             : 'border-red-400 bg-red-50 dark:bg-red-900/20'
-                        : 'border-gray-200 dark:border-gray-700 focus:border-blue-500'
+                        : 'border-amber-700/30 bg-amber-900/20 focus:border-amber-700/70 focus:bg-amber-900/30'
                     }`}
             />
             {showFeedback && !feedback?.isCorrect && feedback?.correctAnswerText && (
@@ -199,10 +199,10 @@ function MultiTextInput({ values, count, onChange, disabled, feedback, showFeedb
                             onChange={e => onChange(i, e.target.value)}
                             disabled={disabled}
                             placeholder={`Réponse ${i + 1}…`}
-                            className={`flex-1 px-4 py-3 rounded-xl border-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-60
+                            className={`flex-1 px-4 py-3 rounded-xl border-2 text-amber-950 dark:text-amber-100 placeholder-amber-700/50 dark:placeholder-amber-200/40 focus:outline-none transition-colors disabled:opacity-60
                                 ${isFieldCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                                     : isFieldWrong ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
-                                        : 'border-gray-200 dark:border-gray-700'}`}
+                                        : 'border-amber-700/30 bg-amber-900/20 focus:border-amber-700/70 focus:bg-amber-900/30'}`}
                         />
                     </div>
                 );
@@ -248,7 +248,7 @@ export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUr
     if (isLoadingQuiz) return <LoadingSpinner message="Chargement du quiz..." />;
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+        <div className="flex flex-col min-h-screen wood-table text-gray-900 dark:text-white">
             <QuizHeader
                 title={quizData.title}
                 progress={progress}
@@ -277,7 +277,7 @@ export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUr
                     )}
 
                     {currentQuestion ? (
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="wood-tile rounded-2xl overflow-hidden shadow-xl">
                             {/* Question text */}
                             <div className="px-6 pt-6 pb-5 border-b border-gray-100 dark:border-gray-800">
                                 <p className="text-lg font-semibold text-gray-800 dark:text-gray-100 leading-snug">
@@ -369,8 +369,8 @@ export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUr
                             {showFeedback && feedback && <FeedbackBanner feedback={feedback} />}
                         </div>
                     ) : (
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
-                            <p className="text-gray-400">Chargement de la question...</p>
+                        <div className="wood-tile rounded-2xl p-6 shadow-xl">
+                            <p className="text-gray-500 dark:text-gray-400">Chargement de la question...</p>
                         </div>
                     )}
 

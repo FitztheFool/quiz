@@ -258,11 +258,40 @@ function getEffectiveSpeed(state: GameState): number {
     return speed;
 }
 
+// Minimum vertical share of velocity. Below this the ball bounces
+// near-horizontally and appears to "crawl" toward bricks.
+const MIN_VY_RATIO = 0.25;
+// Minimum horizontal share so the ball doesn't fall in a perfectly vertical line.
+const MIN_VX_RATIO = 0.10;
+
 function normalizeBallSpeed(ball: Ball, targetSpeed: number): Ball {
-    const mag = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+    let { vx, vy } = ball;
+    const mag = Math.sqrt(vx * vx + vy * vy);
     if (mag === 0) return { ...ball, vx: 0, vy: -targetSpeed };
-    const scale = targetSpeed / mag;
-    return { ...ball, vx: ball.vx * scale, vy: ball.vy * scale };
+
+    // Enforce minimum |vy| share so trajectory never goes flat-horizontal.
+    const minVy = targetSpeed * MIN_VY_RATIO;
+    if (Math.abs(vy) < minVy) {
+        const signVy = vy === 0 ? -1 : Math.sign(vy);
+        vy = signVy * minVy;
+        const remaining = Math.max(0, targetSpeed * targetSpeed - vy * vy);
+        const signVx = vx === 0 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(vx);
+        vx = signVx * Math.sqrt(remaining);
+    }
+    // Enforce minimum |vx| so trajectory never goes pure-vertical (infinite wall ping-pong avoided).
+    const minVx = targetSpeed * MIN_VX_RATIO;
+    if (Math.abs(vx) < minVx) {
+        const signVx = vx === 0 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(vx);
+        vx = signVx * minVx;
+        const remaining = Math.max(0, targetSpeed * targetSpeed - vx * vx);
+        const signVy = vy === 0 ? -1 : Math.sign(vy);
+        vy = signVy * Math.sqrt(remaining);
+    }
+
+    // Final scale to exactly targetSpeed.
+    const newMag = Math.sqrt(vx * vx + vy * vy);
+    const scale = targetSpeed / (newMag || 1);
+    return { ...ball, vx: vx * scale, vy: vy * scale };
 }
 
 function brickRect(b: Brick) {
