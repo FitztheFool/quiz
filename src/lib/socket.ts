@@ -39,6 +39,7 @@ let diamantSocket: Socket | null = null;
 let battleshipSocket: Socket | null = null;
 let ludoSocket: Socket | null = null;
 let perudoSocket: Socket | null = null;
+let cantStopSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -152,4 +153,11 @@ export function getPerudoSocket(): Socket | null {
     if (!perudoSocket) perudoSocket = createSocket(process.env.NEXT_PUBLIC_PERUDO_SERVER_URL ?? "http://localhost:10012", "Perudo Socket");
     connectIfAuth(perudoSocket);
     return perudoSocket;
+}
+
+export function getCantStopSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!cantStopSocket) cantStopSocket = createSocket(process.env.NEXT_PUBLIC_CANT_STOP_SERVER_URL ?? "http://localhost:10013", "Can't Stop Socket");
+    connectIfAuth(cantStopSocket);
+    return cantStopSocket;
 }

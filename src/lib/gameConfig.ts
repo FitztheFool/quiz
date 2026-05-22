@@ -120,6 +120,17 @@ export const GAME_CONFIG = {
         rules: "Chaque joueur lance ses dés en secret. À tour de rôle, faites une annonce (X dés de valeur Y) qui doit dépasser strictement la précédente. Les 1 sont wild — ils comptent pour n'importe quelle face. Si vous ne croyez pas l'annonce, criez « Dudo » : on révèle tous les dés. Si l'annonce est tenue, le challenger perd un dé ; sinon, c'est l'annonceur. À 0 dé, vous êtes éliminé.",
         score: "1 point par victoire. Le classement est basé sur le total de victoires.",
     },
+    cant_stop: {
+        gameType: 'CANT_STOP' as const,
+        label: "Can't Stop",
+        mode: 'both' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Victoires',
+        description: "Push-your-luck aux dés — claim 3 colonnes pour gagner !",
+        players: '2 – 4 joueurs (ou vs bot)',
+        rules: "Lancez 4 dés et choisissez un des 3 splits. Avancez vos marqueurs sur les colonnes correspondant aux sommes. 3 marqueurs temporaires max par tour. Continuez ou stoppez pour banker. Si aucun split légal possible → bust, vous perdez la progression du tour. Premier à claim 3 colonnes au sommet gagne.",
+        score: "1 point par victoire. Le classement est basé sur le total de victoires.",
+    },
     impostor: {
         gameType: 'IMPOSTOR' as const,
         label: 'Imposteur',
@@ -205,6 +216,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     diamant: [2, 3, 4, 5, 6, 7, 8],
     ludo: [2, 3, 4],
     perudo: [2, 3, 4, 5, 6],
+    cant_stop: [2, 3, 4],
     impostor: [4, 5, 6, 7, 8],
     snake: [1],
     pacman: [1],
@@ -221,6 +233,7 @@ export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
     diamant: 2,
     ludo: 2,
     perudo: 2,
+    cant_stop: 2,
     impostor: 4,
 };
 
@@ -232,7 +245,7 @@ export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
     diamant: 'Diamant — 2 à 8 joueurs.',
 };
 
-export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee', 'diamant', 'battleship', 'uno', 'skyjow', 'ludo', 'perudo']);
+export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee', 'diamant', 'battleship', 'uno', 'skyjow', 'ludo', 'perudo', 'cant_stop']);
 
 // Badges par mode — chaque jeu n'apparaît que dans une seule catégorie
 export const SOLO_GAMES: Record<string, { text: string; color: string }> = Object.fromEntries(
@@ -253,7 +266,7 @@ export const MULTI_GAMES: Record<string, { text: string; color: string }> = Obje
         .map(([key]) => [key, { text: 'MULTI', color: '#1D4ED8' }])
 );
 
-export const GAME_URL_SLUGS = ['uno', 'skyjow', 'taboo', 'yahtzee', 'puissance4', 'just-one', 'battleship', 'diamant', 'impostor', 'ludo', 'perudo'] as const;
+export const GAME_URL_SLUGS = ['uno', 'skyjow', 'taboo', 'yahtzee', 'puissance4', 'just-one', 'battleship', 'diamant', 'impostor', 'ludo', 'perudo', 'cant-stop'] as const;
 
 export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string, gameId?: string) => string>> = {
     uno: (id, gid) => gid ? `/uno/${id}/${gid}` : `/uno/${id}`,
@@ -267,5 +280,6 @@ export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string, gameId?: st
     impostor: (id, gid) => gid ? `/impostor/${id}/${gid}` : `/impostor/${id}`,
     ludo: (id, gid) => gid ? `/ludo/${id}/${gid}` : `/ludo/${id}`,
     perudo: (id, gid) => gid ? `/perudo/${id}/${gid}` : `/perudo/${id}`,
+    cant_stop: (id, gid) => gid ? `/cant-stop/${id}/${gid}` : `/cant-stop/${id}`,
     quiz: (id, gid) => gid ? `/quiz/${id}/${gid}` : `/quiz/${id}`,
 };

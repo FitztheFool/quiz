@@ -46,6 +46,7 @@ enum GameType {
   TETRIS
   LUDO
   PERUDO
+  CANT_STOP
 }
 
 model Account {

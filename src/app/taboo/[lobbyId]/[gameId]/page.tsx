@@ -15,66 +15,11 @@ import { TrapPhase } from '@/components/TrapPhase';
 import { NoSymbolIcon, FlagIcon, EyeIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 
-function TeamDot({ team, className = 'w-3 h-3' }: { team: '0' | '1' | 0 | 1; className?: string }) {
-    const isBlue = String(team) === '0';
-    return <span className={`inline-block rounded-full ${className} ${isBlue ? 'bg-blue-500' : 'bg-red-500'} align-middle`} />;
-}
-
 import { useChat } from '@/context/ChatContext';
 import { plural } from '@/lib/utils';
-
-type Attempt = { word: string; userId: string; username: string };
-
-// ── Composants partagés ───────────────────────────────────────────────────────
-
-function ScoreBar({ scores, myTeam, currentTeam }: {
-    scores: Record<string, number>;
-    myTeam: 0 | 1 | null;
-    currentTeam: 0 | 1 | null;
-}) {
-    const myT = myTeam !== null ? String(myTeam) : '0';
-    const advT = myTeam !== null ? String(1 - myTeam) : '1';
-    const myActive = String(currentTeam) === myT;
-    const advActive = String(currentTeam) === advT;
-
-    return (
-        <div className="flex items-center gap-2 justify-center">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">vous</span>
-            <TeamDot team={myT as '0' | '1'} className="w-4 h-4" />
-            <span className={`text-2xl font-bold leading-none transition-colors ${myActive ? (myT === '0' ? 'text-blue-500' : 'text-red-500') : 'text-gray-900 dark:text-white'}`}>
-                {scores[myT] ?? 0}
-            </span>
-            <span className="text-gray-400 dark:text-gray-500 font-bold text-sm">–</span>
-            <span className={`text-2xl font-bold leading-none transition-colors ${advActive ? (advT === '0' ? 'text-blue-500' : 'text-red-500') : 'text-gray-900 dark:text-white'}`}>
-                {scores[advT] ?? 0}
-            </span>
-            <TeamDot team={advT as '0' | '1'} className="w-4 h-4" />
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">adv</span>
-        </div>
-    );
-}
-
-function AttemptsList({ attempts, refEl }: {
-    attempts: Attempt[];
-    refEl?: React.RefObject<HTMLDivElement>;
-}) {
-    if (attempts.length === 0) return (
-        <p className="text-gray-400 dark:text-white/20 text-xs text-center py-2">Aucune tentative…</p>
-    );
-    return (
-        <div className="space-y-1 max-h-40 overflow-y-auto w-full">
-            {attempts.map((a, i) => {
-                return (
-                    <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60">
-                        <span className="font-mono font-bold">{a.word}</span>
-                        <span className="text-xs opacity-50">{a.username}</span>
-                    </div>
-                );
-            })}
-            {refEl && <div ref={refEl} />}
-        </div>
-    );
-}
+import TeamDot from '@/components/Taboo/TeamDot';
+import ScoreBar from '@/components/Taboo/ScoreBar';
+import AttemptsList, { type Attempt } from '@/components/Taboo/AttemptsList';
 
 const TABOO_LEFT = (
     <>

@@ -17,15 +17,8 @@ import BidInput from '@/components/Perudo/BidInput';
 import PlayerChip from '@/components/Perudo/PlayerChip';
 import RoundRecap from '@/components/Perudo/RoundRecap';
 import { colorForIndex } from '@/components/Perudo/colors';
+import BotBadge from '@/components/shared/BotBadge';
 import { TrophyIcon, XCircleIcon, CpuChipIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-
-function BotBadge() {
-    return (
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 leading-none">
-            BOT
-        </span>
-    );
-}
 
 export default function PerudoPage() {
     const { status, router, me, lobbyId, isNotFound, setIsNotFound } = useGamePage();

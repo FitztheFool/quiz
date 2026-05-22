@@ -1,7 +1,7 @@
 // src/page.tsx
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useMemo, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getUnoSocket } from '@/lib/socket';
@@ -10,7 +10,11 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import GameWaitingScreen from '@/components/GameWaitingScreen';
 import GameIcon from '@/components/GameIcon';
 import SurrenderButton from '@/components/SurrenderButton';
-import { NoSymbolIcon, TrophyIcon, ArrowPathIcon, EyeIcon, ExclamationTriangleIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import RankBadge from '@/components/shared/RankBadge';
+import UnoCard from '@/components/Uno/Card';
+import ColorDot from '@/components/Uno/ColorDot';
+import { COLOR_MAP } from '@/components/Uno/constants';
+import { TrophyIcon, EyeIcon, ExclamationTriangleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 type CardColor = 'red' | 'green' | 'blue' | 'yellow' | 'wild';
@@ -62,66 +66,6 @@ type LobbyState = {
     options: UnoOptions;
 };
 
-const COLOR_MAP: Record<string, string> = {
-    red: 'bg-red-500',
-    green: 'bg-green-500',
-    blue: 'bg-blue-500',
-    yellow: 'bg-yellow-400',
-    wild: 'bg-gray-700 dark:bg-gray-800',
-};
-
-const CARD_GRADIENT: Record<string, string> = {
-    red:    'bg-gradient-to-br from-red-500 to-red-700',
-    green:  'bg-gradient-to-br from-green-500 to-green-700',
-    blue:   'bg-gradient-to-br from-blue-500 to-blue-700',
-    yellow: 'bg-gradient-to-br from-yellow-400 to-amber-600',
-    wild:   'bg-black',
-};
-
-const COLOR_DOT_CLASS: Record<string, string> = {
-    red: 'bg-red-500', green: 'bg-green-500', blue: 'bg-blue-500', yellow: 'bg-yellow-400',
-};
-
-function ColorDot({ color, className = 'w-6 h-6' }: { color: string; className?: string }) {
-    const cls = COLOR_DOT_CLASS[color];
-    if (!cls) return null;
-    return <span className={`inline-block rounded-full ${cls} ${className} align-middle`} />;
-}
-
-const VALUE_LABEL: Record<string, ReactNode> = {
-    skip: <NoSymbolIcon className="w-5 h-5" />, reverse: <ArrowPathIcon className="w-5 h-5" />, draw2: '+2', wild: '🌈', wild4: '+4',
-};
-
-function RankBadge({ rank }: { rank: number }) {
-    if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold">1</span>;
-    if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs font-bold">2</span>;
-    if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-700 dark:bg-orange-800 text-orange-50 dark:text-orange-100 text-xs font-bold">3</span>;
-    return <span className="inline-flex items-center justify-center w-7 h-7 text-xs font-semibold text-gray-400">#{rank}</span>;
-}
-
-function UnoCard({ card, playable, selected, onClick }: {
-    card: Card; playable?: boolean; selected?: boolean; onClick?: () => void;
-}) {
-    const label = VALUE_LABEL[card.value] ?? card.value;
-    const gradient = CARD_GRADIENT[card.color] ?? 'bg-gray-400';
-    return (
-        <div onClick={onClick} className={`
-            relative w-16 h-24 ${gradient} rounded-xl border-[3px] border-white shadow-lg
-            flex items-center justify-center font-black text-white
-            select-none transition-all duration-200 overflow-hidden
-            ${playable ? 'cursor-pointer hover:-translate-y-3 hover:shadow-2xl hover:scale-105 ring-2 ring-white/60' : 'opacity-60 cursor-default'}
-            ${selected ? '-translate-y-4 ring-4 ring-yellow-300 shadow-yellow-300/40 shadow-2xl scale-105' : ''}
-        `}>
-            {/* Oval white center for classic UNO look */}
-            <span className="absolute inset-2 rounded-full bg-white/10 -rotate-[20deg] pointer-events-none" />
-            {/* Corner labels */}
-            <span className="absolute top-1 left-1.5 text-[10px] font-black leading-none">{label}</span>
-            <span className="absolute bottom-1 right-1.5 text-[10px] font-black leading-none rotate-180">{label}</span>
-            {/* Center value */}
-            <span className="relative z-10 text-2xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">{label}</span>
-        </div>
-    );
-}
 
 export default function UnoPage() {
     const { data: session, status } = useSession();
@@ -267,7 +211,7 @@ export default function UnoPage() {
                             ${s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-gray-100 dark:bg-gray-700'}
                             ${s.kicked ? 'opacity-60' : ''}`}>
                                 <div className="flex items-center gap-3">
-                                    <RankBadge rank={s.rank} />
+                                    <RankBadge rank={s.rank} size="sm" />
                                     <div>
                                         <div className="flex items-center gap-1.5">
                                             <span className="font-semibold">{s.username}</span>
@@ -311,7 +255,7 @@ export default function UnoPage() {
                         </button>
                         <button
                             onClick={() => router.push('/')}
-                            className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-sm font-semibold hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
+                            className="flex-1 py-3 rounded-xl border-2 border-white/40 text-white/90 text-sm font-semibold hover:border-white/70 hover:bg-white/10 transition-all"
                         >
                             Quitter
                         </button>

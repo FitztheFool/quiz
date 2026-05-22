@@ -60,6 +60,16 @@ function PerudoIcon({ className }: { className?: string }) {
     );
 }
 
+function CantStopIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M12 3 L21 21 L3 21 Z" />
+            <path d="M7 17 L12 9 L17 17" />
+            <circle cx="12" cy="9" r="1.2" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
 function BreakoutIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -88,6 +98,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     IMPOSTOR:   EyeSlashIcon,
     LUDO:       LudoIcon,
     PERUDO:     PerudoIcon,
+    CANT_STOP:  CantStopIcon,
     SNAKE:      SnakeIcon,
     PACMAN:     PacmanIcon,
     BREAKOUT:   BreakoutIcon,
@@ -104,6 +115,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     impostor:   EyeSlashIcon,
     ludo:       LudoIcon,
     perudo:     PerudoIcon,
+    cant_stop:  CantStopIcon,
     snake:      SnakeIcon,
     pacman:     PacmanIcon,
     breakout:   BreakoutIcon,

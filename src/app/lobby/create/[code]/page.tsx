@@ -56,6 +56,7 @@ type LobbyMeta = {
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
     perudoOptions?: { initialDice: number };
+    cantStopOptions?: { columnsToWin: number };
 };
 
 
@@ -76,6 +77,7 @@ type LobbyState = {
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
     perudoOptions?: { initialDice: number };
+    cantStopOptions?: { columnsToWin: number };
     timeMode?: string;
     timePerQuestion?: number;
     quizId?: string | null;
@@ -93,169 +95,15 @@ function useDebounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: n
     }) as T;
 }
 
-function OptionRow({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-            <div className="flex-shrink-0">{children}</div>
-        </div>
-    );
-}
-
-function OptionSelect({ value, onChange, options, disabled }: {
-    value: number | string;
-    onChange: (v: string) => void;
-    options: { v: string | number; label: string }[];
-    disabled?: boolean;
-}) {
-    return (
-        <select value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
-            className="font-sans bg-gray-100 dark:bg-gray-700/60 border border-gray-300 dark:border-gray-600/50 rounded-lg px-3 py-1.5 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/60 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-            {options.map(o => <option key={o.v} value={o.v} className="bg-white dark:bg-gray-800">{o.label}</option>)}
-        </select>
-    );
-}
-
-function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
-    return (
-        <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-            <button type="button" onClick={() => !disabled && onChange(!checked)} disabled={disabled}
-                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'} ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
-            </button>
-        </div>
-    );
-}
-
-function QuizSearch({ isHost, onSelect, selectedId, selectedTitle, selectedQuestionCount, categories, categoryId, onCategoryChange }: {
-    isHost: boolean;
-    onSelect: (id: string, title: string, questionCount?: number) => void;
-    selectedId?: string;
-    selectedTitle?: string;
-    selectedQuestionCount?: number;
-    categories: { id: string; name: string; _count: { quizzes: number } }[];
-    categoryId: string;
-    onCategoryChange: (catId: string) => void;
-}) {
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState<{ id: string; title: string; _count: { questions: number } }[]>([]);
-    const [open, setOpen] = useState(false);
-    const [catOpen, setCatOpen] = useState(false);
-    const searchTimer = useRef<NodeJS.Timeout | null>(null);
-    const catContainerRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    const selectedCategory = categories.find(c => c.id === categoryId) ?? null;
-
-    useEffect(() => {
-        if (!catOpen) return;
-        const handler = (e: MouseEvent) => {
-            if (catContainerRef.current && !catContainerRef.current.contains(e.target as Node)) {
-                setCatOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [catOpen]);
-
-    const search = (q: string, catId?: string) => {
-        setQuery(q);
-        setOpen(true);
-        if (searchTimer.current) clearTimeout(searchTimer.current);
-        const activeCatId = catId !== undefined ? catId : categoryId;
-        if (!q.trim() && !activeCatId) { setResults([]); return; }
-        searchTimer.current = setTimeout(async () => {
-            const params = new URLSearchParams({ page: '1', pageSize: '12' });
-            if (q.trim()) params.set('search', q);
-            if (activeCatId) params.set('categoryId', activeCatId);
-            const res = await fetch(`/api/quiz?${params}`);
-            if (!res.ok) return;
-            const data = await res.json();
-            setResults(Array.isArray(data) ? data : (data.quizzes ?? []));
-        }, 300);
-    };
-
-    const handleCategoryChange = (catId: string) => {
-        onCategoryChange(catId);
-        setCatOpen(false);
-        if (selectedId) onSelect('', '');
-        search(query, catId);
-        setOpen(true);
-        setTimeout(() => inputRef.current?.focus(), 0);
-    };
-
-    const displayValue = selectedId && selectedTitle ? selectedTitle : query;
-    const isSelected = !!(selectedId && selectedTitle);
-
-    return (
-        <div className="w-full space-y-2">
-            {/* Category custom dropdown */}
-            {categories.length > 0 && (
-                <div className="relative" ref={catContainerRef}>
-                    <button
-                        type="button"
-                        onClick={() => isHost && setCatOpen(v => !v)}
-                        className="font-sans w-full flex items-center justify-between bg-gray-100 dark:bg-gray-700/60 border border-gray-300 dark:border-gray-600/50 rounded-lg px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/60">
-                        <span className={selectedCategory ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}>
-                            {selectedCategory ? selectedCategory.name : 'Toutes les catégories'}
-                        </span>
-                        <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">
-                            {selectedCategory ? `(${selectedCategory._count.quizzes})` : '▾'}
-                        </span>
-                    </button>
-                    {catOpen && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600/50 rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto font-sans">
-                            <button onMouseDown={() => handleCategoryChange('')}
-                                className={`w-full px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${!categoryId ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>
-                                <span>Toutes les catégories</span>
-                            </button>
-                            {categories.map(c => (
-                                <button key={c.id} onMouseDown={() => handleCategoryChange(c.id)}
-                                    className={`w-full px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${categoryId === c.id ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>
-                                    <span className="truncate">{c.name}</span>
-                                    <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">({c._count.quizzes})</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Quiz search input */}
-            <div className="relative">
-                <input
-                    type="text"
-                    ref={inputRef}
-                    value={displayValue}
-                    onChange={e => { if (selectedId) onSelect('', ''); search(e.target.value); }}
-                    onFocus={() => { if (query || categoryId) { search(query); setOpen(true); } }}
-                    onBlur={() => setTimeout(() => setOpen(false), 150)}
-                    placeholder="Rechercher un quiz…"
-                    readOnly={!isHost}
-                    className={`font-sans w-full bg-gray-100 dark:bg-gray-700/60 border rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${isSelected ? 'border-green-500/60 pr-16' : 'border-gray-300 dark:border-gray-600/50'}`}
-                />
-                {isSelected && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs pointer-events-none flex items-center gap-1">
-                        {selectedQuestionCount !== undefined && <span className="text-gray-400 dark:text-gray-500">({selectedQuestionCount})</span>}
-                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                    </span>
-                )}
-                {open && results.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600/50 rounded-lg shadow-xl overflow-y-auto max-h-64 font-sans">
-                        {results.map(q => (
-                            <button key={q.id} onMouseDown={() => { onSelect(q.id, q.title, q._count.questions); setQuery(''); setOpen(false); }}
-                                className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${selectedId === q.id ? 'bg-blue-600/20 text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>
-                                <span className="font-medium truncate">{q.title}</span>
-                                <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">{q._count.questions}q</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
+import UnoOptions from '@/components/Lobby/Options/UnoOptions';
+import BattleshipOptions from '@/components/Lobby/Options/BattleshipOptions';
+import TabooOptions from '@/components/Lobby/Options/TabooOptions';
+import QuizOptions from '@/components/Lobby/Options/QuizOptions';
+import SkyjowOptions from '@/components/Lobby/Options/SkyjowOptions';
+import ImpostorOptions from '@/components/Lobby/Options/ImpostorOptions';
+import LudoOptions from '@/components/Lobby/Options/LudoOptions';
+import PerudoOptions from '@/components/Lobby/Options/PerudoOptions';
+import CantStopOptions from '@/components/Lobby/Options/CantStopOptions';
 
 export default function LobbyCodePage() {
     const { data: session, status } = useSession();
@@ -316,6 +164,7 @@ export default function LobbyCodePage() {
     const [ludoWinMode, setLudoWinMode] = useState<'first_done' | 'full_ranking'>('first_done');
     const [ludoTeamMode, setLudoTeamMode] = useState<'none' | '2v2'>('none');
     const [perudoInitialDice, setPerudoInitialDice] = useState<number>(5);
+    const [cantStopColumnsToWin, setCantStopColumnsToWin] = useState<number>(3);
     const [botCount, setBotCount] = useState(0);
     const [botSlots, setBotSlots] = useState<Array<{ userId: string; username: string }>>([]);
     const { setLobbyId } = useChat();
@@ -404,6 +253,7 @@ export default function LobbyCodePage() {
                 battleshipOptions: state.battleshipOptions ?? prev?.battleshipOptions,
                 ludoOptions: state.ludoOptions ?? prev?.ludoOptions,
                 perudoOptions: (state as { perudoOptions?: { initialDice: number } }).perudoOptions ?? prev?.perudoOptions,
+                cantStopOptions: (state as { cantStopOptions?: { columnsToWin: number } }).cantStopOptions ?? prev?.cantStopOptions,
                 quizOptions: state.timeMode
                     ? { timeMode: state.timeMode, timePerQuestion: state.timePerQuestion ?? 15 }
                     : prev?.quizOptions,
@@ -445,6 +295,10 @@ export default function LobbyCodePage() {
             if ((state as { perudoOptions?: { initialDice?: number } }).perudoOptions) {
                 const opt = (state as { perudoOptions?: { initialDice?: number } }).perudoOptions!;
                 setPerudoInitialDice(opt.initialDice ?? 5);
+            }
+            if ((state as { cantStopOptions?: { columnsToWin?: number } }).cantStopOptions) {
+                const opt = (state as { cantStopOptions?: { columnsToWin?: number } }).cantStopOptions!;
+                setCantStopColumnsToWin(opt.columnsToWin ?? 3);
             }
             setBotCount(state.bots ?? 0);
             setBotSlots(Array.isArray(state.botSlots) ? state.botSlots : []);
@@ -532,6 +386,7 @@ export default function LobbyCodePage() {
                 if (m.impostorOptions) { setImpostorRounds(m.impostorOptions.rounds ?? 1); setImpostorTime(m.impostorOptions.timePerRound ?? 60); setImpostorMisterWhite(m.impostorOptions.misterWhite ?? false); }
                 if (m.ludoOptions) { setLudoPawnExit(m.ludoOptions.pawnExit); setLudoBonusOn6(m.ludoOptions.bonusOn6); setLudoWinMode(m.ludoOptions.winMode); setLudoTeamMode(m.ludoOptions.teamMode); }
                 if (m.perudoOptions) setPerudoInitialDice(m.perudoOptions.initialDice ?? 5);
+                if (m.cantStopOptions) setCantStopColumnsToWin(m.cantStopOptions.columnsToWin ?? 3);
             }
             socket.emit('lobby:join', { lobbyId, userId: meUserId, username: meUsername, title: m?.title, description: m?.description, maxPlayers: m?.maxPlayers, isPublic: m?.isPublic });
             const gameFromUrl = searchParams.get('game');
@@ -544,6 +399,7 @@ export default function LobbyCodePage() {
             if (m?.impostorOptions) setTimeout(() => socket.emit('lobby:setImpostorOptions', m!.impostorOptions), 400);
             if (m?.ludoOptions) setTimeout(() => socket.emit('lobby:setLudoOptions', m!.ludoOptions), 400);
             if (m?.perudoOptions) setTimeout(() => socket.emit('lobby:setPerudoOptions', m!.perudoOptions), 400);
+            if (m?.cantStopOptions) setTimeout(() => socket.emit('lobby:setCantStopOptions', m!.cantStopOptions), 400);
             if (m?.quizOptions) setTimeout(() => socket.emit('lobby:setQuizOptions', m!.quizOptions), 400);
         }
 
@@ -757,182 +613,64 @@ export default function LobbyCodePage() {
 
                         {/* Options du jeu sélectionné */}
                         {gameType === 'uno' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options UNO</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {([{ v: 'none', label: 'Solo', desc: '2–8 joueurs' }, { v: '2v2', label: '2v2', desc: '4 joueurs' }] as const).map(opt => (
-                                        <button key={opt.v} onClick={() => isHost && handleUnoTeamMode(opt.v)}
-                                            className={`py-2.5 px-3 rounded-xl border-2 text-xs font-semibold transition-all flex flex-col items-center gap-0.5
-                                                ${unoTeamMode === opt.v
-                                                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300'
-                                                    : 'border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'}`}>
-                                            <span>{opt.label}</span><span className="opacity-60 font-normal">{opt.desc}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                {unoTeamMode === '2v2' && (
-                                    <OptionRow label="Condition de victoire">
-                                        <OptionSelect value={unoTeamWinMode} onChange={v => { setUnoTeamWinMode(v as 'one' | 'both'); socket?.emit('lobby:setUnoOptions', { teamWinMode: v }); }}
-                                            options={[{ v: 'one', label: 'Un vide sa main' }, { v: 'both', label: 'Les 2 vident' }]} disabled={!isHost} />
-                                    </OptionRow>
-                                )}
-                                <Toggle checked={unoStackable} onChange={v => { setUnoStackable(v); socket?.emit('lobby:setUnoOptions', { stackable: v }); }} label="Cartes empilables (+2/+4)" disabled={!isHost} />
-                                {unoTeamMode !== '2v2' && <Toggle checked={unoJumpIn} onChange={v => { setUnoJumpIn(v); socket?.emit('lobby:setUnoOptions', { jumpIn: v }); }} label="Jump-in" disabled={!isHost} />}
-                            </div>
+                            <UnoOptions isHost={isHost} socket={socket} unoTeamMode={unoTeamMode} setUnoTeamMode={setUnoTeamMode} handleUnoTeamMode={handleUnoTeamMode}
+                                unoTeamWinMode={unoTeamWinMode} setUnoTeamWinMode={setUnoTeamWinMode}
+                                unoStackable={unoStackable} setUnoStackable={setUnoStackable}
+                                unoJumpIn={unoJumpIn} setUnoJumpIn={setUnoJumpIn} />
                         )}
 
                         {gameType === 'battleship' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Bataille Navale</p>
-                                <OptionRow label="Taille de la grille">
-                                    <OptionSelect value={gridSize} onChange={v => { const g = Number(v); setGridSize(g); socket?.emit('lobby:setBattleshipOptions', { gridSize: g, turnTime }); }}
-                                        options={[8, 10, 12].map(n => ({ v: n, label: `${n}×${n}` }))} disabled={!isHost} />
-                                </OptionRow>
-                                <OptionRow label="Temps par tour">
-                                    <OptionSelect value={turnTime} onChange={v => { const t = Number(v); setTurnTime(t); socket?.emit('lobby:setBattleshipOptions', { gridSize, turnTime: t }); }}
-                                        options={[10, 20, 30, 60, 90, 120].map(t => ({ v: t, label: `${t}s` }))} disabled={!isHost} />
-                                </OptionRow>
-                            </div>
+                            <BattleshipOptions isHost={isHost} socket={socket}
+                                gridSize={gridSize} setGridSize={setGridSize}
+                                turnTime={turnTime} setTurnTime={setTurnTime} />
                         )}
 
                         {gameType === 'taboo' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Taboo</p>
-                                <OptionRow label="Durée d'un tour"><OptionSelect value={tabooTurnDuration} onChange={v => { setTabooTurnDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { turnDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180, 240, 300].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
-                                <OptionRow label="Rounds"><OptionSelect value={tabooTotalRounds} onChange={v => { setTabooTotalRounds(Number(v)); socket?.emit('lobby:setTabooOptions', { totalRounds: Number(v) }); }} options={[1, 2, 3, 4, 5, 7, 10].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} /></OptionRow>
-                                <OptionRow label="Mots piégés"><OptionSelect value={tabooTrapWordCount} onChange={v => { setTabooTrapWordCount(Number(v)); socket?.emit('lobby:setTabooOptions', { trapWordCount: Number(v) }); }} options={[2, 3, 4, 5, 6, 7, 8, 10].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
-                                <OptionRow label="Temps mots piégés"><OptionSelect value={tabooTrapDuration} onChange={v => { setTabooTrapDuration(Number(v)); socket?.emit('lobby:setTabooOptions', { trapDuration: Number(v) }); }} options={[15, 30, 45, 60, 90, 120, 180].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} /></OptionRow>
-                                <OptionRow label="Tentatives max"><OptionSelect value={tabooMaxAttempts} onChange={v => { setTabooMaxAttempts(Number(v)); socket?.emit('lobby:setTabooOptions', { maxAttempts: Number(v) }); }} options={[3, 5, 7, 10, 15, 20, 30].map(n => ({ v: n, label: `${n}` }))} disabled={!isHost} /></OptionRow>
-                            </div>
+                            <TabooOptions isHost={isHost} socket={socket}
+                                tabooTurnDuration={tabooTurnDuration} setTabooTurnDuration={setTabooTurnDuration}
+                                tabooTotalRounds={tabooTotalRounds} setTabooTotalRounds={setTabooTotalRounds}
+                                tabooTrapWordCount={tabooTrapWordCount} setTabooTrapWordCount={setTabooTrapWordCount}
+                                tabooTrapDuration={tabooTrapDuration} setTabooTrapDuration={setTabooTrapDuration}
+                                tabooMaxAttempts={tabooMaxAttempts} setTabooMaxAttempts={setTabooMaxAttempts} />
                         )}
 
                         {gameType === 'quiz' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Quiz</p>
-                                <div className="space-y-1">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Quiz</p>
-                                    <QuizSearch isHost={isHost} selectedId={selectedQuizId} selectedTitle={selectedQuizTitle} selectedQuestionCount={selectedQuizQuestionCount}
-                                        categories={categories} categoryId={selectedQuizCategoryId}
-                                        onCategoryChange={catId => setSelectedQuizCategoryId(catId)}
-                                        onSelect={(id, title, questionCount) => { setSelectedQuizId(id || undefined); setSelectedQuizTitle(title); setSelectedQuizQuestionCount(questionCount); if (id) socket?.emit('lobby:setQuiz', { quizId: id }); }} />
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Mode de temps</p>
-                                    <select value={quizTimeMode}
-                                        onChange={e => {
-                                            const newMode = e.target.value as typeof quizTimeMode;
-                                            const defaultTpq = newMode === 'total' ? 60 : 15;
-                                            const newTpq = newMode === 'total'
-                                                ? ([60, 120, 180, 300, 600, 900, 1200, 1800, 3600].includes(quizTimePerQuestion) ? quizTimePerQuestion : defaultTpq)
-                                                : ([5, 10, 15, 20, 30, 45, 60, 90, 120].includes(quizTimePerQuestion) ? quizTimePerQuestion : defaultTpq);
-                                            setQuizTimeMode(newMode);
-                                            setQuizTimePerQuestion(newTpq);
-                                            socket?.emit('lobby:setQuizOptions', { timeMode: newMode, timePerQuestion: newTpq });
-                                        }}
-                                        className="font-sans w-full bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/50 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-                                        <option value="per_question">Par question</option>
-                                        <option value="total">Temps total</option>
-                                        <option value="none">Sans limite</option>
-                                    </select>
-                                </div>
-                                {quizTimeMode !== 'none' && (
-                                    <div className="space-y-1">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{quizTimeMode === 'total' ? 'Temps total' : 'Temps / question'}</p>
-                                        <select value={quizTimePerQuestion}
-                                            onChange={e => { setQuizTimePerQuestion(Number(e.target.value)); socket?.emit('lobby:setQuizOptions', { timeMode: quizTimeMode, timePerQuestion: Number(e.target.value) }); }}
-                                            className="font-sans w-full bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/50 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-                                            {(quizTimeMode === 'total' ? [60, 120, 180, 300, 600, 900, 1200, 1800, 3600] : [5, 10, 15, 20, 30, 45, 60, 90, 120]).map(t => (
-                                                <option key={t} value={t}>{formatTime(t)}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-                            </div>
+                            <QuizOptions isHost={isHost} socket={socket}
+                                selectedQuizId={selectedQuizId} selectedQuizTitle={selectedQuizTitle} selectedQuizQuestionCount={selectedQuizQuestionCount}
+                                setSelectedQuizId={setSelectedQuizId} setSelectedQuizTitle={setSelectedQuizTitle} setSelectedQuizQuestionCount={setSelectedQuizQuestionCount}
+                                categories={categories} selectedQuizCategoryId={selectedQuizCategoryId} setSelectedQuizCategoryId={setSelectedQuizCategoryId}
+                                quizTimeMode={quizTimeMode} setQuizTimeMode={setQuizTimeMode}
+                                quizTimePerQuestion={quizTimePerQuestion} setQuizTimePerQuestion={setQuizTimePerQuestion} />
                         )}
 
                         {gameType === 'skyjow' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Skyjow</p>
-                                <Toggle checked={skyjowEliminateRows} onChange={v => { setSkyjowEliminateRows(v); socket?.emit('lobby:setSkyjowOptions', { eliminateRows: v }); }} label="Éliminer les lignes (4 identiques)" disabled={!isHost} />
-                            </div>
+                            <SkyjowOptions isHost={isHost} socket={socket}
+                                skyjowEliminateRows={skyjowEliminateRows} setSkyjowEliminateRows={setSkyjowEliminateRows} />
                         )}
 
                         {gameType === 'impostor' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Imposteur</p>
-                                <OptionRow label="Rounds">
-                                    <OptionSelect value={impostorRounds} onChange={v => { setImpostorRounds(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: Number(v), timePerRound: impostorTime, misterWhite: impostorMisterWhite }); }}
-                                        options={[1, 2, 3, 4, 5].map(r => ({ v: r, label: `${r}` }))} disabled={!isHost} />
-                                </OptionRow>
-                                <OptionRow label="Temps par round">
-                                    <OptionSelect value={impostorTime} onChange={v => { setImpostorTime(Number(v)); socket?.emit('lobby:setImpostorOptions', { rounds: impostorRounds, timePerRound: Number(v), misterWhite: impostorMisterWhite }); }}
-                                        options={[30, 45, 60, 90, 120].map(t => ({ v: t, label: formatTime(t) }))} disabled={!isHost} />
-                                </OptionRow>
-                                <div className="flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-sm text-gray-700 dark:text-gray-300">Mister White</span>
-                                        <div className="relative group">
-                                            <QuestionMarkCircleIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
-                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center">
-                                                Le Mr White commence avec un mot différent mais de la même catégorie que les autres joueurs
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="button" onClick={() => { if (!isHost) return; const v = !impostorMisterWhite; setImpostorMisterWhite(v); socket?.emit('lobby:setImpostorOptions', { rounds: impostorRounds, timePerRound: impostorTime, misterWhite: v }); }} disabled={!isHost}
-                                        className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${impostorMisterWhite ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'} ${!isHost ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${impostorMisterWhite ? 'translate-x-5' : ''}`} />
-                                    </button>
-                                </div>
-                            </div>
+                            <ImpostorOptions isHost={isHost} socket={socket}
+                                impostorRounds={impostorRounds} setImpostorRounds={setImpostorRounds}
+                                impostorTime={impostorTime} setImpostorTime={setImpostorTime}
+                                impostorMisterWhite={impostorMisterWhite} setImpostorMisterWhite={setImpostorMisterWhite} />
                         )}
 
                         {gameType === 'ludo' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Ludo</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {([{ v: 'none', label: 'Chacun pour soi', desc: '2–4 joueurs' }, { v: '2v2', label: '2v2', desc: '4 joueurs' }] as const).map(opt => (
-                                        <button key={opt.v} onClick={() => isHost && handleLudoTeamMode(opt.v)}
-                                            className={`py-2.5 px-3 rounded-xl border-2 text-xs font-semibold transition-all flex flex-col items-center gap-0.5
-                                                ${ludoTeamMode === opt.v
-                                                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-300'
-                                                    : 'border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'}`}>
-                                            <span>{opt.label}</span><span className="opacity-60 font-normal">{opt.desc}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <OptionRow label="Sortie d'un pion">
-                                    <OptionSelect value={ludoPawnExit} onChange={v => { setLudoPawnExit(v as '6' | '6_or_1' | 'any'); socket?.emit('lobby:setLudoOptions', { pawnExit: v }); }}
-                                        options={[{ v: '6', label: 'Sur un 6' }, { v: '6_or_1', label: 'Sur 6 ou 1' }, { v: 'any', label: 'Sur tout score' }]} disabled={!isHost} />
-                                </OptionRow>
-                                <OptionRow label="Bonus sur un 6">
-                                    <OptionSelect value={ludoBonusOn6} onChange={v => { setLudoBonusOn6(v as 'unlimited' | 'triple_lose' | 'none'); socket?.emit('lobby:setLudoOptions', { bonusOn6: v }); }}
-                                        options={[{ v: 'unlimited', label: 'Relance illimitée' }, { v: 'triple_lose', label: 'Triple 6 = tour perdu' }, { v: 'none', label: 'Aucun bonus' }]} disabled={!isHost} />
-                                </OptionRow>
-                                <OptionRow label="Fin de partie">
-                                    <OptionSelect value={ludoWinMode} onChange={v => { setLudoWinMode(v as 'first_done' | 'full_ranking'); socket?.emit('lobby:setLudoOptions', { winMode: v }); }}
-                                        options={[{ v: 'first_done', label: 'Premier arrivé' }, { v: 'full_ranking', label: 'Classement complet' }]} disabled={!isHost} />
-                                </OptionRow>
-                            </div>
+                            <LudoOptions isHost={isHost} socket={socket}
+                                ludoTeamMode={ludoTeamMode} handleLudoTeamMode={handleLudoTeamMode}
+                                ludoPawnExit={ludoPawnExit} setLudoPawnExit={setLudoPawnExit}
+                                ludoBonusOn6={ludoBonusOn6} setLudoBonusOn6={setLudoBonusOn6}
+                                ludoWinMode={ludoWinMode} setLudoWinMode={setLudoWinMode} />
                         )}
 
                         {gameType === 'perudo' && (
-                            <div className={`bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5 space-y-3 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Options Perudo</p>
-                                <OptionRow label="Dés par joueur au départ">
-                                    <OptionSelect
-                                        value={String(perudoInitialDice)}
-                                        onChange={v => { const n = Number(v); setPerudoInitialDice(n); socket?.emit('lobby:setPerudoOptions', { initialDice: n }); }}
-                                        options={[
-                                            { v: '3', label: '3 dés (court)' },
-                                            { v: '4', label: '4 dés' },
-                                            { v: '5', label: '5 dés (standard)' },
-                                            { v: '6', label: '6 dés (long)' },
-                                        ]}
-                                        disabled={!isHost}
-                                    />
-                                </OptionRow>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 italic">Les 1 sont wild (comptent pour n'importe quelle face). Si quelqu'un bid sur les 1, ils redeviennent normaux pour le round.</p>
-                            </div>
+                            <PerudoOptions isHost={isHost} socket={socket}
+                                perudoInitialDice={perudoInitialDice} setPerudoInitialDice={setPerudoInitialDice} />
+                        )}
+
+                        {gameType === 'cant_stop' && (
+                            <CantStopOptions isHost={isHost} socket={socket}
+                                cantStopColumnsToWin={cantStopColumnsToWin} setCantStopColumnsToWin={setCantStopColumnsToWin} />
                         )}
 
                         {NO_OPTIONS_GAMES[gameType] && (

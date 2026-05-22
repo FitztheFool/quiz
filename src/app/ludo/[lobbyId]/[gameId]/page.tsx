@@ -3,7 +3,7 @@
 // no extra react hooks needed
 import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
-import { useLudo, isBot, type LudoPlayer } from '@/hooks/useLudo';
+import { useLudo, isBot } from '@/hooks/useLudo';
 import GameOverModal from '@/components/GameOverModal';
 import GameScoreLeaderboard from '@/components/GameScoreLeaderboard';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -12,31 +12,11 @@ import GameIcon from '@/components/GameIcon';
 import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
-import AfkCountdown from '@/components/AfkCountdown';
 import LudoBoard from '@/components/Ludo/Board';
 import Dice from '@/components/Ludo/Dice';
 import { COLOR_CLASSES } from '@/components/Ludo/boardLayout';
+import PlayerLabel from '@/components/shared/PlayerLabel';
 import { TrophyIcon, XCircleIcon, CpuChipIcon } from '@heroicons/react/24/outline';
-
-function BotBadge() {
-    return (
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 leading-none">
-            BOT
-        </span>
-    );
-}
-
-function PlayerLabel({ player, active, inactivityEndsAt }: { player: LudoPlayer; active: boolean; inactivityEndsAt?: number | null }) {
-    const color = COLOR_CLASSES[player.colorIndex];
-    return (
-        <span className={`flex items-center gap-1.5 transition-all ${active ? 'font-bold' : 'font-normal opacity-60'}`}>
-            <span className={`inline-block w-3 h-3 rounded-full ${color.bg} border border-white shadow-sm`} />
-            {player.username}
-            {isBot(player) && <BotBadge />}
-            {inactivityEndsAt != null && <AfkCountdown endsAt={inactivityEndsAt} />}
-        </span>
-    );
-}
 
 export default function LudoPage() {
     const { status, router, me, lobbyId, isNotFound, setIsNotFound, modalDismissed, setModalDismissed } = useGamePage();
@@ -98,8 +78,11 @@ export default function LudoPage() {
                         {state.players.map((p, idx) => (
                             <PlayerLabel
                                 key={p.userId}
-                                player={p}
+                                username={p.username}
                                 active={state.phase !== 'finished' && idx === state.currentTurn}
+                                isBot={isBot(p)}
+                                bgClass={COLOR_CLASSES[p.colorIndex].bg}
+                                dotExtraClass="border border-white shadow-sm"
                                 inactivityEndsAt={inactivityUserId === p.userId ? inactivityEndsAt : null}
                             />
                         ))}

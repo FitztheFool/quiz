@@ -159,4 +159,14 @@ export const GAME_COLOR: Record<string, {
             label: 'text-fuchsia-700 dark:text-fuchsia-400'
         }
     },
+    CANT_STOP: {
+        selected: 'border-amber-600 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+        badge: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
+        badgeActive: 'bg-amber-600 text-white border-amber-600',
+        card: {
+            border: 'border-amber-200 dark:border-amber-800/60',
+            bg: 'bg-amber-50 dark:bg-amber-900/15',
+            label: 'text-amber-700 dark:text-amber-400'
+        }
+    },
 };

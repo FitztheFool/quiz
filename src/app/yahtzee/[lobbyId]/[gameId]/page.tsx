@@ -14,6 +14,7 @@ import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
 import { useYahtzee, isBot, ScoreCard } from '@/hooks/useYahtzee';
 import SharedDie from '@/components/Dice/Die';
+import BotBadge from '@/components/shared/BotBadge';
 
 // ── Score calculation (client-side preview) ───────────────────────────────────
 function counts(dice: number[]) {
@@ -81,14 +82,6 @@ function Die({ value, held, onClick, rolling, disabled }: {
             onClick={onClick}
             title={held ? 'Gardé (cliquer pour relâcher)' : 'Cliquer pour garder'}
         />
-    );
-}
-
-function BotBadge() {
-    return (
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 leading-none">
-            BOT
-        </span>
     );
 }
 

@@ -122,7 +122,7 @@ export function useBattleship({
 
         socket.on('notFound', () => setGameNotFound(true));
 
-        socket.on('connect', () => {
+        const sendJoin = () => {
             socket.emit('battleship:join', {
                 lobbyId,
                 userId,
@@ -130,7 +130,10 @@ export function useBattleship({
                 avatar: avatar ?? null,
                 options,
             });
-        });
+        };
+        socket.on('connect', sendJoin);
+        // If already connected (socket was cached), emit join immediately — connect won't fire again.
+        if (socket.connected) sendJoin();
 
         // ── Joined ────────────────────────────────────────────────────────────
         socket.on('battleship:joined', (payload: any) => {
@@ -283,8 +286,26 @@ export function useBattleship({
         });
 
         return () => {
+            // Remove every listener attached above to avoid duplicate handlers
+            // leaking across remounts (when the user leaves the page and comes back).
+            socket.off('connect', sendJoin);
             socket.off('notFound');
+            socket.off('battleship:joined');
+            socket.off('battleship:placementStart');
+            socket.off('battleship:placementConfirmed');
+            socket.off('battleship:autoPlaced');
+            socket.off('battleship:opponentReady');
+            socket.off('battleship:playerUpdate');
+            socket.off('battleship:gameStart');
+            socket.off('battleship:shotResult');
             socket.off('battleship:finished');
+            socket.off('battleship:shipsRestored');
+            socket.off('battleship:opponentShotsRestored');
+            socket.off('battleship:inactivityWarning');
+            socket.off('battleship:playerKicked');
+            socket.off('battleship:playerReconnected');
+            socket.off('battleship:error');
+            socket.off('battleship:placementError');
             socket.disconnect();
             socketRef.current = null;
             joinedRef.current = false;
