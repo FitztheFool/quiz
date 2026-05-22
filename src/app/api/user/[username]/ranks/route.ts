@@ -85,14 +85,14 @@ export async function GET(
             SELECT "gameType", rnk::int FROM ranked WHERE "userId" = ${user.id}
         `;
 
-        // ── 3. Jeux classés par victoires (PUISSANCE4, BATTLESHIP) ───────────────────
+        // ── 3. Jeux classés par victoires ─────────────────────────────────────────────
         const winRanks = await prisma.$queryRaw<RankRow[]>`
             WITH scores AS (
                 SELECT a."userId", a."gameType"::text,
                     COUNT(DISTINCT CASE WHEN a.placement = 1 THEN a."gameId" END)::int AS val
                 FROM attempts a
                 WHERE a."userId" = ANY(${eligibleIds})
-                  AND a."gameType"::text = ANY(ARRAY['PUISSANCE4','BATTLESHIP','LUDO'])
+                  AND a."gameType"::text = ANY(ARRAY['PUISSANCE4','BATTLESHIP','LUDO','PERUDO','CANT_STOP'])
                 GROUP BY a."userId", a."gameType"
             ),
             ranked AS (

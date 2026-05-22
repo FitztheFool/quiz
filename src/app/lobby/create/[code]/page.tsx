@@ -38,6 +38,7 @@ const GAME_SERVER_URL_BY_TYPE: Partial<Record<GameType, string | undefined>> = {
     impostor:   process.env.NEXT_PUBLIC_IMPOSTOR_SERVER_URL,
     ludo:       process.env.NEXT_PUBLIC_LUDO_SERVER_URL,
     perudo:     process.env.NEXT_PUBLIC_PERUDO_SERVER_URL,
+    cant_stop:  process.env.NEXT_PUBLIC_CANT_STOP_SERVER_URL,
 };
 
 type Player = { userId: string; username: string };
