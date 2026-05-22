@@ -60,6 +60,14 @@ export function useCantStop({
     const [state, setState] = useState<CantStopState | null>(null);
     const [bustedFlash, setBustedFlash] = useState<{ userId: string; username: string } | null>(null);
     const joinedRef = useRef(false);
+    const phaseRef = useRef<Phase | null>(null);
+    const onNotFoundRef = useRef(onNotFound);
+    const onModalResetRef = useRef(onModalReset);
+
+    useEffect(() => {
+        onNotFoundRef.current = onNotFound;
+        onModalResetRef.current = onModalReset;
+    }, [onNotFound, onModalReset]);
 
     useEffect(() => {
         if (!socket) return;
@@ -71,10 +79,14 @@ export function useCantStop({
         if (socket.connected) sendJoin();
 
         const onState = (s: CantStopState) => {
+            const previousPhase = phaseRef.current;
+            phaseRef.current = s.phase;
             setState(s);
-            if (s.phase === 'ended' && onModalReset) onModalReset();
+            if (s.phase === 'ended' && previousPhase !== 'ended') {
+                onModalResetRef.current?.();
+            }
         };
-        const onNF = () => onNotFound();
+        const onNF = () => onNotFoundRef.current();
         const onBusted = (p: { userId: string; username: string }) => {
             setBustedFlash(p);
             setTimeout(() => setBustedFlash(null), 1500);
@@ -90,8 +102,9 @@ export function useCantStop({
             socket.off('notFound', onNF);
             socket.off('cant_stop:busted', onBusted);
             joinedRef.current = false;
+            phaseRef.current = null;
         };
-    }, [socket, lobbyId, onNotFound, onModalReset]);
+    }, [socket, lobbyId]);
 
     const pickSplit = useCallback((splitIndex: number) => {
         socket?.emit('cant_stop:pickSplit', { lobbyId, splitIndex });

@@ -201,14 +201,14 @@ export default function UnoPage() {
                         <TrophyIcon className="w-8 h-8 text-amber-500 dark:text-amber-400" />
                     </div>
                     <h1 className="text-2xl font-bold mb-1">{gameState.winner?.username} a gagné !</h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                    <p className="text-emerald-200 dark:text-emerald-300 text-sm mb-6">
                         {gameState.spectator ? 'Vous avez observé cette partie' : 'Classement final'}
                     </p>
 
                     <div className="space-y-2 text-left">
                         {scores.map(s => (
                             <div key={s.userId} className={`flex items-center justify-between rounded-lg px-4 py-3
-                            ${s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-gray-100 dark:bg-gray-700'}
+                            ${s.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-white/15 border border-white/20'}
                             ${s.kicked ? 'opacity-60' : ''}`}>
                                 <div className="flex items-center gap-3">
                                     <RankBadge rank={s.rank} size="sm" />
@@ -216,16 +216,16 @@ export default function UnoPage() {
                                         <div className="flex items-center gap-1.5">
                                             <span className="font-semibold">{s.username}</span>
                                             {s.userId === me.userId && !gameState.spectator && (
-                                                <span className="text-gray-500 dark:text-gray-400 text-xs">(moi)</span>
+                                                <span className="text-emerald-200 dark:text-emerald-300 text-xs">(moi)</span>
                                             )}
                                             {s.abandon && (
-                                                <span className="text-xs bg-orange-500/30 text-orange-400 px-1.5 py-0.5 rounded">Abandon</span>
+                                                <span className="text-xs bg-orange-500/25 text-orange-300 border border-orange-500/40 px-1.5 py-0.5 rounded">Abandon</span>
                                             )}
                                             {!s.abandon && s.kicked && (
                                                 <span className="text-xs bg-red-500/30 text-red-400 px-1.5 py-0.5 rounded">AFK</span>
                                             )}
                                         </div>
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        <span className="text-xs text-emerald-200 dark:text-emerald-300">
                                             {s.cardsLeft === 0
                                                 ? '0 carte restante'
                                                 : `${s.cardsLeft} carte${s.cardsLeft > 1 ? 's' : ''} — ${s.pointsInHand} pts en main`}
@@ -233,16 +233,16 @@ export default function UnoPage() {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                                    <span className={`font-bold text-lg ${s.score > 0 ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-300 dark:text-slate-400'}`}>
                                         {s.score > 0 ? `+${s.score}` : '0'}
                                     </span>
-                                    <div className="text-xs text-gray-400 dark:text-gray-500">pts</div>
+                                    <div className="text-xs text-slate-300 dark:text-slate-400">pts</div>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="mt-4 text-xs text-gray-400 dark:text-gray-500 text-left space-y-0.5">
+                    <div className="mt-4 text-xs text-slate-300 dark:text-slate-400 text-left space-y-0.5">
                         <p>0–9 = valeur faciale · Skip/Reverse/+2 = 20 pts · Wild/+4 = 50 pts</p>
                     </div>
 
@@ -255,7 +255,7 @@ export default function UnoPage() {
                         </button>
                         <button
                             onClick={() => router.push('/')}
-                            className="flex-1 py-3 rounded-xl border-2 border-white/40 text-white/90 text-sm font-semibold hover:border-white/70 hover:bg-white/10 transition-all"
+                            className="flex-1 py-3 rounded-xl border-2 border-white/50 text-white text-sm font-semibold hover:border-white/70 hover:bg-white/10 transition-all"
                         >
                             Quitter
                         </button>
@@ -320,7 +320,7 @@ export default function UnoPage() {
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-3 text-sm text-emerald-200 dark:text-emerald-300">
                     <span>{gameState.direction === 1 ? '↻' : '↺'}</span>
                     <span>Couleur :</span>
                     <span className={`w-5 h-5 rounded-full ${COLOR_MAP[gameState.currentColor]}`} />
@@ -362,7 +362,7 @@ export default function UnoPage() {
                                 {p.cardCount > 10 && <span className="text-xs text-gray-400">+{p.cardCount - 10}</span>}
                             </div>
                             <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">{p.cardCount} carte{p.cardCount > 1 ? 's' : ''}</span>
+                                <span className="text-xs text-emerald-200 dark:text-emerald-300">{p.cardCount} carte{p.cardCount > 1 ? 's' : ''}</span>
                                 {p.cardCount === 1 && !p.saidUno && !gameState.spectator && (
                                     <button onClick={() => socket?.emit('uno:callUno', { targetId: p.userId })}
                                         aria-label={`Appeler UNO sur ${p.username}`}
@@ -411,7 +411,7 @@ export default function UnoPage() {
                             : (<><SparklesIcon className="w-4 h-4 inline-block align-middle text-amber-400" /> À toi de jouer !</>)}
                     </span>
                 ) : (
-                    <span className="text-gray-500 dark:text-gray-400 text-sm">
+                    <span className="text-emerald-200 dark:text-emerald-300 text-sm">
                         Tour de <span className="text-gray-900 dark:text-white font-semibold">{currentPlayer?.username}</span>
                         {inactivityUserId === currentPlayer?.userId && inactivitySeconds !== null && (
                             <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded
