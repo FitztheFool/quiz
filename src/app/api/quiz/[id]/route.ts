@@ -47,7 +47,13 @@ export async function GET(
       return NextResponse.json({ error: 'Quiz non trouvé' }, { status: 404 });
     }
 
-    if (!quiz.isPublic && quiz.creatorId !== session?.user?.id && !isInternalRequest) {
+    // Internal requests may be scoped to a lobby host: a private quiz is only
+    // playable in a lobby if the host owns it (prevents IDOR via lobby:setQuiz).
+    // No hostId param → unchanged full internal access (other internal callers).
+    const requestedHostId = request.nextUrl.searchParams.get('hostId');
+    const internalAllowed = isInternalRequest && (!requestedHostId || quiz.isPublic || quiz.creatorId === requestedHostId);
+
+    if (!quiz.isPublic && quiz.creatorId !== session?.user?.id && !internalAllowed) {
       return NextResponse.json({ error: "Vous n'avez pas accès à ce quiz privé" }, { status: 403 });
     }
 
