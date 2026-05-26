@@ -131,6 +131,17 @@ export const GAME_CONFIG = {
         rules: "Lancez 4 dés et choisissez un des 3 splits. Avancez vos marqueurs sur les colonnes correspondant aux sommes. 3 marqueurs temporaires max par tour. Continuez ou stoppez pour banker. Si aucun split légal possible → bust, vous perdez la progression du tour. Premier à claim 3 colonnes au sommet gagne.",
         score: "1 point par victoire. Le classement est basé sur le total de victoires.",
     },
+    mille_bornes: {
+        gameType: 'MILLE_BORNES' as const,
+        label: 'Mille Bornes',
+        mode: 'both' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Victoires',
+        description: "La course de cartes — atteignez la distance avant vos adversaires !",
+        players: '2 – 4 joueurs (ou vs bot)',
+        rules: "Posez des cartes Distance (25 à 200 km) pour avancer, à condition d'avoir un feu vert. Attaquez n'importe quel adversaire avec une attaque (Stop, Limite de vitesse, Accident, Panne d'essence, Crevaison) ; il doit jouer la parade correspondante pour repartir. Les 4 bottes (Prioritaire, As du volant, Citerne, Increvable) immunisent et, jouées juste après l'attaque correspondante, réussissent un Coup Fourré (rejouez aussitôt). Le premier à atteindre exactement la distance cible (700 ou 1000 km) gagne la manche.",
+        score: "1 point par victoire. Le classement est basé sur le total de victoires.",
+    },
     impostor: {
         gameType: 'IMPOSTOR' as const,
         label: 'Imposteur',
@@ -217,6 +228,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     ludo: [2, 3, 4],
     perudo: [2, 3, 4, 5, 6],
     cant_stop: [2, 3, 4],
+    mille_bornes: [2, 3, 4],
     impostor: [4, 5, 6, 7, 8],
     snake: [1],
     pacman: [1],
@@ -234,6 +246,7 @@ export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
     ludo: 2,
     perudo: 2,
     cant_stop: 2,
+    mille_bornes: 2,
     impostor: 4,
 };
 
@@ -245,7 +258,7 @@ export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
     diamant: 'Diamant — 2 à 8 joueurs.',
 };
 
-export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee', 'diamant', 'battleship', 'uno', 'skyjow', 'ludo', 'perudo', 'cant_stop']);
+export const BOT_SUPPORTED_GAMES: Set<string> = new Set(['puissance4', 'yahtzee', 'diamant', 'battleship', 'uno', 'skyjow', 'ludo', 'perudo', 'cant_stop', 'mille_bornes']);
 
 // Badges par mode — chaque jeu n'apparaît que dans une seule catégorie
 export const SOLO_GAMES: Record<string, { text: string; color: string }> = Object.fromEntries(
@@ -266,7 +279,7 @@ export const MULTI_GAMES: Record<string, { text: string; color: string }> = Obje
         .map(([key]) => [key, { text: 'MULTI', color: '#1D4ED8' }])
 );
 
-export const GAME_URL_SLUGS = ['uno', 'skyjow', 'taboo', 'yahtzee', 'puissance4', 'just-one', 'battleship', 'diamant', 'impostor', 'ludo', 'perudo', 'cant-stop'] as const;
+export const GAME_URL_SLUGS = ['uno', 'skyjow', 'taboo', 'yahtzee', 'puissance4', 'just-one', 'battleship', 'diamant', 'impostor', 'ludo', 'perudo', 'cant-stop', 'mille-bornes'] as const;
 
 export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string, gameId?: string) => string>> = {
     uno: (id, gid) => gid ? `/uno/${id}/${gid}` : `/uno/${id}`,
@@ -281,5 +294,6 @@ export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string, gameId?: st
     ludo: (id, gid) => gid ? `/ludo/${id}/${gid}` : `/ludo/${id}`,
     perudo: (id, gid) => gid ? `/perudo/${id}/${gid}` : `/perudo/${id}`,
     cant_stop: (id, gid) => gid ? `/cant-stop/${id}/${gid}` : `/cant-stop/${id}`,
+    mille_bornes: (id, gid) => gid ? `/mille-bornes/${id}/${gid}` : `/mille-bornes/${id}`,
     quiz: (id, gid) => gid ? `/quiz/${id}/${gid}` : `/quiz/${id}`,
 };

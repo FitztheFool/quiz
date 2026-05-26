@@ -11,6 +11,7 @@ interface ScoreEntry {
     userId: string;
     score: number;
     placement?: number | null;
+    team?: number | null;
     trapScore?: number;
     rounds?: number;
     correctAnswers?: number;
@@ -23,6 +24,7 @@ interface BotScore {
     username: string;
     score: number;
     placement: number;
+    team?: number | null;
 }
 
 interface AttemptPayload {
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
                 const botScores = i === 0 ? botScoresJson : null;
                 const score = clampInt(s.score, 0, MAX_SCORE);
                 const placement = s.placement == null ? null : clampInt(s.placement, 1, MAX_PLACEMENT, 1);
+                const team = s.team === 0 || s.team === 1 ? s.team : null;
                 const trapScore = clampInt(s.trapScore, 0, MAX_SCORE);
                 const rounds = clampInt(s.rounds, 0, MAX_ROUNDS);
                 const correctAnswers = clampInt(s.correctAnswers, 0, MAX_ROUNDS);
@@ -112,6 +115,7 @@ export async function POST(req: NextRequest) {
                     update: {
                         score,
                         placement,
+                        team,
                         trapScore,
                         rounds,
                         correctAnswers,
@@ -128,6 +132,7 @@ export async function POST(req: NextRequest) {
                         quizId: quizId ?? null,
                         score,
                         placement,
+                        team,
                         trapScore,
                         rounds,
                         correctAnswers,

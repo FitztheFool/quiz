@@ -70,6 +70,19 @@ function CantStopIcon({ className }: { className?: string }) {
     );
 }
 
+function MilleBornesIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            {/* Milestone / borne kilométrique */}
+            <path d="M7 20h10" />
+            <rect x="9" y="4" width="6" height="14" rx="1.2" />
+            <path d="M9 8h6" />
+            <circle cx="12" cy="6" r="0.9" fill="currentColor" stroke="none" />
+            <path d="M10.4 11.5h3.2M10.4 14h3.2" />
+        </svg>
+    );
+}
+
 function BreakoutIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -99,6 +112,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     LUDO:       LudoIcon,
     PERUDO:     PerudoIcon,
     CANT_STOP:  CantStopIcon,
+    MILLE_BORNES: MilleBornesIcon,
     SNAKE:      SnakeIcon,
     PACMAN:     PacmanIcon,
     BREAKOUT:   BreakoutIcon,
@@ -116,6 +130,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     ludo:       LudoIcon,
     perudo:     PerudoIcon,
     cant_stop:  CantStopIcon,
+    mille_bornes: MilleBornesIcon,
     snake:      SnakeIcon,
     pacman:     PacmanIcon,
     breakout:   BreakoutIcon,

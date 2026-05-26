@@ -141,7 +141,7 @@ export default function Chat({ messages, teamMessages, onSend, currentUserId, te
             {/* BOUTON FERMÉ */}
             {!open && (
                 <button onClick={toggle}
-                    className="relative bg-blue-600 dark:bg-slate-700 hover:bg-blue-700 dark:hover:bg-slate-600 text-white px-4 py-3 rounded-full shadow-xl">
+                    className="relative bg-primary-600 dark:bg-slate-700 hover:bg-primary-500 dark:hover:bg-slate-600 text-white px-4 py-3 rounded-full shadow-xl">
                     <ChatBubbleLeftRightIcon className="w-5 h-5" />
                     {unread > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 py-0.5 rounded-full">
@@ -159,7 +159,7 @@ export default function Chat({ messages, teamMessages, onSend, currentUserId, te
                 }>
 
                     {/* HEADER */}
-                    <div className="bg-blue-600 dark:bg-slate-800 text-white rounded-t-2xl">
+                    <div className="bg-primary-600 dark:bg-slate-800 text-white rounded-t-2xl">
                         <div className="flex justify-between items-center px-4 py-2 cursor-pointer" onClick={toggle}>
                             <div className="font-semibold flex items-center gap-1.5"><ChatBubbleLeftRightIcon className="w-4 h-4" />Lobby Chat</div>
                             <div className="text-lg">—</div>
@@ -171,7 +171,7 @@ export default function Chat({ messages, teamMessages, onSend, currentUserId, te
                                     onClick={() => setActiveTab('lobby')}
                                     className={`flex-1 py-2 text-xs font-semibold relative transition-all
                     ${activeTab === 'lobby'
-                                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
+                                            ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400'
                                             : 'text-white/70 dark:text-slate-400 hover:text-white dark:hover:text-slate-200 hover:bg-white/10 dark:hover:bg-slate-700/50'
                                         }`}>
                                     <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 inline mr-1" />Lobby
@@ -186,11 +186,11 @@ export default function Chat({ messages, teamMessages, onSend, currentUserId, te
                                     className={`flex-1 py-2 text-xs font-semibold relative transition-all
                     ${activeTab === 'team'
                                             ? teamColor === 0
-                                                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
-                                                : 'bg-white dark:bg-slate-900 text-red-600 dark:text-red-400'
+                                                ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400'
+                                                : 'bg-white dark:bg-slate-900 text-felt-700 dark:text-felt-400'
                                             : 'text-white/70 dark:text-slate-400 hover:text-white dark:hover:text-slate-200 hover:bg-white/10 dark:hover:bg-slate-700/50'
                                         }`}>
-                                    <span className={`inline-block w-2 h-2 rounded-full mr-1 ${teamColor === 0 ? 'bg-blue-400' : 'bg-red-400'}`} />{teamColor === 0 ? 'Équipe Bleue' : 'Équipe Rouge'}
+                                    <span className={`inline-block w-2 h-2 rounded-full mr-1 ${teamColor === 0 ? 'bg-primary-500' : 'bg-felt-600'}`} />{teamColor === 0 ? 'Équipe Ambre' : 'Équipe Verte'}
                                     {unreadTeam > 0 && (
                                         <span className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1.5 rounded-full">
                                             {unreadTeam}
@@ -211,7 +211,7 @@ export default function Chat({ messages, teamMessages, onSend, currentUserId, te
                                 <div key={i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow
                                         ${mine
-                                            ? 'bg-blue-600 text-white rounded-br-sm'
+                                            ? 'bg-primary-600 text-white rounded-br-sm'
                                             : 'bg-white dark:bg-slate-700 text-gray-800 dark:text-gray-100 rounded-bl-sm'
                                         }`}>
                                         {!mine && (
@@ -241,7 +241,7 @@ export default function Chat({ messages, teamMessages, onSend, currentUserId, te
                             className="flex-1 border rounded-xl px-3 py-2 text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white"
                         />
                         <button onClick={sendChat}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-xl flex items-center justify-center">
+                            className="bg-primary-600 hover:bg-primary-500 text-white px-4 rounded-xl flex items-center justify-center">
                             <PaperAirplaneIcon className="w-4 h-4" />
                         </button>
                     </div>

@@ -47,6 +47,7 @@ enum GameType {
   LUDO
   PERUDO
   CANT_STOP
+  MILLE_BORNES
 }
 
 model Account {
@@ -203,6 +204,7 @@ model Attempt {
   gameType       GameType @default(QUIZ)
   gameId         String
   placement      Int?
+  team           Int?
   abandon        Boolean  @default(false)
   afk            Boolean  @default(false)
   vsBot          Boolean  @default(false)

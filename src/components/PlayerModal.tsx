@@ -16,9 +16,21 @@ interface Player {
     username: string;
     score: number;
     placement: number | null;
+    team?: number | null;
     abandon?: boolean;
     afk?: boolean;
     isBot?: boolean;
+}
+
+const TEAM_LABEL: Record<number, string> = { 0: 'Ambre', 1: 'Verte' };
+const TEAM_DOT: Record<number, string> = { 0: 'bg-primary-500', 1: 'bg-felt-600' };
+
+function TeamBadge({ team }: { team: number }) {
+    return (
+        <span title={`Équipe ${TEAM_LABEL[team] ?? team}`} className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-full px-1.5 py-0.5">
+            <span className={`w-2 h-2 rounded-full ${TEAM_DOT[team] ?? 'bg-gray-400'}`} />{TEAM_LABEL[team] ?? `Éq. ${team}`}
+        </span>
+    );
 }
 
 interface PlayerModalProps {
@@ -93,6 +105,7 @@ export default function PlayerModal({ gameId, players, onClose }: PlayerModalPro
                                         {p.username}
                                     </Link>
                                 )}
+                                {p.team != null && <TeamBadge team={p.team} />}
                             </div>
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
                                 {p.score} <span className="text-xs text-gray-400 font-normal">pts</span>

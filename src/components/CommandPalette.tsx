@@ -55,7 +55,7 @@ export default function CommandPalette() {
             all.push({ id: 'lobby-all', label: 'Voir les lobbies', hint: 'JOUER', Icon: SignalIcon, keywords: 'lobbies multijoueur', onSelect: goto('/lobby/all') });
         }
         all.push({ id: 'leaderboard', label: 'Classement', hint: 'JOUER', Icon: TrophyIcon, keywords: 'leaderboard scores', onSelect: goto('/leaderboard/uno') });
-        all.push({ id: 'quiz-available', label: 'Quiz disponibles', hint: 'CRÉER', Icon: ListBulletIcon, onSelect: goto('/quiz/available') });
+        all.push({ id: 'quiz-available', label: 'Quiz disponibles', hint: 'JOUER', Icon: ListBulletIcon, keywords: 'jouer quiz disponibles', onSelect: goto('/quiz/available') });
         if (canCreateQuiz) {
             all.push({ id: 'quiz-mine', label: 'Mes quiz', hint: 'CRÉER', Icon: BookmarkIcon, onSelect: goto('/quiz/my-quizzes') });
             all.push({ id: 'quiz-gen', label: 'Générer (IA)', hint: 'CRÉER', Icon: SparklesIcon, keywords: 'ai generation', onSelect: goto('/quiz/generate') });

@@ -226,7 +226,7 @@ export default function SettingsPage() {
     if (!mounted) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
+        <div className="min-h-screen bg-transparent p-4 md:p-8">
             <div className="max-w-3xl mx-auto">
 
                 {/* Header */}

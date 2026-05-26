@@ -114,7 +114,7 @@ export async function GET(
             orderBy: { createdAt: 'desc' },
         });
 
-        const playersByGame = new Map<string, { username: string; score: number; placement: number | null; abandon: boolean; afk: boolean; isBot?: boolean }[]>();
+        const playersByGame = new Map<string, { username: string; score: number; placement: number | null; team?: number | null; abandon: boolean; afk: boolean; isBot?: boolean }[]>();
         const vsBotByGame = new Map<string, boolean>();
         for (const a of allPlayersInGames) {
             if (!playersByGame.has(a.gameId)) playersByGame.set(a.gameId, []);
@@ -126,16 +126,17 @@ export async function GET(
                     username: a.user.username ?? 'Inconnu',
                     score: a.gameType === 'PUISSANCE4' ? (a.score > 0 ? 1 : 0) : a.score,
                     placement: a.placement,
+                    team: a.team,
                     abandon: a.abandon,
                     afk: a.afk,
                 });
             }
         }
         // Ajouter les entrées bots depuis botScores stocké sur les tentatives
-        const botScoresByGame = new Map<string, { username: string; score: number; placement: number }[]>();
+        const botScoresByGame = new Map<string, { username: string; score: number; placement: number; team?: number | null }[]>();
         for (const a of allPlayersInGames) {
             if (!a.vsBot || !a.botScores || botScoresByGame.has(a.gameId)) continue;
-            const bots = a.botScores as { username: string; score: number; placement: number }[];
+            const bots = a.botScores as { username: string; score: number; placement: number; team?: number | null }[];
             if (Array.isArray(bots) && bots.length > 0) botScoresByGame.set(a.gameId, bots);
         }
 
@@ -145,7 +146,7 @@ export async function GET(
             const storedBots = botScoresByGame.get(gameId);
             if (storedBots && storedBots.length > 0) {
                 for (const bot of storedBots) {
-                    humans.push({ username: bot.username, score: bot.score, placement: bot.placement, abandon: false, afk: false, isBot: true });
+                    humans.push({ username: bot.username, score: bot.score, placement: bot.placement, team: bot.team ?? null, abandon: false, afk: false, isBot: true });
                 }
             } else {
                 // Fallback pour les anciennes parties

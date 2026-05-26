@@ -16,18 +16,15 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     const close = useCallback(() => setIsOpen(false), []);
     const toggle = useCallback(() => setIsOpen(v => !v), []);
 
+    // Escape closes the palette when open. (Cmd/Ctrl+K shortcut intentionally removed.)
     useEffect(() => {
+        if (!isOpen) return;
         const handler = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                e.preventDefault();
-                toggle();
-            } else if (e.key === 'Escape' && isOpen) {
-                close();
-            }
+            if (e.key === 'Escape') close();
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [toggle, close, isOpen]);
+    }, [close, isOpen]);
 
     const value = useMemo(() => ({ isOpen, open, close, toggle }), [isOpen, open, close, toggle]);
     return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

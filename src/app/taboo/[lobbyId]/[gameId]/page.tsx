@@ -127,8 +127,8 @@ export default function TabooGamePage() {
     // ── Récap du tour ─────────────────────────────────────────────────────────
     if (game.phase === 'recap') {
         const teamWhoJustPlayed = game.currentTeam;
-        const teamColor = teamWhoJustPlayed === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400';
-        const teamLabel = teamWhoJustPlayed === 0 ? (<><TeamDot team="0" className="w-4 h-4" /> Équipe Bleue</>) : (<><TeamDot team="1" className="w-4 h-4" /> Équipe Rouge</>);
+        const teamColor = teamWhoJustPlayed === 0 ? 'text-primary-600 dark:text-primary-400' : 'text-felt-700 dark:text-felt-400';
+        const teamLabel = teamWhoJustPlayed === 0 ? (<><TeamDot team="0" className="w-4 h-4" /> Équipe Ambre</>) : (<><TeamDot team="1" className="w-4 h-4" /> Équipe Verte</>);
 
         const resultLabel = game.lastTurnResult === 'validated'
             ? (<><CheckCircleIcon className="w-5 h-5 inline-block align-middle text-green-500" /> Mot trouvé !</>)
@@ -216,8 +216,8 @@ export default function TabooGamePage() {
         const currentOratorName = currentOratorId
             ? (game.players.find(p => p.userId === currentOratorId)?.username ?? '?')
             : '?';
-        const teamLabel = game.currentTeam === 0 ? (<><TeamDot team="0" className="w-4 h-4" /> Équipe Bleue</>) : (<><TeamDot team="1" className="w-4 h-4" /> Équipe Rouge</>);
-        const teamColor = game.currentTeam === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400';
+        const teamLabel = game.currentTeam === 0 ? (<><TeamDot team="0" className="w-4 h-4" /> Équipe Ambre</>) : (<><TeamDot team="1" className="w-4 h-4" /> Équipe Verte</>);
+        const teamColor = game.currentTeam === 0 ? 'text-primary-600 dark:text-primary-400' : 'text-felt-700 dark:text-felt-400';
         const playingTeamPlayers = game.players.filter(p => p.team === game.currentTeam);
         const guessers = playingTeamPlayers.filter(p => p.userId !== currentOratorId);
         const myTeamPlayers = game.players.filter(p => p.team === myTeam);
@@ -326,7 +326,7 @@ export default function TabooGamePage() {
                                                     className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all shadow-sm
                                                         ${isSelected
                                                             ? 'bg-green-100 dark:bg-green-500/20 border-green-400 dark:border-green-500/50 text-green-700 dark:text-green-300'
-                                                            : 'bg-white dark:bg-white/10 border-blue-300 dark:border-blue-500/50 text-blue-600 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/20 hover:border-blue-400 dark:hover:border-blue-400'}`}>
+                                                            : 'bg-white dark:bg-white/10 border-primary-300 dark:border-primary-500/50 text-primary-600 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-500/20 hover:border-primary-400 dark:hover:border-primary-400'}`}>
                                                     {isSelected ? '🎤 ' : ''}{p.username}
                                                 </button>
                                             ) : (
@@ -508,7 +508,7 @@ export default function TabooGamePage() {
                 return (
                     <GameOverModal
                         title="Fin de partie !"
-                        subtitle={isDraw ? 'Égalité !' : `Victoire de l'équipe ${winner[0] === '0' ? 'Bleue' : 'Rouge'} !`}
+                        subtitle={isDraw ? 'Égalité !' : `Victoire de l'équipe ${winner[0] === '0' ? 'Ambre' : 'Verte'} !`}
                         onLobby={() => router.push(`/lobby/create/${lobbyId}`)}
                         onLeave={() => router.push('/')}
                         asModal

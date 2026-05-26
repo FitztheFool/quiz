@@ -47,7 +47,9 @@ function NavLink({ href, Icon, label, isActive, collapsed, color, badge }: {
     href: string; Icon: IconComponent; label: string;
     isActive: boolean; collapsed: boolean; color: Color; badge?: number;
 }) {
-    const c = COLOR[color];
+    // All sidebar tabs share the Dashboard's selected style: white in dark, black in light.
+    const c = COLOR.gray;
+    void color;
     return (
         <Link href={href} title={label}
             className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left border-l-2 ${isActive ? `${c.active} ${c.activeBorder} bg-gray-50 dark:bg-gray-800/40` : `${INACTIVE} border-l-transparent`}`}
@@ -75,7 +77,9 @@ function SubNavLink({ href, Icon, label, isActive, color }: {
     href: string; Icon: IconComponent; label: string;
     isActive: boolean; color: Color;
 }) {
-    const c = COLOR[color];
+    // All sidebar tabs share the Dashboard's selected style: white in dark, black in light.
+    const c = COLOR.gray;
+    void color;
     return (
         <Link href={href}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${isActive ? `${c.active}` : INACTIVE}`}
@@ -92,7 +96,9 @@ function SectionToggle({ Icon, label, isActive, isOpen, collapsed, color, onClic
     Icon: IconComponent; label: string; isActive: boolean; isOpen: boolean;
     collapsed: boolean; color: Color; onClick: () => void; badge?: number;
 }) {
-    const c = COLOR[color];
+    // All sidebar tabs share the Dashboard's selected style: white in dark, black in light.
+    const c = COLOR.gray;
+    void color;
     return (
         <button onClick={onClick} title={label}
             aria-label={collapsed ? label : undefined}
@@ -280,7 +286,7 @@ export default function Sidebar({ isOpen, isAuthenticated, userRole, isAnonymous
                 )}
                 <NavLink href="/settings" Icon={Cog6ToothIcon} label="Paramètres" isActive={pathname === '/settings'} collapsed={collapsed} color="gray" />
                 {isAuthenticated && isAdmin && (
-                    <NavLink href="/admin" Icon={ShieldCheckIcon} label="Admin" isActive={pathname === '/admin'} collapsed={collapsed} color="red" />
+                    <NavLink href="/admin" Icon={ShieldCheckIcon} label="Administration" isActive={pathname === '/admin'} collapsed={collapsed} color="red" />
                 )}
 
                 {!isAuthenticated && (

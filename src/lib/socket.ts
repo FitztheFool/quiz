@@ -40,6 +40,7 @@ let battleshipSocket: Socket | null = null;
 let ludoSocket: Socket | null = null;
 let perudoSocket: Socket | null = null;
 let cantStopSocket: Socket | null = null;
+let milleBornesSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -160,4 +161,11 @@ export function getCantStopSocket(): Socket | null {
     if (!cantStopSocket) cantStopSocket = createSocket(process.env.NEXT_PUBLIC_CANT_STOP_SERVER_URL ?? "http://localhost:10013", "Can't Stop Socket");
     connectIfAuth(cantStopSocket);
     return cantStopSocket;
+}
+
+export function getMilleBornesSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!milleBornesSocket) milleBornesSocket = createSocket(process.env.NEXT_PUBLIC_MILLE_BORNES_SERVER_URL ?? "http://localhost:10014", "Mille Bornes Socket");
+    connectIfAuth(milleBornesSocket);
+    return milleBornesSocket;
 }

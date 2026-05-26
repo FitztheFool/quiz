@@ -43,7 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
 
     return (
-        <div className="flex-1 min-h-0 bg-gray-50 dark:bg-gray-950 flex">
+        <div className="flex-1 min-h-0 bg-transparent flex">
 
             {/* Overlay mobile */}
             {sidebarOpen && (

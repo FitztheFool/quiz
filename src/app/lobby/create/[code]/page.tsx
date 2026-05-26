@@ -39,6 +39,7 @@ const GAME_SERVER_URL_BY_TYPE: Partial<Record<GameType, string | undefined>> = {
     ludo:       process.env.NEXT_PUBLIC_LUDO_SERVER_URL,
     perudo:     process.env.NEXT_PUBLIC_PERUDO_SERVER_URL,
     cant_stop:  process.env.NEXT_PUBLIC_CANT_STOP_SERVER_URL,
+    mille_bornes: process.env.NEXT_PUBLIC_MILLE_BORNES_SERVER_URL,
 };
 
 type Player = { userId: string; username: string };
@@ -58,6 +59,7 @@ type LobbyMeta = {
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
     perudoOptions?: { initialDice: number };
     cantStopOptions?: { columnsToWin: number };
+    mbOptions?: { target: number; teamMode?: 'none' | '2v2'; teamDistance?: 'individual' | 'shared' };
 };
 
 
@@ -79,6 +81,7 @@ type LobbyState = {
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
     perudoOptions?: { initialDice: number };
     cantStopOptions?: { columnsToWin: number };
+    mbOptions?: { target: number; teamMode?: 'none' | '2v2'; teamDistance?: 'individual' | 'shared' };
     timeMode?: string;
     timePerQuestion?: number;
     quizId?: string | null;
@@ -105,6 +108,7 @@ import ImpostorOptions from '@/components/Lobby/Options/ImpostorOptions';
 import LudoOptions from '@/components/Lobby/Options/LudoOptions';
 import PerudoOptions from '@/components/Lobby/Options/PerudoOptions';
 import CantStopOptions from '@/components/Lobby/Options/CantStopOptions';
+import MilleBornesOptions from '@/components/Lobby/Options/MilleBornesOptions';
 
 export default function LobbyCodePage() {
     const { data: session, status } = useSession();
@@ -166,6 +170,9 @@ export default function LobbyCodePage() {
     const [ludoTeamMode, setLudoTeamMode] = useState<'none' | '2v2'>('none');
     const [perudoInitialDice, setPerudoInitialDice] = useState<number>(5);
     const [cantStopColumnsToWin, setCantStopColumnsToWin] = useState<number>(3);
+    const [mbTarget, setMbTarget] = useState<number>(1000);
+    const [mbTeamMode, setMbTeamMode] = useState<'none' | '2v2'>('none');
+    const [mbTeamDistance, setMbTeamDistance] = useState<'individual' | 'shared'>('individual');
     const [botCount, setBotCount] = useState(0);
     const [botSlots, setBotSlots] = useState<Array<{ userId: string; username: string }>>([]);
     const { setLobbyId } = useChat();
@@ -203,16 +210,21 @@ export default function LobbyCodePage() {
     }, [isWarming, gameType, socket]);
 
     useEffect(() => {
-        if (!selectedQuizId || selectedQuizTitle) return;
+        if (!selectedQuizId) return;
+        let cancelled = false;
+        // Always resolve the selected quiz's own category so it shows in the selector
+        // (host included, even when the title is already known from the picker).
         fetch(`/api/quiz/${selectedQuizId}`)
             .then(r => r.ok ? r.json() : null)
             .then(data => {
-                if (data?.title) setSelectedQuizTitle(data.title);
-                if (data?.category?.id) setSelectedQuizCategoryId(data.category.id);
-                const qCount = data?._count?.questions ?? (Array.isArray(data?.questions) ? data.questions.length : undefined);
+                if (cancelled || !data) return;
+                if (!selectedQuizTitle && data.title) setSelectedQuizTitle(data.title);
+                if (data.category?.id) setSelectedQuizCategoryId(data.category.id);
+                const qCount = data._count?.questions ?? (Array.isArray(data.questions) ? data.questions.length : undefined);
                 if (qCount !== undefined) setSelectedQuizQuestionCount(qCount);
             })
             .catch(() => { });
+        return () => { cancelled = true; };
     }, [selectedQuizId]);
 
     const myTeam: 0 | 1 | undefined = useMemo(() => {
@@ -255,6 +267,7 @@ export default function LobbyCodePage() {
                 ludoOptions: state.ludoOptions ?? prev?.ludoOptions,
                 perudoOptions: (state as { perudoOptions?: { initialDice: number } }).perudoOptions ?? prev?.perudoOptions,
                 cantStopOptions: (state as { cantStopOptions?: { columnsToWin: number } }).cantStopOptions ?? prev?.cantStopOptions,
+                mbOptions: (state as { mbOptions?: { target: number; teamMode?: 'none' | '2v2'; teamDistance?: 'individual' | 'shared' } }).mbOptions ?? prev?.mbOptions,
                 quizOptions: state.timeMode
                     ? { timeMode: state.timeMode, timePerQuestion: state.timePerQuestion ?? 15 }
                     : prev?.quizOptions,
@@ -301,6 +314,12 @@ export default function LobbyCodePage() {
                 const opt = (state as { cantStopOptions?: { columnsToWin?: number } }).cantStopOptions!;
                 setCantStopColumnsToWin(opt.columnsToWin ?? 3);
             }
+            if ((state as { mbOptions?: { target?: number; teamMode?: 'none' | '2v2'; teamDistance?: 'individual' | 'shared' } }).mbOptions) {
+                const opt = (state as { mbOptions?: { target?: number; teamMode?: 'none' | '2v2'; teamDistance?: 'individual' | 'shared' } }).mbOptions!;
+                setMbTarget(opt.target ?? 1000);
+                setMbTeamMode(opt.teamMode ?? 'none');
+                setMbTeamDistance(opt.teamDistance ?? 'individual');
+            }
             setBotCount(state.bots ?? 0);
             setBotSlots(Array.isArray(state.botSlots) ? state.botSlots : []);
 
@@ -340,7 +359,10 @@ export default function LobbyCodePage() {
             const ludoIs2v2 = g === 'ludo' && ludoTeamModeVal === '2v2';
             const ludoTeamsOk = !ludoIs2v2 || (t0 === 2 && t1 === 2);
             const ludoOk = g !== 'ludo' || ludoTeamsOk;
-            setCanStart(countOk && hasQuiz && tabooOk && unoOk && ludoOk && state.hostId === meUserId);
+            const mbTeamModeVal = state.mbOptions?.teamMode ?? 'none';
+            const mbIs2v2 = g === 'mille_bornes' && mbTeamModeVal === '2v2';
+            const mbOk = !mbIs2v2 || (t0 === 2 && t1 === 2);
+            setCanStart(countOk && hasQuiz && tabooOk && unoOk && ludoOk && mbOk && state.hostId === meUserId);
         };
 
         socket.on('lobby:state', onState);
@@ -388,6 +410,7 @@ export default function LobbyCodePage() {
                 if (m.ludoOptions) { setLudoPawnExit(m.ludoOptions.pawnExit); setLudoBonusOn6(m.ludoOptions.bonusOn6); setLudoWinMode(m.ludoOptions.winMode); setLudoTeamMode(m.ludoOptions.teamMode); }
                 if (m.perudoOptions) setPerudoInitialDice(m.perudoOptions.initialDice ?? 5);
                 if (m.cantStopOptions) setCantStopColumnsToWin(m.cantStopOptions.columnsToWin ?? 3);
+                if (m.mbOptions) { setMbTarget(m.mbOptions.target ?? 1000); setMbTeamMode(m.mbOptions.teamMode ?? 'none'); setMbTeamDistance(m.mbOptions.teamDistance ?? 'individual'); }
             }
             socket.emit('lobby:join', { lobbyId, userId: meUserId, username: meUsername, title: m?.title, description: m?.description, maxPlayers: m?.maxPlayers, isPublic: m?.isPublic });
             const gameFromUrl = searchParams.get('game');
@@ -401,6 +424,7 @@ export default function LobbyCodePage() {
             if (m?.ludoOptions) setTimeout(() => socket.emit('lobby:setLudoOptions', m!.ludoOptions), 400);
             if (m?.perudoOptions) setTimeout(() => socket.emit('lobby:setPerudoOptions', m!.perudoOptions), 400);
             if (m?.cantStopOptions) setTimeout(() => socket.emit('lobby:setCantStopOptions', m!.cantStopOptions), 400);
+            if (m?.mbOptions) setTimeout(() => socket.emit('lobby:setMilleBornesOptions', m!.mbOptions), 400);
             if (m?.quizOptions) setTimeout(() => socket.emit('lobby:setQuizOptions', m!.quizOptions), 400);
         }
 
@@ -442,7 +466,7 @@ export default function LobbyCodePage() {
     const isAdmin = session.user.role === 'ADMIN';
     const isHost = hostId === me;
     const selectedGame = LOBBY_GAME_OPTIONS.find(g => g.value === gameType);
-    const isMaxLocked = gameType === 'puissance4' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2');
+    const isMaxLocked = gameType === 'puissance4' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2') || (gameType === 'mille_bornes' && mbTeamMode === '2v2');
     const formatTime = (t: number) => t < 60 ? `${t}s` : `${Math.floor(t / 60)} min${t % 60 ? ` ${t % 60}s` : ''}`;
 
     const handleGameTypeChange = (g: GameType) => {
@@ -476,7 +500,7 @@ export default function LobbyCodePage() {
     };
 
     return (
-        <main className="bg-gray-50 dark:bg-gray-950 pb-8">
+        <main className="bg-transparent pb-8">
 
             {/* Server warm-up overlay */}
             {isWarming && (
@@ -494,7 +518,7 @@ export default function LobbyCodePage() {
             )}
 
             {/* Sticky header */}
-            <div className="sticky top-0 z-20 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-4 md:px-6 lg:px-8 py-3">
+            <div className="sticky top-0 z-20 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-4 md:px-6 lg:px-8 py-3">
                 <div className="max-w-6xl mx-auto flex items-center gap-4">
                     <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 shadow-lg shadow-primary-500/25 flex-shrink-0 text-white">
                         <GameIcon gameType={selectedGame?.value ?? ''} className="w-5 h-5" />
@@ -674,6 +698,13 @@ export default function LobbyCodePage() {
                                 cantStopColumnsToWin={cantStopColumnsToWin} setCantStopColumnsToWin={setCantStopColumnsToWin} />
                         )}
 
+                        {gameType === 'mille_bornes' && (
+                            <MilleBornesOptions isHost={isHost} socket={socket}
+                                mbTarget={mbTarget} setMbTarget={setMbTarget}
+                                mbTeamMode={mbTeamMode} setMbTeamMode={setMbTeamMode}
+                                mbTeamDistance={mbTeamDistance} setMbTeamDistance={setMbTeamDistance} />
+                        )}
+
                         {NO_OPTIONS_GAMES[gameType] && (
                             <div className="bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-4 text-center">
                                 <p className="text-xs text-gray-400 dark:text-gray-500 italic">{NO_OPTIONS_GAMES[gameType]}</p>
@@ -715,7 +746,7 @@ export default function LobbyCodePage() {
                         </div>
 
                         {/* Équipes */}
-                        {(gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2')) && (
+                        {(gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2') || (gameType === 'mille_bornes' && mbTeamMode === '2v2')) && (
                             <div className="bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-5">
                                 <div className="flex items-center justify-between mb-3">
                                     <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Équipes</h2>
@@ -732,14 +763,14 @@ export default function LobbyCodePage() {
                                         const teamBots = botSlots.filter(b => teams?.[b.userId] === team);
                                         const myTeamLocal = session?.user?.id ? teams?.[session.user.id] : undefined;
                                         return (
-                                            <div key={team} className={`rounded-xl border p-3 space-y-2 ${team === 0 ? 'border-blue-500/30 bg-blue-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+                                            <div key={team} className={`rounded-xl border p-3 space-y-2 ${team === 0 ? 'border-primary-500/30 bg-primary-500/5' : 'border-felt-500/30 bg-felt-500/5'}`}>
                                                 <div className="flex items-center justify-between">
-                                                    <span className={`text-xs font-semibold ${team === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                        <span className={`w-2 h-2 rounded-full inline-block mr-1 ${team === 0 ? 'bg-blue-500' : 'bg-red-500'}`} />{team === 0 ? 'Équipe Bleue' : 'Équipe Rouge'}
+                                                    <span className={`text-xs font-semibold ${team === 0 ? 'text-primary-600 dark:text-primary-400' : 'text-felt-700 dark:text-felt-400'}`}>
+                                                        <span className={`w-2 h-2 rounded-full inline-block mr-1 ${team === 0 ? 'bg-primary-500' : 'bg-felt-600'}`} />{team === 0 ? 'Équipe Ambre' : 'Équipe Verte'}
                                                     </span>
                                                     <button onClick={() => socket?.emit('lobby:setTeam', { team })}
                                                         className={`text-xs px-2 py-0.5 rounded-full font-semibold transition-all ${myTeamLocal === team
-                                                            ? (team === 0 ? 'bg-blue-500 text-white' : 'bg-red-500 text-white')
+                                                            ? (team === 0 ? 'bg-primary-500 text-white' : 'bg-felt-600 text-white')
                                                             : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>
                                                         {myTeamLocal === team ? <><CheckIcon className="w-3 h-3 inline mr-0.5" />Rejoint</> : 'Rejoindre'}
                                                     </button>
@@ -747,14 +778,14 @@ export default function LobbyCodePage() {
                                                 <div className="space-y-1">
                                                     {teamPlayers.map(p => (
                                                         <div key={p.userId} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                                                            <span className={`w-1.5 h-1.5 rounded-full ${team === 0 ? 'bg-blue-400' : 'bg-red-400'}`} />
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${team === 0 ? 'bg-primary-400' : 'bg-felt-500'}`} />
                                                             {p.username}
                                                             {p.userId === hostId && <StarIcon className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />}
                                                         </div>
                                                     ))}
                                                     {teamBots.map(b => (
                                                         <div key={b.userId} className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 italic">
-                                                            <span className={`w-1.5 h-1.5 rounded-full ${team === 0 ? 'bg-blue-400' : 'bg-red-400'}`} />
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${team === 0 ? 'bg-primary-400' : 'bg-felt-500'}`} />
                                                             {b.username}
                                                         </div>
                                                     ))}
@@ -813,7 +844,7 @@ export default function LobbyCodePage() {
 
                             {maxPlayers > 0 && (
                                 <div className="mb-3 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
-                                    <div className="bg-gradient-to-r from-primary-500 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
+                                    <div className="bg-gradient-to-r from-primary-400 to-primary-600 h-1.5 rounded-full transition-all duration-500"
                                         style={{ width: `${Math.min(((players.length + botCount) / maxPlayers) * 100, 100)}%` }} />
                                 </div>
                             )}
@@ -891,7 +922,7 @@ export default function LobbyCodePage() {
                                                 ? <span className="flex items-center justify-center gap-1.5"><PlayIcon className="w-4 h-4" />Lancer {selectedGame?.label ?? 'la partie'} !</span>
                                                 : gameType === 'quiz' && !selectedQuizId && players.length >= 2
                                                     ? <span className="flex items-center justify-center gap-1.5"><QuestionMarkCircleIcon className="w-4 h-4" />Choix du quiz…</span>
-                                                    : (gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2')) && !tabooOk
+                                                    : (gameType === 'taboo' || (gameType === 'uno' && unoTeamMode === '2v2') || (gameType === 'ludo' && ludoTeamMode === '2v2') || (gameType === 'mille_bornes' && mbTeamMode === '2v2')) && !tabooOk
                                                         ? <span className="flex items-center justify-center gap-1.5"><ClockIcon className="w-4 h-4" />En attente des équipes…</span>
                                                         : <span className="flex items-center justify-center gap-1.5"><ClockIcon className="w-4 h-4" />En attente de joueurs…</span>}
                                 </button>

@@ -235,6 +235,7 @@ export async function seedTabooAttempts(prisma: PrismaClient, players: UserLike[
                 data: {
                     userId: player.id, score: myScore, trapScore: myTrapScore,
                     rounds: totalRounds, gameType: 'TABOO', placement,
+                    team: isTeamA ? 0 : 1,
                     gameId, quizId: null, abandon, afk,
                     createdAt: new Date(dates[g].getTime() + p * 1000),
                 },
@@ -693,6 +694,125 @@ export async function seedPerudoAttempts(prisma: PrismaClient, players: UserLike
         console.log(`  ✅ Perudo ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
     }
     console.log(`✅ ${total} parties Perudo créées`);
+}
+
+// ─── CANT STOP ────────────────────────────────────────────────────────────────
+
+export async function seedCantStopAttempts(prisma: PrismaClient, players: UserLike[]) {
+    console.log('\n🎲 Création des parties Can\'t Stop...');
+    const total = 35;
+
+    const dates = Array.from({ length: total }, (_, g) =>
+        daysAgo(Math.floor((g / total) * 70), Math.floor(Math.random() * 36))
+    ).sort((a, b) => a.getTime() - b.getTime());
+
+    for (let g = 0; g < total; g++) {
+        const gameId = crypto.randomUUID();
+        const cap = Math.min(4, players.length);
+        const playerCount = Math.floor(Math.random() * (cap - 1)) + 2;
+        const ranked = shufflePlayers(players).slice(0, playerCount);
+
+        const bots = maybeBots(() => 0, 2);
+        const vsBot = bots.length > 0;
+
+        // 1-win model: a single winner (placement 1, score 1), others 0. Bots interleaved.
+        const humanCount = ranked.length;
+        const positions = [...Array(humanCount + bots.length).keys()].sort(() => Math.random() - 0.5);
+        const humanPositions = positions.slice(0, humanCount);
+        const botPositions = positions.slice(humanCount);
+        bots.forEach((b, i) => { b.placement = botPositions[i] + 1; b.score = botPositions[i] === 0 ? 1 : 0; });
+
+        for (let p = 0; p < ranked.length; p++) {
+            const placement = humanPositions[p] + 1;
+            const isWinner = placement === 1;
+            const { abandon, afk } = randomLeaveFlags(isWinner);
+            await prisma.attempt.create({
+                data: {
+                    userId: ranked[p].id,
+                    score: isWinner ? 1 : 0,
+                    gameType: 'CANT_STOP', placement,
+                    gameId, quizId: null, trapScore: 0,
+                    abandon, afk, vsBot,
+                    ...(vsBot && p === 0 ? { botScores: bots } : {}),
+                    createdAt: new Date(dates[g].getTime() + p * 1000),
+                },
+            });
+        }
+        console.log(`  ✅ Can't Stop ${g + 1}/${total} — ${playerCount} joueurs${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
+    }
+    console.log(`✅ ${total} parties Can't Stop créées`);
+}
+
+// ─── MILLE BORNES ───────────────────────────────────────────────────────────────
+
+export async function seedMilleBornesAttempts(prisma: PrismaClient, players: UserLike[]) {
+    console.log('\n🚗 Création des parties Mille Bornes...');
+    const total = 40;
+    const mbScore = () => Math.floor(Math.random() * 1400) + 400; // 400–1800 pts
+
+    const dates = Array.from({ length: total }, (_, g) =>
+        daysAgo(Math.floor((g / total) * 80), Math.floor(Math.random() * 36))
+    ).sort((a, b) => a.getTime() - b.getTime());
+
+    for (let g = 0; g < total; g++) {
+        const gameId = crypto.randomUUID();
+        const is2v2 = players.length >= 4 && Math.random() < 0.4;
+
+        if (is2v2) {
+            // 2 équipes de 2 (humains). Équipe gagnante = plus haut cumul.
+            const participants = shufflePlayers(players).slice(0, 4);
+            const scores = participants.map(() => mbScore());
+            const teamTotal = [scores[0] + scores[1], scores[2] + scores[3]];
+            const winTeam = teamTotal[0] >= teamTotal[1] ? 0 : 1;
+            for (let p = 0; p < 4; p++) {
+                const team = p < 2 ? 0 : 1;
+                const placement = team === winTeam ? 1 : 2;
+                const { abandon, afk } = randomLeaveFlags(placement === 1);
+                await prisma.attempt.create({
+                    data: {
+                        userId: participants[p].id, score: scores[p],
+                        gameType: 'MILLE_BORNES', placement, team,
+                        gameId, quizId: null, trapScore: 0, abandon, afk, vsBot: false,
+                        createdAt: new Date(dates[g].getTime() + p * 1000),
+                    },
+                });
+            }
+            console.log(`  ✅ Mille Bornes ${g + 1}/${total} — 2v2 — équipe ${winTeam === 0 ? 'Ambre' : 'Verte'} gagne`);
+        } else {
+            // Chacun pour soi (2–4 joueurs, éventuellement des bots).
+            const cap = Math.min(4, players.length);
+            const playerCount = Math.floor(Math.random() * (cap - 1)) + 2;
+            const participants = shufflePlayers(players).slice(0, playerCount);
+            const bots = maybeBots(mbScore, 2);
+            const vsBot = bots.length > 0;
+
+            const ranked = participants
+                .map(player => ({ player, score: mbScore() }))
+                .sort((a, b) => b.score - a.score);
+            if (vsBot) assignBotPlacements(bots, ranked.map(r => r.score));
+
+            const combined = [
+                ...ranked.map((r, i) => ({ score: r.score, isBot: false, idx: i })),
+                ...bots.map(b => ({ score: b.score, isBot: true, idx: -1 })),
+            ].sort((a, b) => b.score - a.score);
+            const humanPlacement = (i: number) => combined.findIndex(c => !c.isBot && c.idx === i) + 1;
+
+            for (let p = 0; p < ranked.length; p++) {
+                const { abandon, afk } = randomLeaveFlags(humanPlacement(p) === 1);
+                await prisma.attempt.create({
+                    data: {
+                        userId: ranked[p].player.id, score: ranked[p].score,
+                        gameType: 'MILLE_BORNES', placement: humanPlacement(p),
+                        gameId, quizId: null, trapScore: 0, abandon, afk, vsBot,
+                        ...(vsBot && p === 0 ? { botScores: bots } : {}),
+                        createdAt: new Date(dates[g].getTime() + p * 1000),
+                    },
+                });
+            }
+            console.log(`  ✅ Mille Bornes ${g + 1}/${total} — ${playerCount} joueurs (FFA)${vsBot ? ` + ${bots.length} bot(s)` : ''}`);
+        }
+    }
+    console.log(`✅ ${total} parties Mille Bornes créées`);
 }
 
 // ─── BREAKOUT ─────────────────────────────────────────────────────────────────

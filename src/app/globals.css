@@ -5,7 +5,7 @@
 @layer base {
   body {
     @apply min-h-dvh flex flex-col text-gray-900 transition-colors duration-200;
-    background-color: #f7f1e6; /* warm cream — "Game Night" base */
+    background-color: #fafaf9; /* stone-50 — neutral app base (matches dashboard) */
   }
 
   .dark body {

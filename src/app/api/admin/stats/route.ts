@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
         score: true,
         gameType: true,
         placement: true,
+        team: true,
         gameId: true,
         abandon: true,
         afk: true,
@@ -190,7 +191,7 @@ export async function GET(req: NextRequest) {
         gameType: string;
         gameId: string;
         quiz: { id: string; title: string } | null;
-        players: { username: string; score: number; placement: number | null; abandon?: boolean; afk?: boolean; isBot?: boolean }[];
+        players: { username: string; score: number; placement: number | null; team?: number | null; abandon?: boolean; afk?: boolean; isBot?: boolean }[];
     }>();
 
     for (const gameId of pageGameIds) {
@@ -208,16 +209,17 @@ export async function GET(req: NextRequest) {
                 username: a.user.username ?? 'Anonyme',
                 score: a.score,
                 placement: a.placement,
+                team: a.team,
                 abandon: a.abandon ?? false,
                 afk: a.afk ?? false,
             });
         }
     }
 
-    const botScoresByGame = new Map<string, { username: string; score: number; placement: number }[]>();
+    const botScoresByGame = new Map<string, { username: string; score: number; placement: number; team?: number | null }[]>();
     for (const a of allPlayersForPage) {
         if (!a.vsBot || !a.botScores || !a.gameId) continue;
-        const bots = a.botScores as { username: string; score: number; placement: number }[];
+        const bots = a.botScores as { username: string; score: number; placement: number; team?: number | null }[];
         if (Array.isArray(bots) && bots.length > 0 && !botScoresByGame.has(a.gameId)) {
             botScoresByGame.set(a.gameId, bots);
         }
@@ -230,7 +232,7 @@ export async function GET(req: NextRequest) {
         const storedBots = botScoresByGame.get(gameId);
         if (storedBots && storedBots.length > 0) {
             for (const bot of storedBots) {
-                game.players.push({ username: bot.username, score: bot.score, placement: bot.placement, abandon: false, afk: false, isBot: true });
+                game.players.push({ username: bot.username, score: bot.score, placement: bot.placement, team: bot.team ?? null, abandon: false, afk: false, isBot: true });
             }
         } else {
             const usedPlacements = new Set(game.players.map(p => p.placement).filter(p => p != null));

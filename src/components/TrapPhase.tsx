@@ -272,8 +272,8 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
     const trapColor = (game.trapTimeLeft ?? 999) <= 10 ? '#ef4444'
         : (game.trapTimeLeft ?? 999) <= 20 ? '#f97316' : '#f59e0b';
 
-    const teamBorder = myTeam === 0 ? 'bg-blue-500/10 border-blue-500/20'
-        : myTeam === 1 ? 'bg-red-500/10 border-red-500/20'
+    const teamBorder = myTeam === 0 ? 'bg-primary-500/10 border-primary-500/20'
+        : myTeam === 1 ? 'bg-felt-500/10 border-felt-500/20'
             : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10';
 
     return (
@@ -297,7 +297,7 @@ export function TrapPhase({ game, myId, myTeam, lobbyId, socketRef }: TrapPhaseP
             {myTeam !== null && wordToPiege ? (
                 <div className="mb-5 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                     <p className="text-xs text-gray-500 dark:text-white/40 uppercase tracking-widest mb-1">
-                        Mot à piéger — pour l'équipe {myTeam === 0 ? <>rouge <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 align-middle" /></> : <>bleue <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 align-middle" /></>}
+                        Mot à piéger — pour l'équipe {myTeam === 0 ? <>verte <span className="inline-block w-2.5 h-2.5 rounded-full bg-felt-600 align-middle" /></> : <>ambre <span className="inline-block w-2.5 h-2.5 rounded-full bg-primary-500 align-middle" /></>}
                     </p>
                     <p style={{ fontFamily: "'Bebas Neue', cursive" }}
                         className="text-2xl sm:text-3xl md:text-4xl tracking-wider break-words leading-tight text-yellow-400">
