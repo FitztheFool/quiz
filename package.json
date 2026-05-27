@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-prod": "tsx prisma/seed-prod.ts",
+    "db:sync-words": "tsx prisma/sync-words.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "kill:port": "fuser -k 3000/tcp",

@@ -98,6 +98,19 @@ function BreakoutIcon({ className }: { className?: string }) {
     );
 }
 
+function SutomIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className}>
+            <rect x="2.5" y="6.5" width="6" height="6" rx="1.2" fill="currentColor" stroke="none" />
+            <rect x="9.5" y="6.5" width="6" height="6" rx="1.2" />
+            <rect x="16.5" y="6.5" width="5" height="6" rx="1.2" />
+            <rect x="2.5" y="14" width="6" height="6" rx="1.2" />
+            <rect x="9.5" y="14" width="6" height="6" rx="1.2" fill="currentColor" stroke="none" />
+            <rect x="16.5" y="14" width="5" height="6" rx="1.2" />
+        </svg>
+    );
+}
+
 const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
     UNO:        RectangleStackIcon,
     SKYJOW:     Squares2X2Icon,
@@ -116,6 +129,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     SNAKE:      SnakeIcon,
     PACMAN:     PacmanIcon,
     BREAKOUT:   BreakoutIcon,
+    SUTOM:      SutomIcon,
     // lowercase keys for gameConfig key-based lookups
     uno:        RectangleStackIcon,
     skyjow:     Squares2X2Icon,
@@ -134,6 +148,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     snake:      SnakeIcon,
     pacman:     PacmanIcon,
     breakout:   BreakoutIcon,
+    sutom:      SutomIcon,
 };
 
 interface Props {

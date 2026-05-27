@@ -2,7 +2,7 @@
 import { PrismaClient } from '../src/generated/prisma/client';
 import { seedQuizzes } from './seed-quiz';
 
-const wordGroups: Record<string, string[]> = {
+export const wordGroups: Record<string, string[]> = {
     'Éclairage': [
         'HALOGÈNE', 'RÉVERBÈRE', 'LAMPADAIRE', 'PHARE', 'BOUGIE', 'LANTERNE', 'PROJECTEUR',
         'NÉON', 'TORCHE', 'VEILLEUSE', 'LUSTRE', 'APPLIQUE', 'LAMPE À ARC',
@@ -122,6 +122,62 @@ const wordGroups: Record<string, string[]> = {
         'TRONÇONNEUSE', 'PERCEUSE', 'SCIE', 'RABOT',
         'ÉQUERRE', 'CISEAU À BOIS', 'MARTEAU', 'PINCE-MONSEIGNEUR', 'TOURNEVIS',
     ],
+    'Fruits & légumes': [
+        'ABRICOT', 'AUBERGINE', 'COURGETTE', 'POTIRON', 'ARTICHAUT', 'RHUBARBE', 'GROSEILLE',
+        'MYRTILLE', 'BETTERAVE', 'ASPERGE', 'GRENADE', 'FIGUE', 'MANGUE', 'POIREAU',
+    ],
+    'Boissons': [
+        'LIMONADE', 'EXPRESSO', 'TISANE', 'CIDRE', 'HYDROMEL', 'SMOOTHIE', 'MOJITO',
+        'CAPPUCCINO', 'GRENADINE', 'NECTAR', 'MILKSHAKE', 'CHAMPAGNE',
+    ],
+    'Vêtements': [
+        'ÉCHARPE', 'MANTEAU', 'CHAUSSETTE', 'BERMUDA', 'IMPERMÉABLE', 'SALOPETTE', 'CRAVATE',
+        'MOUFLE', 'CASQUETTE', 'KIMONO', 'PONCHO', 'GILET',
+    ],
+    'Mobilier': [
+        'COMMODE', 'TABOURET', 'ÉTAGÈRE', 'FAUTEUIL', 'CANAPÉ', 'BUFFET', 'HAMAC',
+        'PARAVENT', 'PORTEMANTEAU', 'BANQUETTE', 'PUPITRE', 'BERCEAU',
+    ],
+    'Émotions': [
+        'COLÈRE', 'JALOUSIE', 'ENTHOUSIASME', 'MÉLANCOLIE', 'SÉRÉNITÉ', 'ANGOISSE', 'EUPHORIE',
+        'COMPASSION', 'FIERTÉ', 'TENDRESSE', 'EFFROI', 'GRATITUDE',
+    ],
+    'Couleurs': [
+        'TURQUOISE', 'ÉCARLATE', 'INDIGO', 'MAGENTA', 'OCRE', 'POURPRE', 'ÉMERAUDE',
+        'LAVANDE', 'CARMIN', 'AZUR', 'FUCHSIA', 'GRENAT',
+    ],
+    'Matériaux': [
+        'ALUMINIUM', 'BRONZE', 'GRANIT', 'PORCELAINE', 'CUIVRE', 'MARBRE', 'PLATINE',
+        'ARGILE', 'BÉTON', 'IVOIRE', 'VELOURS', 'LIÈGE',
+    ],
+    'Instruments de musique': [
+        'VIOLONCELLE', 'TROMPETTE', 'ACCORDÉON', 'HARPE', 'CLARINETTE', 'XYLOPHONE', 'TAMBOURIN',
+        'CORNEMUSE', 'BANJO', 'HARMONICA', 'MANDOLINE', 'SAXOPHONE',
+    ],
+    'Insectes': [
+        'LIBELLULE', 'COCCINELLE', 'SAUTERELLE', 'MOUSTIQUE', 'LUCIOLE', 'MILLE-PATTES', 'CIGALE',
+        'PUCERON', 'BOURDON', 'TERMITE', 'FOURMI', 'PAPILLON',
+    ],
+    'Oiseaux': [
+        'HIRONDELLE', 'ROSSIGNOL', 'CHOUETTE', 'PÉLICAN', 'COLIBRI', 'MÉSANGE', 'ALBATROS',
+        'MOINEAU', 'CORBEAU', 'PIVERT', 'CIGOGNE', 'HIBOU',
+    ],
+    'Créatures fantastiques': [
+        'SORCIÈRE', 'DRAGON', 'LICORNE', 'OGRE', 'LUTIN', 'TROLL', 'VAMPIRE',
+        'GOBELIN', 'CHIMÈRE', 'SIRÈNE', 'PHÉNIX', 'GRIFFON',
+    ],
+    'Espace': [
+        'SATELLITE', 'FUSÉE', 'NAVETTE', 'COSMONAUTE', 'MÉTÉORITE', 'CONSTELLATION', 'ORBITE',
+        'CRATÈRE', 'SUPERNOVA', 'GALAXIE', 'COMBINAISON', 'APESANTEUR',
+    ],
+    'Jeux & jouets': [
+        'TOUPIE', 'CERF-VOLANT', 'MARELLE', 'DOMINO', 'KALÉIDOSCOPE', 'PUZZLE', 'BILBOQUET',
+        'OSSELET', 'YOYO', 'TOBOGGAN', 'BALANÇOIRE', 'PELUCHE',
+    ],
+    'Phénomènes naturels': [
+        'ARC-EN-CIEL', 'AURORE', 'MARÉE', 'ÉCLIPSE', 'SÉISME', 'ÉRUPTION', 'TSUNAMI',
+        'GEYSER', 'MIRAGE', 'ROSÉE', 'BROUILLARD', 'FOUDRE',
+    ],
 };
 
 export async function seedShared(prisma: PrismaClient, randomUserId: string) {
@@ -159,15 +215,15 @@ export async function seedShared(prisma: PrismaClient, randomUserId: string) {
 }
 
 export async function cleanDatabase(prisma: PrismaClient) {
-    await prisma.account.deleteMany();
-    await prisma.session.deleteMany();
-    await prisma.verificationToken.deleteMany();
-    await prisma.answer.deleteMany();
-    await prisma.question.deleteMany();
-    await prisma.attempt.deleteMany();
-    await prisma.quiz.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.user.deleteMany();
+    // await prisma.account.deleteMany();
+    // await prisma.session.deleteMany();
+    // await prisma.verificationToken.deleteMany();
+    // await prisma.answer.deleteMany();
+    // await prisma.question.deleteMany();
+    // await prisma.attempt.deleteMany();
+    // await prisma.quiz.deleteMany();
+    // await prisma.category.deleteMany();
+    // await prisma.user.deleteMany();
     await prisma.word.deleteMany();
     await prisma.wordGroup.deleteMany();
 }

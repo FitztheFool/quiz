@@ -197,6 +197,17 @@ export const GAME_CONFIG = {
         rules: "Faites tomber et orientez les pièces pour former des lignes horizontales complètes. Une ligne complète est éliminée. La partie se termine quand les pièces atteignent le haut.",
         score: "100 pts par ligne × niveau, 300 pour 2 lignes, 500 pour 3, 800 pour un Tetris (4 lignes). Meilleur score conservé.",
     },
+    sutom: {
+        gameType: 'SUTOM' as const,
+        label: 'Sutom',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Devinez le mot mystère en 6 essais — à la française !",
+        players: '1 joueur',
+        rules: "Un mot français est à deviner ; sa première lettre et son nombre de lettres sont donnés. À chaque essai, tapez un mot de la bonne longueur commençant par cette lettre. Les lettres bien placées s'allument, les lettres présentes mais mal placées sont signalées, les autres sont absentes. Vous avez 6 tentatives.",
+        score: "Victoire = (7 − nombre d'essais) × 100 + 25 par lettre du mot. Gagner vite sur un mot long rapporte le plus. Seul votre meilleur score est conservé.",
+    },
 } as const;
 
 export type GameType = keyof typeof GAME_CONFIG;
@@ -234,6 +245,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     pacman: [1],
     breakout: [1],
     tetris: [1],
+    sutom: [1],
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {

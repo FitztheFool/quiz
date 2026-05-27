@@ -48,6 +48,7 @@ enum GameType {
   PERUDO
   CANT_STOP
   MILLE_BORNES
+  SUTOM
 }
 
 model Account {

@@ -3,7 +3,7 @@ import type React from 'react';
 interface Props {
     icon: React.ReactNode;
     label: string;
-    value: number;
+    value: number | string;
     color: string;
     align?: 'left' | 'center' | 'right';
 }
