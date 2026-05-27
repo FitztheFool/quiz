@@ -15,6 +15,7 @@ import BotBadge from '@/components/shared/BotBadge';
 import Board from '@/components/CantStop/Board';
 import SplitChoice from '@/components/CantStop/SplitChoice';
 import { colorForIndex } from '@/components/CantStop/colors';
+import { GameLogSidebar } from '@/components/GameLog';
 import { TrophyIcon, XCircleIcon, CpuChipIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export default function CantStopPage() {
@@ -72,7 +73,8 @@ export default function CantStopPage() {
                 />
             )}
 
-            <main className="flex-1 flex flex-col items-center gap-4 p-3 md:p-6">
+            <main className="flex-1 flex flex-col lg:flex-row gap-4 p-3 md:p-6">
+              <div className="flex-1 flex flex-col items-center gap-4 min-w-0">
                 {bustedFlash && (
                     <div className="px-4 py-2 rounded-xl bg-red-600/80 text-white font-bold text-sm animate-pulse">
                         <ExclamationTriangleIcon className="inline-block w-4 h-4 align-middle mr-1" />
@@ -137,6 +139,9 @@ export default function CantStopPage() {
                         Vous êtes éliminé — observez la fin de la partie.
                     </div>
                 )}
+              </div>
+
+              <GameLogSidebar entries={state.log ?? []} />
             </main>
 
             {state.phase === 'ended' && winner && !modalDismissed && (

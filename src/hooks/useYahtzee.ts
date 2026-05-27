@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getYahtzeeSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 export type ScoreCard = {
     ones: number | null; twos: number | null; threes: number | null;
@@ -23,6 +24,7 @@ export type GameState = {
     currentIndex: number; turn: number;
     phase: 'rolling' | 'scoring' | 'ended';
     currentUserId: string;
+    log?: GameLogEntry[];
 };
 
 export type ResultEntry = {

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getJustOneSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export function useJustOne({
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
     const [inactivityEndsAt, setInactivityEndsAt] = useState<number | null>(null);
     const [kickedPlayers, setKickedPlayers] = useState<{ id: string; name: string }[]>([]);
+    const [log, setLog] = useState<GameLogEntry[]>([]);
 
     const isGuesser = guesserId === userId;
 
@@ -86,6 +88,7 @@ export function useJustOne({
             playersRef.current = ps;
             setPlayers(ps);
         });
+        socket.on('just_one:log', ({ log: l }: { log: GameLogEntry[] }) => setLog(l ?? []));
 
         socket.on('just_one:roundStart', (payload: {
             guesserId: string; guesserName: string; card?: { words: string[] };
@@ -165,6 +168,7 @@ export function useJustOne({
         return () => {
             socket.off('notFound', onNotFound);
             socket.off('just_one:players');
+            socket.off('just_one:log');
             socket.off('just_one:roundStart');
             socket.off('just_one:writeClues');
             socket.off('just_one:clueSubmitted');
@@ -231,6 +235,7 @@ export function useJustOne({
         inactivityEndsAt,
         kickedPlayers,
         isGuesser,
+        log,
         pickWord,
         submitClue,
         submitGuess,

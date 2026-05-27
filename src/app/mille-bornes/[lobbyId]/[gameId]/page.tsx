@@ -13,7 +13,7 @@ import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import Card from '@/components/MilleBornes/Card';
 import PlayerBoard from '@/components/MilleBornes/PlayerBoard';
-import ActionLog from '@/components/MilleBornes/ActionLog';
+import { GameLogSidebar } from '@/components/GameLog';
 import ScoreBreakdown from '@/components/MilleBornes/ScoreBreakdown';
 import { canPlayNow, canAttackTarget, canRemedyHelp, cardTitle, HAZARD_LABEL, SAFETY_LABEL } from '@/components/MilleBornes/labels';
 import { TrophyIcon, XCircleIcon, CpuChipIcon, BoltIcon } from '@heroicons/react/24/outline';
@@ -132,7 +132,8 @@ export default function MilleBornesPage() {
                 />
             )}
 
-            <main className="flex-1 flex flex-col items-center gap-4 p-3 md:p-6">
+            <main className="flex-1 flex flex-col lg:flex-row gap-4 p-3 md:p-6">
+              <div className="flex-1 flex flex-col items-center gap-4 min-w-0">
                 {/* Team progress (2v2) */}
                 {is2v2 && (
                     <div className="w-full max-w-5xl bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl px-4 py-3">
@@ -204,9 +205,6 @@ export default function MilleBornesPage() {
                     </div>
                 )}
 
-                {/* Action feed */}
-                {state.log.length > 0 && <ActionLog entries={state.log} />}
-
                 <div className="flex-1" />
 
                 {/* My hand */}
@@ -270,6 +268,10 @@ export default function MilleBornesPage() {
                         Vous n&apos;êtes plus en course — observez la fin de la partie.
                     </div>
                 )}
+              </div>
+
+              {/* History — right sidebar */}
+              <GameLogSidebar entries={state.log} />
             </main>
 
             {/* Coup fourré celebration flash */}

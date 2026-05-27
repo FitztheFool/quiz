@@ -12,6 +12,7 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
+import { GameLogSidebar } from '@/components/GameLog';
 import { TrophyIcon, FaceFrownIcon, CheckCircleIcon, XCircleIcon, ShieldExclamationIcon, UserIcon, EyeSlashIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ export default function ImpostorPage() {
         requestUnmask,
         guessWord,
         surrender,
+        log,
     } = useImpostor({
         lobbyId,
         userId: me.userId,
@@ -211,7 +213,7 @@ export default function ImpostorPage() {
             <div className="flex-1 flex flex-col mystery-table text-white">
                 {header}
                 {timerBar}
-                <main className="p-4 flex flex-col items-center">
+                <main className="flex-1 p-4 flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4">
                     <div className="w-full max-w-lg space-y-4">
                         {roleBanner}
 
@@ -310,6 +312,7 @@ export default function ImpostorPage() {
                             </div>
                         </div>
                     </div>
+                    <GameLogSidebar entries={log ?? []} />
                 </main>
             </div>
         );
@@ -321,7 +324,7 @@ export default function ImpostorPage() {
         return (
             <div className="flex-1 flex flex-col mystery-table text-white">
                 {header}
-                <main className="p-4 flex flex-col items-center">
+                <main className="flex-1 p-4 flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4">
                     <div className="w-full max-w-lg space-y-4">
                         {roleBanner}
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
@@ -339,6 +342,7 @@ export default function ImpostorPage() {
                             </p>
                         </div>
                     </div>
+                    <GameLogSidebar entries={log ?? []} />
                 </main>
             </div>
         );
@@ -351,7 +355,7 @@ export default function ImpostorPage() {
             <div className="flex-1 flex flex-col mystery-table text-white">
                 {header}
                 {timerBar}
-                <main className="p-4 flex flex-col items-center">
+                <main className="flex-1 p-4 flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4">
                     <div className="w-full max-w-lg space-y-4">
                         {roleBanner}
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 space-y-5">
@@ -431,6 +435,7 @@ export default function ImpostorPage() {
                             )}
                         </div>
                     </div>
+                    <GameLogSidebar entries={log ?? []} />
                 </main>
             </div>
         );
@@ -444,7 +449,7 @@ export default function ImpostorPage() {
             <div className="flex-1 flex flex-col mystery-table text-white">
                 {header}
                 {timerBar}
-                <main className="p-4 flex flex-col items-center">
+                <main className="flex-1 p-4 flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4">
                     <div className="w-full max-w-lg">
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center space-y-4">
                             <MagnifyingGlassIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500" />
@@ -482,6 +487,7 @@ export default function ImpostorPage() {
                             )}
                         </div>
                     </div>
+                    <GameLogSidebar entries={log ?? []} />
                 </main>
             </div>
         );

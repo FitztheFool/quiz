@@ -20,6 +20,7 @@ import { plural } from '@/lib/utils';
 import TeamDot from '@/components/Taboo/TeamDot';
 import ScoreBar from '@/components/Taboo/ScoreBar';
 import AttemptsList, { type Attempt } from '@/components/Taboo/AttemptsList';
+import { GameLogSidebar } from '@/components/GameLog';
 
 const TABOO_LEFT = (
     <>
@@ -107,18 +108,21 @@ export default function TabooGamePage() {
                         </div>
                     }
                 />
-                <div className="flex items-center justify-center p-4 py-8">
-                    <TrapPhase
-                        game={{
-                            ...game,
-                            team0Slots: game.team0Slots ?? [],
-                            team1Slots: game.team1Slots ?? [],
-                        }}
-                        myId={myId}
-                        myTeam={myTeam}
-                        lobbyId={lobbyId}
-                        socketRef={socketRef}
-                    />
+                <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 lg:items-start justify-center">
+                    <div className="w-full lg:flex-1 flex justify-center py-4">
+                        <TrapPhase
+                            game={{
+                                ...game,
+                                team0Slots: game.team0Slots ?? [],
+                                team1Slots: game.team1Slots ?? [],
+                            }}
+                            myId={myId}
+                            myTeam={myTeam}
+                            lobbyId={lobbyId}
+                            socketRef={socketRef}
+                        />
+                    </div>
+                    <GameLogSidebar entries={game.log ?? []} />
                 </div>
             </div>
         );
@@ -134,7 +138,9 @@ export default function TabooGamePage() {
             ? (<><CheckCircleIcon className="w-5 h-5 inline-block align-middle text-green-500" /> Mot trouvé !</>)
             : game.lastTurnResult === 'fail'
                 ? (<><XCircleIcon className="w-5 h-5 inline-block align-middle text-red-500" /> Mot interdit !</>)
-                : '⏱ Temps écoulé';
+                : game.lastTurnResult === 'max_attempts'
+                    ? (<><XCircleIcon className="w-5 h-5 inline-block align-middle text-orange-500" /> Tentatives épuisées</>)
+                    : '⏱ Temps écoulé';
         const resultColor = game.lastTurnResult === 'validated'
             ? 'text-green-600 dark:text-green-400'
             : game.lastTurnResult === 'fail'
@@ -163,7 +169,8 @@ export default function TabooGamePage() {
                         </div>
                     }
                 />
-                <div className="flex items-center justify-center p-4 py-8">
+                <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 lg:items-start justify-center">
+                    <div className="w-full lg:flex-1 flex justify-center py-4">
                     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 max-w-sm w-full space-y-4">
                         <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest text-center">Fin du tour</p>
                         <p className={`text-2xl font-bold text-center ${teamColor}`}>{teamLabel}</p>
@@ -206,6 +213,8 @@ export default function TabooGamePage() {
                             <p className="mt-2 text-center text-sm text-gray-400 dark:text-white/40 italic">En attente de l'hôte…</p>
                         )}
                     </div>
+                    </div>
+                    <GameLogSidebar entries={game.log ?? []} />
                 </div>
             </div>
         );
@@ -241,7 +250,8 @@ export default function TabooGamePage() {
                         </div>
                     }
                 />
-                <div className="flex items-center justify-center p-4 py-8">
+                <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 lg:items-start justify-center">
+                    <div className="w-full lg:flex-1 flex justify-center py-4">
                     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 max-w-sm w-full space-y-4">
                         <p className="text-xs text-gray-400 dark:text-white/30 uppercase tracking-widest text-center">Prochain tour</p>
                         <p className={`text-2xl font-bold text-center ${teamColor}`}>{teamLabel}</p>
@@ -355,6 +365,8 @@ export default function TabooGamePage() {
                             </p>
                         )}
                     </div>
+                    </div>
+                    <GameLogSidebar entries={game.log ?? []} />
                 </div>
             </div>
         );
@@ -394,7 +406,8 @@ export default function TabooGamePage() {
 
             <TimerBar endsAt={game.turnDeadline ?? undefined} duration={game.turnDuration} paused={game.paused} />
 
-            <div className="flex flex-col items-center justify-center p-4 py-8 gap-4">
+            <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 lg:items-start">
+              <div className="w-full lg:flex-1 flex flex-col items-center justify-center py-4 gap-4 min-w-0">
 
                 {isOrator && (
                     <div className="w-full max-w-sm space-y-3">
@@ -499,6 +512,9 @@ export default function TabooGamePage() {
                 {myTeam === null && (
                     <p className="text-gray-400 dark:text-white/30 text-sm">Vous observez la partie…</p>
                 )}
+              </div>
+
+              <GameLogSidebar entries={game.log ?? []} />
             </div>
 
             {game.phase === 'finished' && (() => {

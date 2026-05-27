@@ -15,6 +15,7 @@ import { useSkyjow } from '@/hooks/useSkyjow';
 
 import type { CardState, Phase } from '@/hooks/useSkyjow';
 import Card, { cardColor } from '@/components/Skyjow/Card';
+import GameLog from '@/components/GameLog';
 import PlayerGrid from '@/components/Skyjow/PlayerGrid';
 import { ChartBarIcon, ClockIcon, NoSymbolIcon, ExclamationTriangleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { BoltIcon } from '@heroicons/react/24/solid';
@@ -53,6 +54,7 @@ export default function skyjowGamePage() {
         turnDuration,
         flip2EndsAt,
         flip2Duration,
+        log,
         drawDeck,
         takeDiscard,
         handleCardClick,
@@ -522,6 +524,11 @@ export default function skyjowGamePage() {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* ── Journal ── */}
+                <div className="lg:w-72 lg:shrink-0 p-3 order-4 lg:order-3 lg:overflow-y-auto border-t lg:border-t-0 lg:border-l border-black/40">
+                    <GameLog entries={log ?? []} />
                 </div>
             </main>
         </div>

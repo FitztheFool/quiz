@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getCantStopSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 export type Phase = 'rolling' | 'choosing' | 'busted' | 'ended';
 
@@ -38,6 +39,7 @@ export interface CantStopState {
     columnLengths: Record<number, number>;
     players: CantStopPlayerView[];
     spectator: boolean;
+    log?: GameLogEntry[];
 }
 
 export function isBot(player: { userId?: string } | null | undefined): boolean {

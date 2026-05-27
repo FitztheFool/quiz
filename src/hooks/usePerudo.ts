@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getPerudoSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 export type Phase = 'rolling' | 'bidding' | 'reveal' | 'ended';
 
@@ -52,6 +53,7 @@ export interface PerudoState {
     turnDuration: number;
     players: PerudoPlayerView[];
     spectator: boolean;
+    log?: GameLogEntry[];
 }
 
 export interface PerudoFinished {

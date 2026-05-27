@@ -1,7 +1,6 @@
 // src/app/just-one/[lobbyId]/page.tsx
 'use client';
 
-import { useState } from 'react';
 import { notFound } from 'next/navigation';
 import { useGamePage } from '@/hooks/useGamePage';
 import { useJustOne } from '@/hooks/useJustOne';
@@ -13,7 +12,8 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
-import { TrophyIcon, StarIcon, FaceSmileIcon, ClockIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, XCircleIcon, ForwardIcon, QuestionMarkCircleIcon, ListBulletIcon } from '@heroicons/react/24/outline';
+import { GameLogSidebar } from '@/components/GameLog';
+import { TrophyIcon, StarIcon, FaceSmileIcon, ClockIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, XCircleIcon, ForwardIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 
 // ─── Composants ───────────────────────────────────────────────────────────────
 
@@ -75,13 +75,13 @@ export default function JustOnePage() {
         myGuess,
         setMyGuess,
         lastResult,
-        history,
         finalScore,
         currentWordIndex,
         inactivityUserId,
         inactivityEndsAt,
         kickedPlayers,
         isGuesser,
+        log,
         pickWord,
         submitClue,
         submitGuess,
@@ -93,7 +93,6 @@ export default function JustOnePage() {
         onNotFound: () => setIsNotFound(true),
     });
 
-    const [showHistory, setShowHistory] = useState(false);
 
     const me = meInfo.userId;
 
@@ -360,13 +359,7 @@ export default function JustOnePage() {
                     {round > 0 && <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">Manche {round}/13 · <span className="text-blue-500">{score} pt{score !== 1 ? 's' : ''}</span></p>}
                     {guesserName && <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">{isGuesser ? 'Tu devines' : <><EyeIcon className="w-3 h-3" /><span className="font-medium">{guesserName}</span> devine</>}</p>}
                 </div>}
-                right={<>
-                    <button onClick={() => setShowHistory(h => !h)} className="text-xs px-2 sm:px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all whitespace-nowrap flex items-center gap-1">
-                        <ListBulletIcon className="w-4 h-4" />
-                        <span className="hidden sm:inline">Historique</span>
-                    </button>
-                    {roundState !== 'WAITING' && roundState !== 'END_GAME' && <SurrenderButton onSurrender={surrender} />}
-                </>}
+                right={roundState !== 'WAITING' && roundState !== 'END_GAME' && <SurrenderButton onSurrender={surrender} />}
             />
 
             <TimerBar endsAt={timerEndsAt} duration={timerDuration} />
@@ -387,25 +380,15 @@ export default function JustOnePage() {
                 ))}
             </div>
 
-            <main className="p-4 flex flex-col items-center">
+            <main className="flex-1 p-4 flex flex-col lg:flex-row items-start justify-center gap-4">
                 <div className="w-full max-w-lg space-y-4">
                     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
                         {renderPhase()}
                     </div>
 
-                    {showHistory && history.length > 0 && (
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-2">
-                            <p className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Historique</p>
-                            {[...history].reverse().map((h, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                    <span className="text-gray-400 dark:text-gray-500">Manche {h.round}</span>
-                                    <span className="font-semibold text-gray-700 dark:text-gray-300">{h.targetWord}</span>
-                                    <span>{h.result === 'CORRECT' ? <CheckCircleIcon className="w-4 h-4 text-green-500" /> : h.result === 'PASS' ? <ForwardIcon className="w-4 h-4 text-gray-400" /> : <XCircleIcon className="w-4 h-4 text-red-400" />}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
+
+                <GameLogSidebar entries={log ?? []} />
             </main>
         </div>
     );

@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getTabooSocket } from '@/lib/socket';
 import type { TrapSlotData } from '@/components/TrapPhase';
+import type { GameLogEntry } from '@/components/GameLog';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -40,8 +41,9 @@ export type TabooState = {
     gameStarted: boolean;
     trapsByPlayer: Record<string, string[]>;
     orators?: { '0': string | null; '1': string | null };
-    lastTurnResult: 'validated' | 'fail' | 'timeout' | null;
+    lastTurnResult: 'validated' | 'fail' | 'timeout' | 'max_attempts' | null;
     trapDuration: number;
+    log?: GameLogEntry[];
 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────

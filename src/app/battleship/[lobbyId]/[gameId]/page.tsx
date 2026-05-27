@@ -17,6 +17,7 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
+import { GameLogSidebar } from '@/components/GameLog';
 import { TrophyIcon, XCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { BoltIcon } from '@heroicons/react/24/solid';
 
@@ -145,8 +146,8 @@ export default function BattleshipPage() {
             )}
 
             {/* Body */}
-            <main className="flex-1 overflow-auto p-4">
-                <div className="flex flex-col items-center gap-4 h-full">
+            <main className="flex-1 overflow-auto p-4 flex flex-col lg:flex-row gap-4 items-stretch">
+                <div className="flex-1 flex flex-col items-center gap-4 min-w-0">
 
                     {/* Placement */}
                     {state.phase === 'placement' && (
@@ -198,6 +199,8 @@ export default function BattleshipPage() {
                         </div>
                     )}
                 </div>
+
+                <GameLogSidebar entries={state.log ?? []} />
             </main>
 
             {/* Game over modal */}

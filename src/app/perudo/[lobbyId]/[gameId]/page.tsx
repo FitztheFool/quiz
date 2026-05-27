@@ -18,6 +18,7 @@ import PlayerChip from '@/components/Perudo/PlayerChip';
 import RoundRecap from '@/components/Perudo/RoundRecap';
 import { colorForIndex } from '@/components/Perudo/colors';
 import BotBadge from '@/components/shared/BotBadge';
+import { GameLogSidebar } from '@/components/GameLog';
 import { TrophyIcon, XCircleIcon, CpuChipIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export default function PerudoPage() {
@@ -136,7 +137,8 @@ export default function PerudoPage() {
                 />
             )}
 
-            <main className="flex-1 flex flex-col items-center gap-4 p-3 md:p-6">
+            <main className="flex-1 flex flex-col lg:flex-row gap-4 p-3 md:p-6">
+              <div className="flex-1 flex flex-col items-center gap-4 min-w-0">
                 {/* Opponents — wood-tile cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 w-full max-w-5xl">
                     {state.players
@@ -239,6 +241,9 @@ export default function PerudoPage() {
                 {state.phase === 'reveal' && (
                     <p className="text-xs text-gray-200/80 font-semibold animate-pulse">Préparation du round suivant…</p>
                 )}
+              </div>
+
+              <GameLogSidebar entries={state.log ?? []} />
             </main>
 
             {finished && (

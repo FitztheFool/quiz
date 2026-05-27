@@ -399,7 +399,7 @@ function TrapSlotInput({ index, value, ownerInfo, onChange }: {
         ? `${colors.border} ${colors.bg}`
         : isMe && value
             ? 'border-orange-500/40 bg-orange-500/5'
-            : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5';
+            : 'border-white/10 bg-white/5';
 
     return (
         <div className="relative">
@@ -407,10 +407,10 @@ function TrapSlotInput({ index, value, ownerInfo, onChange }: {
                 value={value}
                 onChange={e => onChange(index, e.target.value)}
                 placeholder={`Mot piégé ${index + 1}`}
-                className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-24
-                    focus:outline-none placeholder:text-gray-400 dark:placeholder:text-white/20 transition-colors duration-150
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-24 font-semibold
+                    focus:outline-none placeholder:text-white/30 placeholder:font-normal transition-colors duration-150
                     ${borderClass}
-                    ${ownerUsername ? 'text-gray-500 dark:text-white/50' : 'text-gray-900 dark:text-white focus:border-orange-400/70'}`}
+                    ${(ownerUsername || (isMe && value)) ? 'text-white/90' : 'text-white focus:border-orange-400/70'}`}
             />
             {ownerUsername && colors && (
                 <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5

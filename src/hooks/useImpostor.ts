@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getImpostorSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ export function useImpostor({
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
     const [inactivityEndsAt, setInactivityEndsAt] = useState<number | null>(null);
     const [kickedPlayerIds, setKickedPlayerIds] = useState<string[]>([]);
+    const [log, setLog] = useState<GameLogEntry[]>([]);
 
     function startTimer(seconds: number) {
         setTimerDuration(seconds);
@@ -108,6 +110,7 @@ export function useImpostor({
 
         socket.on('notFound', onNotFound);
         socket.on('impostor:players', ({ players }: { players: Player[] }) => setPlayers(players));
+        socket.on('impostor:log', ({ log: l }: { log: GameLogEntry[] }) => setLog(l ?? []));
 
         socket.on('impostor:gameStart', ({ role, word, players, totalRounds, speakingOrder, misterWhiteEnabled: mwe }: {
             role: Role; word: string | null; players: Player[]; totalRounds: number; speakingOrder: string[]; misterWhiteEnabled?: boolean;
@@ -235,6 +238,7 @@ export function useImpostor({
         return () => {
             socket.off('notFound', onNotFound);
             socket.off('impostor:players');
+            socket.off('impostor:log');
             socket.off('impostor:gameStart');
             socket.off('impostor:writingPhase');
             socket.off('impostor:speakerTurn');
@@ -371,5 +375,6 @@ export function useImpostor({
         requestUnmask,
         guessWord,
         surrender,
+        log,
     };
 }

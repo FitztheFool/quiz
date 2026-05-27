@@ -16,6 +16,7 @@ import ColorDot from '@/components/Uno/ColorDot';
 import { COLOR_MAP } from '@/components/Uno/constants';
 import { TrophyIcon, EyeIcon, ExclamationTriangleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { GameLogSidebar, type GameLogEntry } from '@/components/GameLog';
 
 type CardColor = 'red' | 'green' | 'blue' | 'yellow' | 'wild';
 type Card = { id: string; color: CardColor; value: string };
@@ -57,6 +58,7 @@ type GameState = {
     spectator: boolean;
     turnEndsAt: number | null;
     turnDuration: number;
+    log?: GameLogEntry[];
 };
 
 type LobbyState = {
@@ -383,7 +385,8 @@ export default function UnoPage() {
             </div>
 
             {/* Zone centrale */}
-            <div className="flex-1 flex items-center justify-center gap-8">
+            <div className="flex-1 flex flex-col lg:flex-row items-stretch gap-4 px-3">
+              <div className="flex-1 flex items-center justify-center gap-8 min-w-0">
                 <div className="flex flex-col items-center gap-2">
                     <div
                         onClick={!gameState.spectator && gameState.isMyTurn ? () => socket?.emit('uno:drawCard') : undefined}
@@ -400,6 +403,9 @@ export default function UnoPage() {
                     {gameState.topCard && <UnoCard card={gameState.topCard} />}
                     <div className={`w-4 h-4 rounded-full ${COLOR_MAP[gameState.currentColor]} border-2 border-white`} />
                 </div>
+              </div>
+
+              <GameLogSidebar entries={gameState.log ?? []} />
             </div>
 
             {/* Indicateur de tour */}
@@ -435,7 +441,7 @@ export default function UnoPage() {
                             </button>
                         )}
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
+                    <div className="flex gap-2 pt-4 pb-2 justify-center flex-wrap">
                         {gameState.hand.map(card => (
                             <UnoCard key={card.id} card={card}
                                 playable={isPlayable(card)}

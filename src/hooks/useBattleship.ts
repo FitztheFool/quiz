@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { getBattleshipSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,8 @@ export interface BattleshipState {
     // Flags
     opponentReady: boolean;
     error: string | null;
+    // Journal
+    log: GameLogEntry[];
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -109,6 +112,7 @@ export function useBattleship({
         gameOverReason: null,
         opponentReady: false,
         error: null,
+        log: [],
     });
 
     // ── Connect ───────────────────────────────────────────────────────────────
@@ -147,7 +151,13 @@ export function useBattleship({
                 turnEndsAt: payload.turnEndsAt ?? null,
                 winnerUserId: payload.winnerUserId ?? prev.winnerUserId,
                 gameOverReason: payload.gameOverReason ?? prev.gameOverReason,
+                log: payload.log ?? prev.log,
             }));
+        });
+
+        // ── Journal ───────────────────────────────────────────────────────────
+        socket.on('battleship:log', (payload: { log: GameLogEntry[] }) => {
+            setState((prev) => ({ ...prev, log: payload.log ?? prev.log }));
         });
 
         // ── Placement start ───────────────────────────────────────────────────
@@ -291,6 +301,7 @@ export function useBattleship({
             socket.off('connect', sendJoin);
             socket.off('notFound');
             socket.off('battleship:joined');
+            socket.off('battleship:log');
             socket.off('battleship:placementStart');
             socket.off('battleship:placementConfirmed');
             socket.off('battleship:autoPlaced');

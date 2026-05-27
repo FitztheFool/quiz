@@ -16,6 +16,7 @@ import LudoBoard from '@/components/Ludo/Board';
 import Dice from '@/components/Ludo/Dice';
 import { COLOR_CLASSES } from '@/components/Ludo/boardLayout';
 import PlayerLabel from '@/components/shared/PlayerLabel';
+import { GameLogSidebar } from '@/components/GameLog';
 import { TrophyIcon, XCircleIcon, CpuChipIcon } from '@heroicons/react/24/outline';
 
 export default function LudoPage() {
@@ -142,6 +143,8 @@ export default function LudoPage() {
                         {state.options.teamMode === '2v2' && <div className="font-semibold text-blue-500">Mode 2v2</div>}
                     </div>
                 </div>
+
+                <GameLogSidebar entries={state.log ?? []} />
             </main>
 
             {state.phase === 'finished' && winnerLabel && !modalDismissed && (

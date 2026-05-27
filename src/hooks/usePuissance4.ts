@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getPuissance4Socket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 export type Cell = 0 | 1 | null;
 export type Grid = Cell[][];
@@ -22,6 +23,7 @@ export interface GameState {
     turnStartedAt: number | null;
     turnDuration: number;
     reason?: 'surrender' | 'afk' | null;
+    log?: GameLogEntry[];
 }
 
 export function isBot(player: Pick<PlayerInfo, 'userId'> | null | undefined): boolean {

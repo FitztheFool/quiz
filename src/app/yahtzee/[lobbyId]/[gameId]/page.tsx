@@ -15,6 +15,7 @@ import { useGamePage } from '@/hooks/useGamePage';
 import { useYahtzee, isBot, ScoreCard } from '@/hooks/useYahtzee';
 import SharedDie from '@/components/Dice/Die';
 import BotBadge from '@/components/shared/BotBadge';
+import GameLog from '@/components/GameLog';
 
 // ── Score calculation (client-side preview) ───────────────────────────────────
 function counts(dice: number[]) {
@@ -445,6 +446,8 @@ export default function YahtzeePage() {
                                 </div>
                             </details>
                         ))}
+
+                        <GameLog entries={game.log ?? []} />
                     </div>
                 </div>
             </div>

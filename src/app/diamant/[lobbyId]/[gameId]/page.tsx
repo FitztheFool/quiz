@@ -14,6 +14,7 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import AfkCountdown from '@/components/AfkCountdown';
+import { GameLogSidebar } from '@/components/GameLog';
 import { TrophyIcon, SparklesIcon, LockClosedIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, ClockIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -254,7 +255,8 @@ export default function DiamantPage() {
             )}
 
             {/* Body */}
-            <main className="flex-1 overflow-visible p-4 flex flex-col items-center gap-4">
+            <main className="flex-1 overflow-visible p-4 flex flex-col lg:flex-row items-stretch gap-4">
+              <div className="flex-1 flex flex-col items-center gap-4 min-w-0">
 
                 <div className="w-full max-w-3xl flex flex-col gap-5">
 
@@ -394,6 +396,9 @@ export default function DiamantPage() {
                         </>
                     )}
                 </div>
+              </div>
+
+              <GameLogSidebar entries={state.log ?? []} />
             </main>
 
             {/* Game over */}

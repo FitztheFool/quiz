@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getLudoSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 export interface LudoPawn { progress: number; }
 
@@ -36,6 +37,7 @@ export interface LudoState {
     turnDuration: number;
     options: LudoOptions;
     players: LudoPlayer[];
+    log?: GameLogEntry[];
 }
 
 export function isBot(p: { userId: string } | null | undefined): boolean {

@@ -13,6 +13,7 @@ import TimerBar from '@/components/TimerBar';
 import GamePageHeader from '@/components/GamePageHeader';
 import SurrenderButton from '@/components/SurrenderButton';
 import PlayerLabel from '@/components/shared/PlayerLabel';
+import { GameLogSidebar } from '@/components/GameLog';
 import { TrophyIcon, XCircleIcon, CpuChipIcon, ScaleIcon } from '@heroicons/react/24/outline';
 
 const ROWS = 6;
@@ -123,7 +124,8 @@ export default function Puissance4Page() {
                     />
                 )}
 
-                <main className="flex-1 flex flex-col items-center justify-center p-4 gap-6">
+                <main className="flex-1 flex flex-col lg:flex-row items-stretch gap-4 p-4">
+                  <div className="flex-1 flex flex-col items-center justify-center gap-6 min-w-0">
                     <div className="relative select-none" onMouseLeave={() => setHoverCol(null)}>
                         {isMyTurn && hoverCol !== null && gameState.grid[0][hoverCol] === null && (
                             <div
@@ -182,6 +184,9 @@ export default function Puissance4Page() {
                             ))}
                         </div>
                     </div>
+                  </div>
+
+                  <GameLogSidebar entries={gameState.log ?? []} />
                 </main>
 
                 {gameState.status === 'finished' && !modalDismissed && (

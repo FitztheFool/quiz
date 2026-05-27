@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { getDiamantSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,8 @@ export interface DiamantState {
     winnerId: string | null;
     // Erreur
     error: string | null;
+    // Journal d'actions
+    log: GameLogEntry[];
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -125,6 +128,7 @@ export function useDiamant({
         finalScores: [],
         winnerId: null,
         error: null,
+        log: [],
     });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -137,6 +141,7 @@ export function useDiamant({
         diamantOnCards: s.diamantOnCards ?? prev.diamantOnCards,
         relicsInCave: s.relicsInCave ?? prev.relicsInCave,
         relicsExited: s.relicsExited ?? prev.relicsExited,
+        log: s.log ?? prev.log,
         players: s.players
             ? s.players.map((p: any) => ({
                 ...p,

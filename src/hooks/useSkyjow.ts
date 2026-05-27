@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSkyjowSocket } from '@/lib/socket';
+import type { GameLogEntry } from '@/components/GameLog';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ export type GameState = {
     players: PlayerPublic[];
     scores: ScoreEntry[];
     lastRoundStarterIndex: number | null;
+    log?: GameLogEntry[];
 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -63,6 +65,7 @@ export function useSkyjow({
     const [drawnAction, setDrawnAction] = useState<'swap' | 'discard_flip' | null>(null);
     const [readyCount, setReadyCount] = useState(0);
     const [flip2Count, setFlip2Count] = useState(0);
+    const [log, setLog] = useState<GameLogEntry[]>([]);
     const [inactivityEndsAt, setInactivityEndsAt] = useState<number | null>(null);
     const [inactivityUserId, setInactivityUserId] = useState<string | null>(null);
     const [turnStartedAt, setTurnStartedAt] = useState<number | null>(null);
@@ -127,6 +130,7 @@ export function useSkyjow({
             setRound(state.round);
             setCurrentPlayerIndex(state.currentPlayerIndex);
             setScores(state.scores);
+            if (state.log) setLog(state.log);
         });
 
         sock.on('skyjow:turn', ({ currentUserId }) => {
@@ -328,5 +332,6 @@ export function useSkyjow({
         turnDuration,
         flip2EndsAt,
         flip2Duration,
+        log,
     };
 }
