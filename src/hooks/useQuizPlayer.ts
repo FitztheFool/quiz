@@ -32,6 +32,7 @@ export type Quiz = {
 export type Feedback = {
     isCorrect: boolean;
     correctAnswerText?: string;
+    correctAnswerIds?: string[];
 };
 
 type UserAnswer = { questionId: string; answerIds: string[] | string; text?: string };
@@ -266,7 +267,7 @@ export function useQuizPlayer({ quizId, lobbyId, resultUrl, timeMode: timeModePr
                 body: JSON.stringify(body),
             });
             const data = await res.json();
-            setFeedback({ isCorrect: data.isCorrect, correctAnswerText: data.correctAnswerText });
+            setFeedback({ isCorrect: data.isCorrect, correctAnswerText: data.correctAnswerText, correctAnswerIds: data.correctAnswerIds });
             earnedPointsRef.current += data.earnedPoints ?? 0;
 
             const userAnswerText = buildUserAnswerText(currentQuestion, selectedAnswer, selectedAnswers, freeTextAnswer, multiTextAnswers);

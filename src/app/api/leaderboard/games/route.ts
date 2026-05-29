@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
                 const draws = data.draws;
                 const score = game === 'skyjow' || game === 'just_one' ? avgScore
                     : game === 'puissance4' || game === 'battleship' || game === 'ludo' ? wins
-                    : (game === 'snake' || game === 'tetris' || game === 'pacman' || game === 'breakout') ? Math.max(...data.scores)
+                    : (game === 'snake' || game === 'tetris' || game === 'pacman' || game === 'breakout' || game === 'sutom' || game === 'space_invaders' || game === '2048' || game === 'flappy_bird') ? Math.max(...data.scores)
                         : totalScore;
                 const totalRounds = roundsByUser.get(userId) ?? 0;
                 const bestLevel = (game === 'pacman' || game === 'breakout') && data.rounds.length > 0
@@ -151,6 +151,10 @@ export async function GET(req: NextRequest) {
                         break;
                     case 'tetris':
                     case 'snake':
+                    case 'sutom':
+                    case 'space_invaders':
+                    case '2048':
+                    case 'flappy_bird':
                         detail = `${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
                     case 'pacman':

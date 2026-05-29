@@ -117,11 +117,11 @@ export default function QuizPlayer({ quizId, lobbyId, resultUrl, loginCallbackUr
                                             const isSelected = isMulti
                                                 ? selectedAnswers.includes(answer.id)
                                                 : selectedAnswer === answer.id;
-                                            const correctList = isMulti
-                                                ? feedback?.correctAnswerText?.split(', ') ?? []
-                                                : [];
+                                            // Match correct answers by ID (avoids breakage when texts contain commas).
+                                            const correctIds = feedback?.correctAnswerIds ?? [];
                                             const showCorrect = showFeedback && (
-                                                isMulti ? correctList.includes(answer.text) : feedback?.correctAnswerText === answer.text
+                                                isMulti ? correctIds.includes(answer.id)
+                                                    : (correctIds.length > 0 ? correctIds.includes(answer.id) : feedback?.correctAnswerText === answer.text)
                                             );
                                             const showWrong = showFeedback && isSelected && !showCorrect;
 

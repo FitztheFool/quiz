@@ -63,6 +63,7 @@ export async function POST(
             isCorrect,
             earnedPoints,
             correctAnswerText: correctAnswerText(normalizedQuestion),
+            correctAnswerIds: normalizedQuestion.answers.filter(a => a.isCorrect).map(a => a.id),
         });
     } catch (error) {
         console.error('Erreur check réponse:', error);

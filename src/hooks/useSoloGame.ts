@@ -12,12 +12,15 @@ export function useSoloGame({
     submitEndpoint,
     localStorageKey,
     starters,
+    allowZeroScore = false,
 }: {
     gameKey: string;
     gameType: string;
     submitEndpoint: string;
     localStorageKey: string;
     starters: Set<string>;
+    /** Submit attempts even when the final score is 0 (default: skip). */
+    allowZeroScore?: boolean;
 }) {
     const { data: session } = useSession();
 
@@ -62,7 +65,8 @@ export function useSoloGame({
     }, [phase, starters]);
 
     const submitScore = useCallback(async (finalScore: number, extraPayload?: Record<string, unknown>) => {
-        if (!session?.user || finalScore <= 0) return;
+        if (!session?.user || finalScore < 0) return;
+        if (finalScore === 0 && !allowZeroScore) return;
         setSubmitState('loading');
         try {
             const token = await (tokenRef.current ?? Promise.resolve(''));
@@ -76,7 +80,7 @@ export function useSoloGame({
         } catch {
             setSubmitState('error');
         }
-    }, [session, submitEndpoint]);
+    }, [session, submitEndpoint, allowZeroScore]);
 
     const endGame = useCallback((finalScore: number, extraPayload?: Record<string, unknown>) => {
         setPhase('over');

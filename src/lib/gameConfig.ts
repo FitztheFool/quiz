@@ -208,6 +208,39 @@ export const GAME_CONFIG = {
         rules: "Un mot français est à deviner ; sa première lettre et son nombre de lettres sont donnés. À chaque essai, tapez un mot de la bonne longueur commençant par cette lettre. Les lettres bien placées s'allument, les lettres présentes mais mal placées sont signalées, les autres sont absentes. Vous avez 6 tentatives.",
         score: "Victoire = (7 − nombre d'essais) × 100 + 25 par lettre du mot. Gagner vite sur un mot long rapporte le plus. Seul votre meilleur score est conservé.",
     },
+    space_invaders: {
+        gameType: 'SPACE_INVADERS' as const,
+        label: 'Space Invaders',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Repoussez l'invasion extraterrestre vague après vague !",
+        players: '1 joueur',
+        rules: "Déplacez votre vaisseau et tirez pour détruire les aliens avant qu'ils n'atteignent le bas. Les rangées du haut valent plus de points. Évitez leurs tirs : vous avez 3 vies. Chaque vague nettoyée en fait surgir une plus rapide.",
+        score: "10 à 30 points par alien selon la rangée. Seul votre meilleur score est conservé pour le classement.",
+    },
+    '2048': {
+        gameType: 'GAME_2048' as const,
+        label: '2048',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Fusionnez les tuiles identiques jusqu'à atteindre 2048 !",
+        players: '1 joueur',
+        rules: "Glissez les tuiles dans 4 directions ; deux tuiles de même valeur fusionnent en doublant. À chaque coup, une nouvelle tuile (2 ou 4) apparaît. La partie se termine quand plus aucun mouvement n'est possible.",
+        score: "Le score augmente de la valeur de chaque tuile fusionnée. Seul votre meilleur score est conservé.",
+    },
+    flappy_bird: {
+        gameType: 'FLAPPY_BIRD' as const,
+        label: 'Flappy Bird',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Battez des ailes pour passer entre les tuyaux !",
+        players: '1 joueur',
+        rules: "Appuyez sur Espace ou tapez l'écran pour battre des ailes et faire monter l'oiseau. La gravité le fait redescendre. Évitez les tuyaux et le sol. Un point par tuyau franchi.",
+        score: "1 point par tuyau franchi. Seul votre meilleur score est conservé pour le classement.",
+    },
 } as const;
 
 export type GameType = keyof typeof GAME_CONFIG;
@@ -246,6 +279,9 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     breakout: [1],
     tetris: [1],
     sutom: [1],
+    space_invaders: [1],
+    '2048': [1],
+    flappy_bird: [1],
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { createSoloToken } from '@/lib/soloToken';
 
-const VALID_GAMES = new Set(['PACMAN', 'BREAKOUT', 'SNAKE', 'TETRIS', 'SUTOM']);
+const VALID_GAMES = new Set(['PACMAN', 'BREAKOUT', 'SNAKE', 'TETRIS', 'SUTOM', 'SPACE_INVADERS', 'GAME_2048', 'FLAPPY_BIRD']);
 
 export async function POST(req: NextRequest) {
     const session = await auth();

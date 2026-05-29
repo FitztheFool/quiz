@@ -71,8 +71,11 @@ export async function GET(
             if (g.placement === 1) gameStats[g.gameType].wins++;
         }
 
+        const soloTypes = Object.values(GAME_CONFIG)
+            .filter(g => g.mode === 'solo')
+            .map(g => g.gameType) as GameType[];
         const soloAttempts = await prisma.attempt.findMany({
-            where: { userId: user.id, gameType: { in: ['SNAKE', 'PACMAN', 'BREAKOUT', 'TETRIS'] } },
+            where: { userId: user.id, gameType: { in: soloTypes } },
             select: { score: true, gameType: true, rounds: true },
         });
         for (const a of soloAttempts) {

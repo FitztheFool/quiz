@@ -111,6 +111,42 @@ function SutomIcon({ className }: { className?: string }) {
     );
 }
 
+function SpaceInvadersIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+            {/* Classic invader silhouette */}
+            <path d="M8 3h2v2H8V3zm6 0h2v2h-2V3zM6 5h2v2H6V5zm10 0h2v2h-2V5zM5 7h14v2H5V7zM4 9h2v2H4V9zm14 0h2v2h-2V9zM5 9h14v2H5V9zm-1 2h16v2H4v-2zm2 2h2v2H6v-2zm10 0h2v2h-2v-2zM8 15h2v2H8v-2zm6 0h2v2h-2v-2z" />
+        </svg>
+    );
+}
+
+function Twenty48Icon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className={className}>
+            <rect x="2.5" y="2.5" width="8.5" height="8.5" rx="1.5" fill="currentColor" stroke="none" />
+            <rect x="13" y="2.5" width="8.5" height="8.5" rx="1.5" />
+            <rect x="2.5" y="13" width="8.5" height="8.5" rx="1.5" />
+            <rect x="13" y="13" width="8.5" height="8.5" rx="1.5" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
+function FlappyBirdIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            {/* Bird body */}
+            <ellipse cx="11" cy="13" rx="6.5" ry="5" fill="currentColor" stroke="none" />
+            {/* Eye */}
+            <circle cx="14" cy="11.5" r="1.2" fill="white" stroke="none" />
+            <circle cx="14.4" cy="11.5" r="0.5" fill="black" stroke="none" />
+            {/* Beak */}
+            <path d="M16.5 13l3 0.5-3 1.5z" fill="currentColor" stroke="none" />
+            {/* Wing */}
+            <path d="M8 13c1.5-2 4-2 5.5-0.5" />
+        </svg>
+    );
+}
+
 const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
     UNO:        RectangleStackIcon,
     SKYJOW:     Squares2X2Icon,
@@ -130,6 +166,9 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     PACMAN:     PacmanIcon,
     BREAKOUT:   BreakoutIcon,
     SUTOM:      SutomIcon,
+    SPACE_INVADERS: SpaceInvadersIcon,
+    GAME_2048: Twenty48Icon,
+    FLAPPY_BIRD: FlappyBirdIcon,
     // lowercase keys for gameConfig key-based lookups
     uno:        RectangleStackIcon,
     skyjow:     Squares2X2Icon,
@@ -149,6 +188,9 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     pacman:     PacmanIcon,
     breakout:   BreakoutIcon,
     sutom:      SutomIcon,
+    space_invaders: SpaceInvadersIcon,
+    '2048':     Twenty48Icon,
+    flappy_bird: FlappyBirdIcon,
 };
 
 interface Props {

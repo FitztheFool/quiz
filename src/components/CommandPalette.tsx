@@ -14,7 +14,7 @@ import {
     Squares2X2Icon,
     Cog6ToothIcon,
     ShieldCheckIcon,
-    ArrowRightOnRectangleIcon,
+    ArrowRightStartOnRectangleIcon,
     BookmarkIcon,
     ListBulletIcon,
 } from '@heroicons/react/24/outline';
@@ -80,7 +80,7 @@ export default function CommandPalette() {
         }
 
         if (isAuth) {
-            all.push({ id: 'signout', label: 'Déconnexion', hint: 'COMPTE', Icon: ArrowRightOnRectangleIcon, keywords: 'logout', onSelect: () => { close(); signOut({ callbackUrl: '/' }); } });
+            all.push({ id: 'signout', label: 'Déconnexion', hint: 'COMPTE', Icon: ArrowRightStartOnRectangleIcon, keywords: 'logout', onSelect: () => { close(); signOut({ callbackUrl: '/' }); } });
         }
         return all;
     }, [isAuth, isAdmin, canCreateQuiz, pinned, router, close]);

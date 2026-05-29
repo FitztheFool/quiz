@@ -294,7 +294,7 @@ export default function Sidebar({ isOpen, isAuthenticated, userRole, isAnonymous
                 )}
             </nav>
 
-            {/* User profile + logout — always at the bottom of the sidebar */}
+            {/* User profile + logout — back at the bottom */}
             {isAuthenticated && (
                 <div className="flex-shrink-0 border-t border-gray-100 dark:border-gray-700">
                     <SidebarUser collapsed={collapsed} />

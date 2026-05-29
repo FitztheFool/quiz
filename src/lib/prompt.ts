@@ -88,9 +88,10 @@ Si une question nécessite plusieurs réponses (ex: "noms des 3 amis"), utilise 
 - Distracteurs plausibles et intelligents
 - Orthographe et grammaire parfaites
 - Difficulté parfaitement adaptée
+- **JAMAIS la réponse (ni un synonyme, ni un mot-racine, ni une traduction) dans l'énoncé de la question**. Exemple interdit : "Quel est le nom de famille de Bruce Wayne ?" → "Wayne" est déjà dans la question. Reformule (ex: "Quel est le nom de famille de Batman ?").
 
 **Images** :
-Ajoute "imageQuery" (2-5 mots en anglais) sur 25% à 40% des questions lorsqu'une image apporte une vraie valeur pédagogique.
+Ajoute "imageQuery" (2-5 mots en anglais) sur 40% à 60% des questions lorsqu'une image apporte une vraie valeur pédagogique.
 
 **SCHÉMA JSON À RESPECTER EXACTEMENT** :
 

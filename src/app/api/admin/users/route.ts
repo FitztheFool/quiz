@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
             : user.role !== 'GUEST' ? ['credentials'] : [],
         totalAttempts: attempts.length,
         quizAttempts: attempts.filter(a => a.gameType === 'QUIZ').length,
-        soloAttempts: attempts.filter(a => a.gameType === 'SNAKE' || a.gameType === 'PACMAN' || a.gameType === 'BREAKOUT').length,
+        soloAttempts: attempts.filter(a => a.gameType === 'SNAKE' || a.gameType === 'PACMAN' || a.gameType === 'BREAKOUT' || a.gameType === 'TETRIS' || a.gameType === 'SUTOM' || a.gameType === 'SPACE_INVADERS' || a.gameType === 'GAME_2048' || a.gameType === 'FLAPPY_BIRD').length,
     }));
 
     return NextResponse.json({

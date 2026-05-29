@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
 import {
-    ArrowRightOnRectangleIcon,
+    ArrowRightStartOnRectangleIcon,
     UserCircleIcon,
     Cog6ToothIcon,
     ChevronUpIcon,
@@ -37,7 +37,7 @@ export default function SidebarUser({ collapsed }: Props) {
     const isAdmin = role === 'ADMIN';
 
     return (
-        <div ref={wrapRef} className="relative px-2 py-3">
+        <div ref={wrapRef} className="relative px-2 py-3 flex flex-col">
             <button
                 type="button"
                 onClick={() => setOpen(v => !v)}
@@ -68,7 +68,7 @@ export default function SidebarUser({ collapsed }: Props) {
             </button>
 
             {open && (
-                <div className={`absolute z-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl py-1 ${collapsed ? 'left-full ml-2 bottom-0 w-56' : 'left-2 right-2 bottom-full mb-2'}`}>
+                <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl py-1 ${collapsed ? 'absolute z-40 left-full ml-2 bottom-0 w-56' : 'order-first mx-2 mb-2'}`}>
                     <Link
                         href="/dashboard"
                         onClick={() => setOpen(false)}
@@ -91,7 +91,7 @@ export default function SidebarUser({ collapsed }: Props) {
                         onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
-                        <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                        <ArrowRightStartOnRectangleIcon className="w-4 h-4" />
                         Déconnexion
                     </button>
                 </div>

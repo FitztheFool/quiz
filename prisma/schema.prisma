@@ -49,6 +49,9 @@ enum GameType {
   CANT_STOP
   MILLE_BORNES
   SUTOM
+  SPACE_INVADERS
+  GAME_2048
+  FLAPPY_BIRD
 }
 
 model Account {

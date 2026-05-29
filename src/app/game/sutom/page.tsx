@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { StarIcon, TrophyIcon } from '@heroicons/react/24/solid';
 import { useSutom } from '@/hooks/useSutom';
 import { MAX_TRIES, type LetterState } from '@/lib/sutom/engine';
@@ -28,8 +29,17 @@ export default function SutomPage() {
     const {
         phase, length, rows, current, message, won, keyStates, answer, loading,
         bestScore, displayScore, isNewBest, submitState, session,
-        start, onKey,
+        start, onKey, setCurrentInput, submit,
     } = useSutom();
+
+    const inputRef = useRef<HTMLInputElement>(null);
+    // Open the native phone keyboard as soon as a game starts.
+    useEffect(() => {
+        if (phase === 'playing') {
+            const t = setTimeout(() => inputRef.current?.focus(), 50);
+            return () => clearTimeout(t);
+        }
+    }, [phase]);
 
     const triesUsed = rows.length;
 
@@ -58,7 +68,22 @@ export default function SutomPage() {
                     </button>
                 </div>
             ) : (
-                <div className="relative w-full max-w-[440px]">
+                <div className="relative w-full max-w-[440px]"
+                    onClick={() => inputRef.current?.focus()}>
+                    {/* Invisible input — drives the native mobile keyboard. */}
+                    <input
+                        ref={inputRef}
+                        value={current}
+                        onChange={e => setCurrentInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        inputMode="text"
+                        aria-label="Saisir le mot"
+                        className="absolute opacity-0 pointer-events-none -z-10 h-1 w-1"
+                    />
                     {/* Grid */}
                     <div className="flex flex-col gap-1.5 items-center">
                         {Array.from({ length: MAX_TRIES }).map((_, r) => {

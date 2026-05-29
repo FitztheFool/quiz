@@ -79,10 +79,13 @@ export function useSutom() {
         }
     }, [solo.phase, answer.length, submit]);
 
-    // Physical keyboard.
+    // Physical keyboard. Skip when an <input>/<textarea> is focused (the native
+    // mobile keyboard feeds events to that input — we don't want to double-process).
     useEffect(() => {
         if (solo.phase !== 'playing') return;
         const handle = (e: KeyboardEvent) => {
+            const tag = (e.target as HTMLElement | null)?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
             if (e.key === 'Enter') { e.preventDefault(); onKey('ENTER'); }
             else if (e.key === 'Backspace') { e.preventDefault(); onKey('BACKSPACE'); }
             else if (e.key.length === 1) onKey(e.key);
@@ -90,6 +93,16 @@ export function useSutom() {
         window.addEventListener('keydown', handle);
         return () => window.removeEventListener('keydown', handle);
     }, [solo.phase, onKey]);
+
+    // Bulk-set current from a raw input value (native mobile keyboard via a hidden <input>).
+    // Always keeps the revealed first letter and clamps to the word length.
+    const setCurrentInput = useCallback((raw: string) => {
+        let v = normalizeWord(raw);
+        if (!answer) return;
+        if (!v.startsWith(answer[0])) v = answer[0] + v;
+        setCurrent(v.slice(0, answer.length) || answer[0]);
+        setMessage('');
+    }, [answer]);
 
     // Per-letter best state, for colouring the on-screen keyboard.
     const keyStates: Record<string, LetterState> = {};
@@ -113,5 +126,7 @@ export function useSutom() {
         keyStates,
         start,
         onKey,
+        setCurrentInput,
+        submit,
     };
 }

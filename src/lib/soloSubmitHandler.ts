@@ -4,17 +4,20 @@ import { verifySoloToken } from '@/lib/soloToken';
 import prisma from '@/lib/prisma';
 import { Prisma, type GameType } from '@/generated/prisma/client';
 
-const MIN_DURATION_MS = 10_000;
+const DEFAULT_MIN_DURATION_MS = 10_000;
 
 interface Config {
     gameType: GameType;
     maxScore: number;
     hasRounds?: boolean;
     maxRounds?: number;
+    /** Minimum elapsed time between token issuance and submission (ms). */
+    minDurationMs?: number;
 }
 
 export function createSoloSubmitHandler({
     gameType, maxScore, hasRounds = false, maxRounds = 1000,
+    minDurationMs = DEFAULT_MIN_DURATION_MS,
 }: Config) {
     return async function POST(req: NextRequest) {
         const session = await auth();
@@ -30,7 +33,7 @@ export function createSoloSubmitHandler({
                 return NextResponse.json({ error: 'Score invalide' }, { status: 400 });
             }
 
-            const check = verifySoloToken(token, session.user.id, gameType, MIN_DURATION_MS);
+            const check = verifySoloToken(token, session.user.id, gameType, minDurationMs);
             if (!check.ok) {
                 return NextResponse.json({ error: check.error }, { status: 400 });
             }
@@ -54,8 +57,12 @@ export function createSoloSubmitHandler({
                     },
                 });
             } catch (e) {
-                if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-                    return NextResponse.json({ error: 'Token déjà utilisé' }, { status: 409 });
+                if (e instanceof Prisma.PrismaClientKnownRequestError) {
+                    if (e.code === 'P2002') return NextResponse.json({ error: 'Token déjà utilisé' }, { status: 409 });
+                    if (e.code === 'P2003') {
+                        // FK violation on userId → the session points to a user that no longer exists.
+                        return NextResponse.json({ error: 'Session expirée, reconnectez-vous' }, { status: 401 });
+                    }
                 }
                 throw e;
             }
