@@ -121,6 +121,8 @@ export default function LobbyCodePage() {
     const socket = useMemo(() => getLobbySocket(), []);
     const joinedRef = useRef(false);
     const playersRef = useRef<Player[]>([]);
+    const botCountRef = useRef(0);
+    const botSlotsRef = useRef<Array<{ userId: string; username: string }>>([]);
     const reconnectConfigRef = useRef({ gameType: 'uno' as GameType, maxPlayers: 8, isPublic: false, meta: null as LobbyMeta | null });
 
     const [meta, setMeta] = useState<LobbyMeta | null>(null);
@@ -175,6 +177,8 @@ export default function LobbyCodePage() {
     const [mbTeamDistance, setMbTeamDistance] = useState<'individual' | 'shared'>('individual');
     const [botCount, setBotCount] = useState(0);
     const [botSlots, setBotSlots] = useState<Array<{ userId: string; username: string }>>([]);
+    useEffect(() => { botCountRef.current = botCount; }, [botCount]);
+    useEffect(() => { botSlotsRef.current = botSlots; }, [botSlots]);
     const { setLobbyId } = useChat();
 
     useEffect(() => {
@@ -384,7 +388,19 @@ export default function LobbyCodePage() {
                 } else {
                     const routeFn = GAME_ROUTES[payload.gameType];
                     if (routeFn) {
-                        sessionStorage.setItem(`lobby_players_${lobbyId}`, JSON.stringify(playersRef.current));
+                        // Include bots so the waiting screen shows the full lineup,
+                        // not just humans. Prefer botSlots (named server-side);
+                        // fall back to synthesising from botCount.
+                        const cachedBots = botSlotsRef.current.length > 0
+                            ? botSlotsRef.current
+                            : Array.from({ length: botCountRef.current }, (_, i) => ({
+                                userId: `bot-${i + 1}`,
+                                username: `Bot ${i + 1}`,
+                            }));
+                        sessionStorage.setItem(
+                            `lobby_players_${lobbyId}`,
+                            JSON.stringify([...playersRef.current, ...cachedBots]),
+                        );
                         router.push(routeFn(lobbyId, payload.gameId));
                     }
                 }

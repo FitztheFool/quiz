@@ -219,9 +219,19 @@ export default function YahtzeePage() {
                     <span className="text-xs text-gray-500 ml-2">{CAT_DESC[cat]}</span>
                 </div>
                 <div className="text-right min-w-[40px]">
-                    {val !== null ? <span className="font-black text-gray-300 dark:text-gray-300">{val}</span>
-                        : isHovered && preview !== null ? <span className="font-black text-blue-600 dark:text-blue-400">{preview}</span>
-                            : <span className="text-gray-400 dark:text-gray-600">—</span>}
+                    {val !== null ? (
+                        <span className="font-black text-gray-300 dark:text-gray-300">{val}</span>
+                    ) : preview !== null ? (
+                        <span className={`font-black transition-colors ${isHovered
+                            ? 'text-blue-600 dark:text-blue-300'
+                            : preview > 0
+                                ? 'text-blue-500/45 dark:text-blue-300/45'
+                                : 'text-amber-50/30 dark:text-amber-50/30'}`}>
+                            {preview}
+                        </span>
+                    ) : (
+                        <span className="text-amber-50/40 dark:text-amber-50/40">—</span>
+                    )}
                 </div>
             </div>
         );
@@ -276,7 +286,7 @@ export default function YahtzeePage() {
                                 </h2>
                                 {isMyTurn && (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-500">Lancers restants :</span>
+                                        <span className="text-sm text-amber-50/80">Lancers restants :</span>
                                         <div className="flex gap-1">
                                             {[1, 2, 3].map(n => (
                                                 <div key={n} className={`w-3 h-3 rounded-full ${(myPlayer?.rollsLeft ?? 0) >= n ? 'bg-blue-400' : 'bg-gray-300 dark:bg-gray-600'}`} />
@@ -305,7 +315,7 @@ export default function YahtzeePage() {
                                 <p className="text-center text-sm text-indigo-400 mt-3 font-semibold animate-pulse"><CpuChipIcon className="inline-block w-4 h-4 text-indigo-500 align-text-bottom mr-1" />Le bot réfléchit…</p>
                             )}
                             {isMyTurn && myPlayer && myPlayer.rollsLeft < 3 && myPlayer.rollsLeft > 0 && (
-                                <p className="text-center text-xs text-gray-500 mt-3">Cliquez sur un dé pour le garder, puis relancez ou marquez des points.</p>
+                                <p className="text-center text-xs text-amber-50/75 mt-3">Cliquez sur un dé pour le garder, puis relancez ou marquez des points.</p>
                             )}
                             {isMyTurn && game.phase === 'scoring' && (
                                 <p className="text-center text-sm text-amber-500 dark:text-amber-400 mt-3 font-semibold"><PencilSquareIcon className="inline-block w-4 h-4 align-text-bottom mr-1" />Choisissez une catégorie à scorer ci-dessous</p>
@@ -315,7 +325,7 @@ export default function YahtzeePage() {
                         <div className="wood-tile rounded-xl p-5">
                             <h2 className="font-bold text-gray-600 dark:text-gray-300 mb-4">Votre feuille de score</h2>
                             <div className="mb-2">
-                                <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Section haute</div>
+                                <div className="text-xs font-bold text-amber-200/90 dark:text-amber-200/90 uppercase tracking-widest mb-2">Section haute</div>
                                 <div className="space-y-1">{UPPER_CATS.map(cat => <ScoreRow key={cat} cat={cat} />)}</div>
                                 <div className="flex justify-between px-3 py-2 mt-1 bg-amber-900/20 border border-amber-700/30 rounded-lg text-sm">
                                     <span className="text-amber-900 dark:text-amber-100 font-semibold">Sous-total</span>
@@ -323,18 +333,18 @@ export default function YahtzeePage() {
                                 </div>
                                 {upperNeeded > 0 && (
                                     <div className="px-3 py-1">
-                                        <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1">
+                                        <div className="flex justify-between text-xs text-amber-50/75 dark:text-amber-50/75 mb-1">
                                             <span>Progression bonus (+35)</span><span>{upperTotal}/63</span>
                                         </div>
-                                        <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${Math.min(100, (upperTotal / 63) * 100)}%` }} />
+                                        <div className="h-1.5 bg-amber-50/20 dark:bg-amber-50/20 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-400 rounded-full transition-all" style={{ width: `${Math.min(100, (upperTotal / 63) * 100)}%` }} />
                                         </div>
                                     </div>
                                 )}
                                 {myPlayer?.upperBonus === 35 && <div className="px-3 py-1.5 text-center text-xs text-green-500 dark:text-green-400 font-bold"><CheckCircleIcon className="inline-block w-4 h-4 align-text-bottom mr-1" />Bonus +35 débloqué !</div>}
                             </div>
                             <div className="mt-3">
-                                <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Section basse</div>
+                                <div className="text-xs font-bold text-amber-200/90 dark:text-amber-200/90 uppercase tracking-widest mb-2">Section basse</div>
                                 <div className="space-y-1">{LOWER_CATS.map(cat => <ScoreRow key={cat} cat={cat} />)}</div>
                                 {(myPlayer?.scoreCard.yahtzeeBonus ?? 0) > 0 && (
                                     <div className="flex justify-between px-3 py-2 mt-1 bg-amber-400/10 border border-amber-400/30 rounded-lg text-sm">
@@ -373,10 +383,10 @@ export default function YahtzeePage() {
                                                 </div>
                                                 <span className="font-black text-xl">{p.total}</span>
                                             </div>
-                                            <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                                            <div className="flex items-center justify-between text-xs text-amber-50/70 dark:text-amber-50/70">
                                                 <span>{filled}/13 catégories</span>
-                                                <div className="w-24 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-blue-400 rounded-full" style={{ width: `${(filled / 13) * 100}%` }} />
+                                                <div className="w-24 h-1 bg-amber-50/20 dark:bg-amber-50/20 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-blue-300 rounded-full" style={{ width: `${(filled / 13) * 100}%` }} />
                                                 </div>
                                             </div>
                                         </div>
