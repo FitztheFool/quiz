@@ -14,13 +14,21 @@ export const AI_MODELS = [
         desc: 'Ultra rapide',
     },
     {
+        id: 'gemini-3.5-flash',
+        label: 'Gemini 3.5 Flash',
+        provider: 'gemini' as const,
+        badge: 'Google',
+        desc: 'Dernier modèle Google',
+    },
+    {
         id: 'gemini-2.5-flash',
         label: 'Gemini 2.5 Flash',
         provider: 'gemini' as const,
         badge: 'Google',
-        desc: 'Créatif',
+        desc: 'Meilleur instruction following',
     },
 ] as const;
 
 export type ModelId = typeof AI_MODELS[number]['id'];
+export type ModelProvider = typeof AI_MODELS[number]['provider'];
 export const DEFAULT_MODEL_ID: ModelId = 'llama-3.3-70b-versatile';

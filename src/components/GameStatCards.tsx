@@ -51,6 +51,7 @@ function getSecondaryStat(type: string, stat: GameStat, hideWinRate = false): { 
         case 'SPACE_INVADERS':
         case 'GAME_2048':
         case 'FLAPPY_BIRD':
+        case 'PLUMBER':
             return { value: fmt(stat.bestScore ?? stat.points), label: 'meilleur score' };
         case 'PACMAN':
         case 'BREAKOUT':
@@ -93,7 +94,7 @@ function getBar(type: string, stat: GameStat): { pct: number; label: string; win
         return { pct, label: '', wins: null, color };
     }
 
-    if (type === 'SNAKE' || type === 'TETRIS' || type === 'PACMAN' || type === 'BREAKOUT' || type === 'SUTOM' || type === 'SPACE_INVADERS' || type === 'GAME_2048' || type === 'FLAPPY_BIRD') {
+    if (type === 'SNAKE' || type === 'TETRIS' || type === 'PACMAN' || type === 'BREAKOUT' || type === 'SUTOM' || type === 'SPACE_INVADERS' || type === 'GAME_2048' || type === 'FLAPPY_BIRD' || type === 'PLUMBER') {
         return { pct: 0, label: `${fmt(stat.points)} pts`, wins: null, color: 'bg-emerald-500' };
     }
 

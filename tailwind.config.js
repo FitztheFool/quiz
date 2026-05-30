@@ -13,7 +13,7 @@ module.exports = {
         extend: {
             colors: {
                 gray: colors.stone,
-                // ── Brand "Game Night" — amber / brass primary ──
+                // ── Brand "Kwizar" — amber / brass primary ──
                 primary: {
                     50: '#fdf6ec',
                     100: '#f9e7c9',

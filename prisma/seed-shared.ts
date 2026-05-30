@@ -215,15 +215,15 @@ export async function seedShared(prisma: PrismaClient, randomUserId: string) {
 }
 
 export async function cleanDatabase(prisma: PrismaClient) {
-    // await prisma.account.deleteMany();
-    // await prisma.session.deleteMany();
-    // await prisma.verificationToken.deleteMany();
-    // await prisma.answer.deleteMany();
-    // await prisma.question.deleteMany();
-    // await prisma.attempt.deleteMany();
-    // await prisma.quiz.deleteMany();
-    // await prisma.category.deleteMany();
-    // await prisma.user.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.session.deleteMany();
+    await prisma.verificationToken.deleteMany();
+    await prisma.answer.deleteMany();
+    await prisma.question.deleteMany();
+    await prisma.attempt.deleteMany();
+    await prisma.quiz.deleteMany();
+    await prisma.category.deleteMany();
+    await prisma.user.deleteMany();
     await prisma.word.deleteMany();
     await prisma.wordGroup.deleteMany();
 }

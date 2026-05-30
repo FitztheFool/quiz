@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import MyQuizzesPanel from '@/components/Quiz/MyQuizzesPanel';
 import UserStats from '@/components/UserStats';
 import { MembersOnlyBanner } from '@/components/MembersOnlyBanner';
+import UserAvatar from '@/components/UserAvatar';
 import { ChartBarIcon, BookOpenIcon, Cog6ToothIcon, EnvelopeIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 // ── Bloc finaliser le compte ───────────────────────────────────────────────────
@@ -269,15 +270,13 @@ export default function UserProfilePage({ username, isOwnProfile = false }: Prop
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-4 py-3">
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Avatar */}
-                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
-                            {profile.image ? (
-                                <img src={profile.image} alt="Avatar" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-base font-bold">
-                                    {displayName.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                        </div>
+                        <UserAvatar
+                            seed={profile.id}
+                            name={displayName}
+                            image={profile.image}
+                            size="md"
+                            shape="square"
+                        />
 
                         {/* Nom */}
                         <div className="flex-1 min-w-0">

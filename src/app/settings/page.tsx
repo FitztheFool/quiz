@@ -12,6 +12,22 @@ import { UserIcon, LockClosedIcon, SwatchIcon, SunIcon, MoonIcon, ComputerDeskto
 type TabType = 'theme' | 'compte' | 'securite';
 type DeleteType = 'soft' | 'hard';
 
+const TAB_HASHES: Record<TabType, string> = {
+    compte:   '#compte',
+    securite: '#securite',
+    theme:    '#theme',
+};
+const HASH_TO_TAB: Record<string, TabType> = {
+    '#compte':   'compte',
+    '#securite': 'securite',
+    '#theme':    'theme',
+};
+
+function readTabFromHash(): TabType | null {
+    if (typeof window === 'undefined') return null;
+    return HASH_TO_TAB[window.location.hash] ?? null;
+}
+
 export default function SettingsPage() {
     const { data: session, update: updateSession } = useSession();
     const { theme, setTheme } = useTheme();
@@ -56,7 +72,13 @@ export default function SettingsPage() {
         if (!session) return;
         if (!initialized.current) {
             initialized.current = true;
-            setActiveTab(isAnonymous ? 'theme' : 'compte');
+            const fromHash = readTabFromHash();
+            const initial: TabType = fromHash ?? (isAnonymous ? 'theme' : 'compte');
+            setActiveTab(initial);
+            // Make sure the hash reflects the resolved tab (e.g. no-hash → #compte).
+            if (typeof window !== 'undefined' && window.location.hash !== TAB_HASHES[initial]) {
+                history.replaceState(null, '', TAB_HASHES[initial]);
+            }
             setUsernameValue(session.user?.username ?? session.user?.name ?? '');
             setEmailValue(session.user?.email ?? '');
         } else {
@@ -64,6 +86,23 @@ export default function SettingsPage() {
             if (!emailUpdated) setEmailValue(session.user?.email ?? '');
         }
     }, [session]);
+
+    // Sync tab when the URL hash changes (back/forward, manual edit, deep link).
+    useEffect(() => {
+        const onHash = () => {
+            const t = readTabFromHash();
+            if (t) setActiveTab(t);
+        };
+        window.addEventListener('hashchange', onHash);
+        return () => window.removeEventListener('hashchange', onHash);
+    }, []);
+
+    const selectTab = (tab: TabType) => {
+        setActiveTab(tab);
+        if (typeof window !== 'undefined' && window.location.hash !== TAB_HASHES[tab]) {
+            history.pushState(null, '', TAB_HASHES[tab]);
+        }
+    };
 
     const u = session?.user?.username ?? '';
 
@@ -255,7 +294,7 @@ export default function SettingsPage() {
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => !disabled && setActiveTab(tab.id)}
+                                    onClick={() => !disabled && selectTab(tab.id)}
                                     disabled={disabled}
                                     title={disabled ? 'Non disponible pour les invités' : undefined}
                                     className={`pb-3 px-4 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2 ${disabled

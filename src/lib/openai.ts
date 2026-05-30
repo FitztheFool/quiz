@@ -1,9 +1,10 @@
 // src/lib/openai.ts
 import OpenAI from 'openai';
-import { AI_MODELS, ModelId } from './aiModels';
+import { AI_MODELS, ModelId, ModelProvider } from './aiModels';
 
 const groqKey = process.env.GROQ_API_KEY;
 const geminiKey = process.env.GEMINI_KEY;
+
 if (!groqKey) throw new Error('GROQ_API_KEY manquante');
 
 export const groqClient = new OpenAI({
@@ -20,8 +21,14 @@ export const geminiClient = new OpenAI({
 export function getClientForModel(modelId: ModelId) {
     const model = AI_MODELS.find(m => m.id === modelId);
     if (!model) throw new Error(`Modèle inconnu : ${modelId}`);
+
+    const clients: Record<ModelProvider, OpenAI> = {
+        groq: groqClient,
+        gemini: geminiClient,
+    };
+
     return {
-        client: model.provider === 'gemini' ? geminiClient : groqClient,
+        client: clients[model.provider],
         modelId: model.id,
     };
 }

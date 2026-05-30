@@ -29,6 +29,9 @@ export function useSoloGame({
     const gameIdRef   = useRef('');
     // Resolves to the signed server token once /api/solo/start responds
     const tokenRef    = useRef<Promise<string> | null>(null);
+    // Timestamp of the last endGame — used to swallow key auto-repeat that would
+    // otherwise instantly restart the game before the player can read the result.
+    const overSinceRef = useRef(0);
 
     const [phase, setPhase]             = useState<Phase>('idle');
     const [displayScore, setDisplayScore] = useState(0);
@@ -58,46 +61,65 @@ export function useSoloGame({
     useEffect(() => {
         if (phase !== 'idle' && phase !== 'over') return;
         const handle = (e: KeyboardEvent) => {
+            // Grace period after end-of-game so the same Enter/Space that
+            // ended the round (or its OS-level auto-repeat) doesn't instantly
+            // start a new one before the player can see the result.
+            if (phase === 'over' && Date.now() - overSinceRef.current < 700) return;
             if (starters.has(e.key)) { e.preventDefault(); startGameRef.current(); }
         };
         window.addEventListener('keydown', handle);
         return () => window.removeEventListener('keydown', handle);
     }, [phase, starters]);
 
-    const submitScore = useCallback(async (finalScore: number, extraPayload?: Record<string, unknown>) => {
-        if (!session?.user || finalScore < 0) return;
-        if (finalScore === 0 && !allowZeroScore) return;
+    const submitScore = useCallback(async (finalScore: number, extraPayload?: Record<string, unknown>): Promise<boolean> => {
+        if (!session?.user || finalScore < 0) return false;
+        if (finalScore === 0 && !allowZeroScore) return false;
         setSubmitState('loading');
         try {
             const token = await (tokenRef.current ?? Promise.resolve(''));
-            if (!token) { setSubmitState('error'); return; }
+            if (!token) { setSubmitState('error'); return false; }
             const res = await fetch(submitEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ score: finalScore, token, ...extraPayload }),
             });
             setSubmitState(res.ok ? 'done' : 'error');
+            return res.ok;
         } catch {
             setSubmitState('error');
+            return false;
         }
     }, [session, submitEndpoint, allowZeroScore]);
 
     const endGame = useCallback((finalScore: number, extraPayload?: Record<string, unknown>) => {
         setPhase('over');
         phaseRef.current = 'over';
+        overSinceRef.current = Date.now();
         setDisplayScore(finalScore);
-        let newBest = false;
-        setBestScore(prev => {
-            if (finalScore > prev) {
-                newBest = true;
+        // Tentative new-best flag (UX). The actual local best is only persisted
+        // after the server confirms the attempt, so a rejected submit (e.g.
+        // minDurationMs not met) cannot leave a phantom localStorage best.
+        setIsNewBest(finalScore > bestScore);
+
+        if (!session?.user) {
+            // Guest run — no server side, store locally only.
+            if (finalScore > bestScore) {
                 localStorage.setItem(localStorageKey, String(finalScore));
-                return finalScore;
+                setBestScore(finalScore);
             }
-            return prev;
+            return;
+        }
+        submitScore(finalScore, extraPayload).then(ok => {
+            if (ok && finalScore > bestScore) {
+                localStorage.setItem(localStorageKey, String(finalScore));
+                setBestScore(finalScore);
+            } else if (!ok) {
+                // Revert the tentative new-best badge so the overlay matches
+                // what's actually saved.
+                setIsNewBest(false);
+            }
         });
-        setIsNewBest(newBest);
-        submitScore(finalScore, extraPayload);
-    }, [submitScore, localStorageKey]);
+    }, [submitScore, localStorageKey, bestScore, session]);
 
     const resetForStart = useCallback(() => {
         gameIdRef.current = crypto.randomUUID();

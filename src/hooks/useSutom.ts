@@ -20,6 +20,8 @@ export function useSutom() {
     });
 
     const [answer, setAnswer] = useState('');
+    const [category, setCategory] = useState('');
+    const [hintRevealed, setHintRevealed] = useState(false);
     const [rows, setRows] = useState<SutomRow[]>([]);
     const [current, setCurrent] = useState('');   // always starts with the revealed first letter
     const [message, setMessage] = useState('');
@@ -31,19 +33,27 @@ export function useSutom() {
         setLoading(true);
         setMessage('');
         let w = '';
+        let cat = '';
         try {
             const res = await fetch('/api/sutom/word');
             const data = await res.json();
             if (data?.word) w = normalizeWord(data.word);
+            if (typeof data?.category === 'string') cat = data.category;
         } catch { /* handled below */ }
         setLoading(false);
         if (!w || w.length < 6) { setMessage('Impossible de charger un mot, réessayez.'); return; }
         setAnswer(w);
+        setCategory(cat);
+        setHintRevealed(false);
         setRows([]);
         setCurrent(w[0]);     // first letter is given
         setWon(false);
         solo.resetForStart();
     }, [solo, loading]);
+
+    const revealHint = useCallback(() => {
+        if (category) setHintRevealed(true);
+    }, [category]);
 
     useEffect(() => { solo.startGameRef.current = start; }, [start, solo.startGameRef]);
 
@@ -117,6 +127,9 @@ export function useSutom() {
     return {
         ...solo,
         answer,
+        category,
+        hintRevealed,
+        revealHint,
         length: answer.length,
         rows,
         current,

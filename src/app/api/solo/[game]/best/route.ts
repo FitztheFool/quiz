@@ -12,6 +12,7 @@ const SOLO_GAMES: Record<string, GameType> = {
     space_invaders: 'SPACE_INVADERS',
     '2048': 'GAME_2048',
     flappy_bird: 'FLAPPY_BIRD',
+    plumber: 'PLUMBER',
 };
 
 export async function GET(

@@ -241,6 +241,17 @@ export const GAME_CONFIG = {
         rules: "Appuyez sur Espace ou tapez l'écran pour battre des ailes et faire monter l'oiseau. La gravité le fait redescendre. Évitez les tuyaux et le sol. Un point par tuyau franchi.",
         score: "1 point par tuyau franchi. Seul votre meilleur score est conservé pour le classement.",
     },
+    plumber: {
+        gameType: 'PLUMBER' as const,
+        label: 'Plumber',
+        mode: 'solo' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Meilleur score',
+        description: "Courez, sautez, écrasez les ennemis et collectez les pièces !",
+        players: '1 joueur',
+        rules: "Courez vers la droite, sautez par-dessus les trous et les ennemis. Écrasez les Goombas en leur sautant dessus. Ramassez les champignons (vous donnent une vie supplémentaire) et les fleurs de feu (vous laissent tirer des boules de feu). Mort en touchant un ennemi sans pouvoir ou en tombant dans un trou.",
+        score: "1 pt par pièce, 5 pts par ennemi écrasé, bonus de distance et de power-up. Seul votre meilleur score est conservé.",
+    },
 } as const;
 
 export type GameType = keyof typeof GAME_CONFIG;
@@ -282,6 +293,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     space_invaders: [1],
     '2048': [1],
     flappy_bird: [1],
+    plumber: [1],
 };
 
 export const MIN_PLAYERS: Partial<Record<GameType, number>> = {

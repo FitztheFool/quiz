@@ -29,6 +29,7 @@ export default function SutomPage() {
     const {
         phase, length, rows, current, message, won, keyStates, answer, loading,
         bestScore, displayScore, isNewBest, submitState, session,
+        category, hintRevealed, revealHint,
         start, onKey, setCurrentInput, submit,
     } = useSutom();
 
@@ -55,6 +56,24 @@ export default function SutomPage() {
                 <StatCell icon={<StarIcon className="w-3 h-3 text-yellow-500" />} label="ESSAIS" value={phase === 'idle' ? '—' : `${triesUsed}/${MAX_TRIES}`} color="text-gray-900 dark:text-white" align="left" />
                 <StatCell icon={<TrophyIcon className="w-3 h-3 text-yellow-500" />} label="MEILLEUR" value={Math.max(bestScore, displayScore)} color="text-yellow-500 dark:text-yellow-400" align="right" />
             </div>
+
+            {phase === 'playing' && (
+                <div className="w-full max-w-[440px] mb-3">
+                    {hintRevealed ? (
+                        <div className="px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200/60 dark:border-amber-700/40 text-sm flex items-center justify-between gap-3">
+                            <span className="text-amber-700 dark:text-amber-300">
+                                <span className="text-[10px] font-bold tracking-wider uppercase mr-2 opacity-70">Catégorie</span>
+                                <span className="font-bold">{category}</span>
+                            </span>
+                        </div>
+                    ) : (
+                        <button onClick={revealHint}
+                            className="w-full px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-amber-200/60 dark:border-amber-700/40 text-amber-700 dark:text-amber-300 text-sm font-bold hover:bg-amber-50 dark:hover:bg-amber-900/15 active:scale-[0.99] transition-all">
+                            💡 Indice — révéler la catégorie
+                        </button>
+                    )}
+                </div>
+            )}
 
             {phase === 'idle' ? (
                 <div className="mt-10 flex flex-col items-center gap-5">

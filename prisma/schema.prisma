@@ -52,6 +52,7 @@ enum GameType {
   SPACE_INVADERS
   GAME_2048
   FLAPPY_BIRD
+  PLUMBER
 }
 
 model Account {
@@ -228,12 +229,12 @@ model Attempt {
 }
 
 model Word {
-  id          String     @id @default(cuid())
-  word        String     @unique
+  id          String    @id @default(cuid())
+  word        String    @unique
   description String?
-  createdAt   DateTime   @default(now())
-  wordGroupId String?
-  wordGroup   WordGroup? @relation(fields: [wordGroupId], references: [id])
+  createdAt   DateTime  @default(now())
+  wordGroupId String
+  wordGroup   WordGroup @relation(fields: [wordGroupId], references: [id])
 
   @@map("words")
 }

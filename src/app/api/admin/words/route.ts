@@ -69,10 +69,11 @@ export async function POST(req: NextRequest) {
 
     const { word, description, wordGroupId } = await req.json();
     if (!word?.trim()) return NextResponse.json({ error: 'Mot manquant' }, { status: 400 });
+    if (!wordGroupId?.trim()) return NextResponse.json({ error: 'Groupe requis' }, { status: 400 });
 
     try {
         const created = await prisma.word.create({
-            data: { word: word.trim(), description: description?.trim() || null, wordGroupId: wordGroupId || null },
+            data: { word: word.trim(), description: description?.trim() || null, wordGroupId },
             select: WORD_SELECT,
         });
         return NextResponse.json(created, { status: 201 });
@@ -92,7 +93,10 @@ export async function PATCH(req: NextRequest) {
     const data: Record<string, unknown> = {};
     if (word?.trim()) data.word = word.trim();
     if (description !== undefined) data.description = description?.trim() || null;
-    if (wordGroupId !== undefined) data.wordGroupId = wordGroupId || null;
+    if (wordGroupId !== undefined) {
+        if (!wordGroupId?.trim()) return NextResponse.json({ error: 'Groupe requis' }, { status: 400 });
+        data.wordGroupId = wordGroupId;
+    }
 
     try {
         const updated = await prisma.word.update({ where: { id: wordId }, data, select: WORD_SELECT });

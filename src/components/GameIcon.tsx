@@ -131,6 +131,17 @@ function Twenty48Icon({ className }: { className?: string }) {
     );
 }
 
+function PlumberIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+            {/* Jumping plumber silhouette: cap, body arched, legs raised */}
+            <path d="M9 2h5v2h1v2h1v2h-2V6h-1v2h-3V6h-1V4h1V2h-1z" />
+            <path d="M8 8h8v2h1v2h-2v-1h-1v2H10v-2H9v1H7v-2h1V8z" />
+            <path d="M9 14h6v2h2v2h-2v-1h-1v3h-2v-3h-2v3h-2v-3H8v1H6v-2h2v-2h1z" />
+        </svg>
+    );
+}
+
 function FlappyBirdIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -169,6 +180,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     SPACE_INVADERS: SpaceInvadersIcon,
     GAME_2048: Twenty48Icon,
     FLAPPY_BIRD: FlappyBirdIcon,
+    PLUMBER:    PlumberIcon,
     // lowercase keys for gameConfig key-based lookups
     uno:        RectangleStackIcon,
     skyjow:     Squares2X2Icon,
@@ -191,6 +203,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     space_invaders: SpaceInvadersIcon,
     '2048':     Twenty48Icon,
     flappy_bird: FlappyBirdIcon,
+    plumber:    PlumberIcon,
 };
 
 interface Props {

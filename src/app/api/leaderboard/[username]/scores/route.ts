@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
                 const totalTrapScore = data.trapScores.reduce((s, v) => s + v, 0);
                 const avgScore = gamesPlayed > 0 ? Math.round(totalScore / gamesPlayed) : 0;
                 const wins = data.placements.filter(p => p === 1).length;
-                const isSolo = game === 'snake' || game === 'pacman' || game === 'breakout' || game === 'tetris' || game === 'sutom' || game === 'space_invaders' || game === '2048' || game === 'flappy_bird';
+                const isSolo = game === 'snake' || game === 'pacman' || game === 'breakout' || game === 'tetris' || game === 'sutom' || game === 'space_invaders' || game === '2048' || game === 'flappy_bird' || game === 'plumber';
                 const score = game === 'skyjow' ? avgScore
                     : isSolo ? Math.max(...data.scores, 0)
                     : totalScore;

@@ -9,6 +9,7 @@ import {
     Cog6ToothIcon,
     ChevronUpIcon,
 } from '@heroicons/react/24/outline';
+import UserAvatar from '@/components/UserAvatar';
 
 interface Props {
     collapsed: boolean;
@@ -32,7 +33,6 @@ export default function SidebarUser({ collapsed }: Props) {
 
     const user = session.user;
     const name = user.name ?? user.email ?? 'Utilisateur';
-    const initial = (name || '?').trim()[0]?.toUpperCase() ?? '?';
     const role = user.role;
     const isAdmin = role === 'ADMIN';
 
@@ -45,12 +45,14 @@ export default function SidebarUser({ collapsed }: Props) {
                 title={collapsed ? name : undefined}
                 aria-expanded={open}
             >
-                {user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.image} alt={name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                ) : (
-                    <span className="w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{initial}</span>
-                )}
+                <UserAvatar
+                    seed={user.id ?? name}
+                    name={name}
+                    image={user.image}
+                    size="sm"
+                    shape="round"
+                />
+
                 {!collapsed && (
                     <>
                         <div className="flex-1 min-w-0 text-left">

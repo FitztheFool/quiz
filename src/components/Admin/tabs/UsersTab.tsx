@@ -8,6 +8,7 @@ import {
     ShieldExclamationIcon, ShieldCheckIcon, UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import type { AdminUser, UserSort } from '../types';
+import UserAvatar from '@/components/UserAvatar';
 
 const ROLES = ['GUEST', 'USER', 'RANDOM', 'ADMIN'] as const;
 
@@ -127,9 +128,7 @@ export default function UsersTab({
                             ) : users.map(user => (
                                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                     <td className="px-4 py-2.5">
-                                        {user.image
-                                            ? <img src={user.image} alt={`Avatar de ${user.username}`} className="w-8 h-8 rounded-lg object-cover border border-gray-100 dark:border-gray-700" />
-                                            : <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0">{user.username[0]?.toUpperCase()}</div>}
+                                        <UserAvatar name={user.username} image={user.image} size="sm" shape="square" />
                                     </td>
                                     <td className="px-4 py-2.5 font-semibold text-xs whitespace-nowrap">
                                         <Link href={session?.user?.username === user.username ? '/dashboard' : `/user/${user.username}`} className="text-blue-600 dark:text-blue-400 hover:underline">{user.username}</Link>
