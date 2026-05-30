@@ -15,6 +15,7 @@ const ALLOWED_ENV_KEYS = [
     'NEXT_PUBLIC_LUDO_SERVER_URL',
     'NEXT_PUBLIC_PERUDO_SERVER_URL',
     'NEXT_PUBLIC_CANT_STOP_SERVER_URL',
+    'NEXT_PUBLIC_MILLE_BORNES_SERVER_URL',
 ];
 
 function allowedUpstreams(): Set<string> {
