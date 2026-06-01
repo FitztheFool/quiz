@@ -28,13 +28,13 @@ export async function GET(
         // Toujours inclure l'utilisateur demandeur pour qu'il ait un rang même s'il est admin
         const eligibleIds = [...new Set([...eligibleUsers.map(u => u.id), user.id])];
 
-        // ── 1. Jeux classés par score total (UNO, TABOO, YAHTZEE, DIAMANT, IMPOSTOR) ─
+        // ── 1. Jeux classés par score total (UNO, TABOO, YAHTZEE, DIAMANT, IMPOSTOR, SPYFALL) ─
         const sumRanks = await prisma.$queryRaw<RankRow[]>`
             WITH scores AS (
                 SELECT "userId", "gameType"::text, SUM(score) AS val
                 FROM attempts
                 WHERE "userId" = ANY(${eligibleIds})
-                  AND "gameType"::text = ANY(ARRAY['UNO','TABOO','YAHTZEE','DIAMANT','IMPOSTOR'])
+                  AND "gameType"::text = ANY(ARRAY['UNO','TABOO','YAHTZEE','DIAMANT','IMPOSTOR','SPYFALL'])
                 GROUP BY "userId", "gameType"
             ),
             ranked AS (

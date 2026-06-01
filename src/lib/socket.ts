@@ -41,6 +41,7 @@ let ludoSocket: Socket | null = null;
 let perudoSocket: Socket | null = null;
 let cantStopSocket: Socket | null = null;
 let milleBornesSocket: Socket | null = null;
+let spyfallSocket: Socket | null = null;
 
 function createSocket(url: string, name: string): Socket {
     const socket = io(url, {
@@ -168,4 +169,11 @@ export function getMilleBornesSocket(): Socket | null {
     if (!milleBornesSocket) milleBornesSocket = createSocket(process.env.NEXT_PUBLIC_MILLE_BORNES_SERVER_URL ?? "http://localhost:10014", "Mille Bornes Socket");
     connectIfAuth(milleBornesSocket);
     return milleBornesSocket;
+}
+
+export function getSpyfallSocket(): Socket | null {
+    if (typeof window === "undefined") return null;
+    if (!spyfallSocket) spyfallSocket = createSocket(process.env.NEXT_PUBLIC_SPYFALL_SERVER_URL ?? "http://localhost:10015", "Spyfall Socket");
+    connectIfAuth(spyfallSocket);
+    return spyfallSocket;
 }

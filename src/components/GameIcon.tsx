@@ -142,6 +142,20 @@ function PlumberIcon({ className }: { className?: string }) {
     );
 }
 
+function SpyfallIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+            {/* Spy: fedora hat + face + sunglasses */}
+            <path d="M5 9c0-1 3-4 7-4s7 3 7 4c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1z" />
+            <path d="M4 10.5h16c.6 0 1 .4 1 1s-.4 1-1 1H4c-.6 0-1-.4-1-1s.4-1 1-1z" />
+            <path d="M8 14a4 4 0 0 0 8 0v-.5H8z" opacity="0.55" />
+            <rect x="7.5" y="13.5" width="4" height="2.5" rx="1.25" />
+            <rect x="12.5" y="13.5" width="4" height="2.5" rx="1.25" />
+            <rect x="11.3" y="14" width="1.4" height="1" />
+        </svg>
+    );
+}
+
 function FlappyBirdIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -169,6 +183,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     BATTLESHIP: ViewfinderCircleIcon,
     DIAMANT:    SparklesIcon,
     IMPOSTOR:   EyeSlashIcon,
+    SPYFALL:    SpyfallIcon,
     LUDO:       LudoIcon,
     PERUDO:     PerudoIcon,
     CANT_STOP:  CantStopIcon,
@@ -192,6 +207,7 @@ const GAME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
     battleship: ViewfinderCircleIcon,
     diamant:    SparklesIcon,
     impostor:   EyeSlashIcon,
+    spyfall:    SpyfallIcon,
     ludo:       LudoIcon,
     perudo:     PerudoIcon,
     cant_stop:  CantStopIcon,

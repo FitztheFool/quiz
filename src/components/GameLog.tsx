@@ -50,10 +50,12 @@ interface Props {
 
 /** Shared in-game action journal with a built-in show/hide toggle. */
 export default function GameLog({ entries, title = 'Journal', className = '' }: Props) {
-    const endRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useLogOpen();
     useEffect(() => {
-        if (open) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        // Scroll the log container only, never the page (scrollIntoView would move the window).
+        const el = scrollRef.current;
+        if (open && el) el.scrollTop = el.scrollHeight;
     }, [entries, open]);
 
     return (
@@ -67,14 +69,13 @@ export default function GameLog({ entries, title = 'Journal', className = '' }: 
                 <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${open ? '' : '-rotate-90'}`} />
             </button>
             {open && (
-                <div className="mt-1.5 max-h-28 lg:max-h-[70vh] overflow-y-auto space-y-0.5 text-xs leading-snug pr-1">
+                <div ref={scrollRef} className="mt-1.5 max-h-28 lg:max-h-[70vh] overflow-y-auto space-y-0.5 text-xs leading-snug pr-1">
                     {entries.length === 0 && <p className="text-gray-300/70 italic">La partie commence…</p>}
                     {entries.map(e => (
                         <p key={e.id} className={TONE_STYLE[e.tone] ?? 'text-gray-300'}>
                             {TONE_ICON[e.tone] ?? ''}{e.text}
                         </p>
                     ))}
-                    <div ref={endRef} />
                 </div>
             )}
         </div>

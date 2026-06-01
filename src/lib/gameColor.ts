@@ -99,6 +99,15 @@ export const GAME_COLOR: Record<string, {
             label: 'text-violet-700 dark:text-violet-400'
         }
     },
+    SPYFALL: {
+        selected: 'border-slate-500 bg-slate-500/10 text-slate-600 dark:text-slate-300',
+        badge: 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300', badgeActive: 'bg-slate-700 text-white border-slate-700',
+        card: {
+            border: 'border-slate-200 dark:border-slate-700/60',
+            bg: 'bg-slate-50 dark:bg-slate-800/20',
+            label: 'text-slate-700 dark:text-slate-300'
+        }
+    },
     SNAKE: {
         selected: 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-300',
         badge: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400',

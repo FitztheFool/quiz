@@ -53,6 +53,7 @@ enum GameType {
   GAME_2048
   FLAPPY_BIRD
   PLUMBER
+  SPYFALL
 }
 
 model Account {

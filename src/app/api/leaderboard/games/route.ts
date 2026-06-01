@@ -147,6 +147,7 @@ export async function GET(req: NextRequest) {
                         detail = `${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
                     case 'impostor':
+                    case 'spyfall':
                         detail = `${totalScore} pt${totalScore > 1 ? 's' : ''} · ${wins} victoire${wins > 1 ? 's' : ''} · ${gamesPlayed} partie${gamesPlayed > 1 ? 's' : ''}`;
                         break;
                     case 'tetris':

@@ -40,6 +40,7 @@ const GAME_SERVER_URL_BY_TYPE: Partial<Record<GameType, string | undefined>> = {
     perudo:     process.env.NEXT_PUBLIC_PERUDO_SERVER_URL,
     cant_stop:  process.env.NEXT_PUBLIC_CANT_STOP_SERVER_URL,
     mille_bornes: process.env.NEXT_PUBLIC_MILLE_BORNES_SERVER_URL,
+    spyfall:    process.env.NEXT_PUBLIC_SPYFALL_SERVER_URL,
 };
 
 type Player = { userId: string; username: string };
@@ -56,6 +57,7 @@ type LobbyMeta = {
     skyjowOptions?: { eliminateRows: boolean };
     battleshipOptions?: { gridSize: number; turnTime: number };
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
+    spyfallOptions?: { exchangesPerPlayer: number; turnTime: number };
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
     perudoOptions?: { initialDice: number };
     cantStopOptions?: { columnsToWin: number };
@@ -78,6 +80,7 @@ type LobbyState = {
     skyjowOptions?: { eliminateRows: boolean };
     battleshipOptions?: { gridSize: number; turnTime: number };
     impostorOptions?: { rounds: number; timePerRound: number; misterWhite?: boolean };
+    spyfallOptions?: { exchangesPerPlayer: number; turnTime: number };
     ludoOptions?: { pawnExit: '6' | '6_or_1' | 'any'; bonusOn6: 'unlimited' | 'triple_lose' | 'none'; winMode: 'first_done' | 'full_ranking'; teamMode: 'none' | '2v2' };
     perudoOptions?: { initialDice: number };
     cantStopOptions?: { columnsToWin: number };
@@ -105,6 +108,7 @@ import TabooOptions from '@/components/Lobby/Options/TabooOptions';
 import QuizOptions from '@/components/Lobby/Options/QuizOptions';
 import SkyjowOptions from '@/components/Lobby/Options/SkyjowOptions';
 import ImpostorOptions from '@/components/Lobby/Options/ImpostorOptions';
+import SpyfallOptions from '@/components/Lobby/Options/SpyfallOptions';
 import LudoOptions from '@/components/Lobby/Options/LudoOptions';
 import PerudoOptions from '@/components/Lobby/Options/PerudoOptions';
 import CantStopOptions from '@/components/Lobby/Options/CantStopOptions';
@@ -166,6 +170,8 @@ export default function LobbyCodePage() {
     const [impostorRounds, setImpostorRounds] = useState(1);
     const [impostorTime, setImpostorTime] = useState(60);
     const [impostorMisterWhite, setImpostorMisterWhite] = useState(false);
+    const [spyfallExchanges, setSpyfallExchanges] = useState(2);
+    const [spyfallTurnTime, setSpyfallTurnTime] = useState(60);
     const [ludoPawnExit, setLudoPawnExit] = useState<'6' | '6_or_1' | 'any'>('6');
     const [ludoBonusOn6, setLudoBonusOn6] = useState<'unlimited' | 'triple_lose' | 'none'>('unlimited');
     const [ludoWinMode, setLudoWinMode] = useState<'first_done' | 'full_ranking'>('first_done');
@@ -304,6 +310,7 @@ export default function LobbyCodePage() {
                 setTurnTime(state.battleshipOptions.turnTime ?? 30);
             }
             if (state.impostorOptions) { setImpostorRounds(state.impostorOptions.rounds ?? 1); setImpostorTime(state.impostorOptions.timePerRound ?? 60); setImpostorMisterWhite(state.impostorOptions.misterWhite ?? false); }
+            if (state.spyfallOptions) { setSpyfallExchanges(state.spyfallOptions.exchangesPerPlayer ?? 2); setSpyfallTurnTime(state.spyfallOptions.turnTime ?? 60); }
             if (state.ludoOptions) {
                 setLudoPawnExit(state.ludoOptions.pawnExit ?? '6');
                 setLudoBonusOn6(state.ludoOptions.bonusOn6 ?? 'unlimited');
@@ -423,6 +430,7 @@ export default function LobbyCodePage() {
                 if (m.skyjowOptions) setSkyjowEliminateRows(m.skyjowOptions.eliminateRows);
                 if (m.battleshipOptions) { setGridSize(m.battleshipOptions.gridSize); setTurnTime(m.battleshipOptions.turnTime); }
                 if (m.impostorOptions) { setImpostorRounds(m.impostorOptions.rounds ?? 1); setImpostorTime(m.impostorOptions.timePerRound ?? 60); setImpostorMisterWhite(m.impostorOptions.misterWhite ?? false); }
+                if (m.spyfallOptions) { setSpyfallExchanges(m.spyfallOptions.exchangesPerPlayer ?? 2); setSpyfallTurnTime(m.spyfallOptions.turnTime ?? 60); }
                 if (m.ludoOptions) { setLudoPawnExit(m.ludoOptions.pawnExit); setLudoBonusOn6(m.ludoOptions.bonusOn6); setLudoWinMode(m.ludoOptions.winMode); setLudoTeamMode(m.ludoOptions.teamMode); }
                 if (m.perudoOptions) setPerudoInitialDice(m.perudoOptions.initialDice ?? 5);
                 if (m.cantStopOptions) setCantStopColumnsToWin(m.cantStopOptions.columnsToWin ?? 3);
@@ -437,6 +445,7 @@ export default function LobbyCodePage() {
             if (m?.skyjowOptions) setTimeout(() => socket.emit('lobby:setSkyjowOptions', m!.skyjowOptions), 400);
             if (m?.battleshipOptions) setTimeout(() => socket.emit('lobby:setBattleshipOptions', m!.battleshipOptions), 400);
             if (m?.impostorOptions) setTimeout(() => socket.emit('lobby:setImpostorOptions', m!.impostorOptions), 400);
+            if (m?.spyfallOptions) setTimeout(() => socket.emit('lobby:setSpyfallOptions', m!.spyfallOptions), 400);
             if (m?.ludoOptions) setTimeout(() => socket.emit('lobby:setLudoOptions', m!.ludoOptions), 400);
             if (m?.perudoOptions) setTimeout(() => socket.emit('lobby:setPerudoOptions', m!.perudoOptions), 400);
             if (m?.cantStopOptions) setTimeout(() => socket.emit('lobby:setCantStopOptions', m!.cantStopOptions), 400);
@@ -680,6 +689,11 @@ export default function LobbyCodePage() {
                                 impostorRounds={impostorRounds} setImpostorRounds={setImpostorRounds}
                                 impostorTime={impostorTime} setImpostorTime={setImpostorTime}
                                 impostorMisterWhite={impostorMisterWhite} setImpostorMisterWhite={setImpostorMisterWhite} />
+                        )}
+                        {gameType === 'spyfall' && (
+                            <SpyfallOptions isHost={isHost} socket={socket}
+                                spyfallExchanges={spyfallExchanges} setSpyfallExchanges={setSpyfallExchanges}
+                                spyfallTurnTime={spyfallTurnTime} setSpyfallTurnTime={setSpyfallTurnTime} />
                         )}
 
                         {gameType === 'ludo' && (

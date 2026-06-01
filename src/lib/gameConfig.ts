@@ -153,6 +153,17 @@ export const GAME_CONFIG = {
         rules: "Les joueurs normaux reçoivent un mot secret et donnent des indices sans se trahir. L'imposteur, qui ignore le mot, doit improviser et se fondre dans la masse. En option, un Mister White reçoit un mot différent mais de la même catégorie — il ne sait pas qu'il est Mister White. Après les tours de parole, tout le monde vote pour éliminer l'imposteur et (si l'option est activée) le Mister White.",
         score: "<p>Imposteur éliminé : <ul><li>+2 pts pour chaque joueur ayant voté pour lui</li><li>+1 pt par joueur de l'équipe</li></ul></p><br><p>Vote raté : <ul><li>+3 pts pour l'imposteur</li><li>+1 pt par joueur ayant quand même voté pour lui</li></ul></p><br><p>Mister White (si option activée) : <ul><li>Non identifié : +2 pts pour le Mister White</li><li>Identifié : +1 pt pour chaque joueur ayant voté pour lui</li></ul></p><br><p>Dans tous les cas, l'imposteur peut tenter de deviner le mot mystère après le vote. S'il devine correctement : +2 pts et il remporte la manche malgré l'élimination. Le classement est basé sur le total de points cumulés.</p>",
     },
+    spyfall: {
+        gameType: 'SPYFALL' as const,
+        label: 'Spyfall',
+        mode: 'multi' as const,
+        higherIsBetter: true,
+        scoreLabel: 'Points',
+        description: "Un lieu secret, un espion infiltré — interrogez-vous pour le démasquer (idéal en appel vocal).",
+        players: '3 – 8 joueurs',
+        rules: "Tout le monde connaît le lieu (et reçoit un rôle) sauf l'espion. À tour de rôle, le joueur actif interroge un autre joueur à l'oral (il le désigne d'un tap), puis le bâton passe à la personne interrogée. Les civils cherchent à démasquer l'espion par des questions fines sans révéler le lieu ; l'espion bluffe et tente de deviner où l'on se trouve. Après le nombre d'échanges prévu (ou un vote demandé par la majorité), tout le monde vote. L'espion peut aussi se déclarer pour tenter sa chance.",
+        score: "<p>Espion non démasqué : <ul><li>+3 pts pour l'espion</li></ul></p><br><p>Espion démasqué : <ul><li>+1 pt par civil</li><li>+1 pt bonus si le civil a voté pour l'espion</li></ul></p><br><p>Après avoir été démasqué (ou en se déclarant), l'espion peut deviner le lieu : s'il trouve, +2 pts et il vole la victoire. Le classement est basé sur le total de points cumulés.</p>",
+    },
     snake: {
         gameType: 'SNAKE' as const,
         label: 'Snake',
@@ -285,6 +296,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number[]> = {
     cant_stop: [2, 3, 4],
     mille_bornes: [2, 3, 4],
     impostor: [4, 5, 6, 7, 8],
+    spyfall: [3, 4, 5, 6, 7, 8],
     snake: [1],
     pacman: [1],
     breakout: [1],
@@ -308,6 +320,7 @@ export const MIN_PLAYERS: Partial<Record<GameType, number>> = {
     cant_stop: 2,
     mille_bornes: 2,
     impostor: 4,
+    spyfall: 3,
 };
 
 export const NO_OPTIONS_GAMES: Partial<Record<GameType, string>> = {
@@ -339,7 +352,7 @@ export const MULTI_GAMES: Record<string, { text: string; color: string }> = Obje
         .map(([key]) => [key, { text: 'MULTI', color: '#1D4ED8' }])
 );
 
-export const GAME_URL_SLUGS = ['uno', 'skyjow', 'taboo', 'yahtzee', 'puissance4', 'just-one', 'battleship', 'diamant', 'impostor', 'ludo', 'perudo', 'cant-stop', 'mille-bornes'] as const;
+export const GAME_URL_SLUGS = ['uno', 'skyjow', 'taboo', 'yahtzee', 'puissance4', 'just-one', 'battleship', 'diamant', 'impostor', 'spyfall', 'ludo', 'perudo', 'cant-stop', 'mille-bornes'] as const;
 
 export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string, gameId?: string) => string>> = {
     uno: (id, gid) => gid ? `/uno/${id}/${gid}` : `/uno/${id}`,
@@ -351,6 +364,7 @@ export const GAME_ROUTES: Partial<Record<GameType, (lobbyId: string, gameId?: st
     battleship: (id, gid) => gid ? `/battleship/${id}/${gid}` : `/battleship/${id}`,
     diamant: (id, gid) => gid ? `/diamant/${id}/${gid}` : `/diamant/${id}`,
     impostor: (id, gid) => gid ? `/impostor/${id}/${gid}` : `/impostor/${id}`,
+    spyfall: (id, gid) => gid ? `/spyfall/${id}/${gid}` : `/spyfall/${id}`,
     ludo: (id, gid) => gid ? `/ludo/${id}/${gid}` : `/ludo/${id}`,
     perudo: (id, gid) => gid ? `/perudo/${id}/${gid}` : `/perudo/${id}`,
     cant_stop: (id, gid) => gid ? `/cant-stop/${id}/${gid}` : `/cant-stop/${id}`,
