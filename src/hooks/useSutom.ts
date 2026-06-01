@@ -77,6 +77,14 @@ export function useSutom() {
         }
     }, [current, answer, rows, solo]);
 
+    // Give up: end the round with a 0 score (not submitted — useSoloGame skips
+    // zero scores), revealing the answer in the game-over overlay.
+    const abandon = useCallback(() => {
+        if (solo.phase !== 'playing') return;
+        setWon(false);
+        solo.endGame(0);
+    }, [solo]);
+
     const onKey = useCallback((rawKey: string) => {
         if (solo.phase !== 'playing') return;
         const key = rawKey.toUpperCase();
@@ -141,5 +149,6 @@ export function useSutom() {
         onKey,
         setCurrentInput,
         submit,
+        abandon,
     };
 }

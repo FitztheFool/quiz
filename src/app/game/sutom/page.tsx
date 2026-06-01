@@ -30,7 +30,7 @@ export default function SutomPage() {
         phase, length, rows, current, message, won, keyStates, answer, loading,
         bestScore, displayScore, isNewBest, submitState, session,
         category, hintRevealed, revealHint,
-        start, onKey, setCurrentInput, submit,
+        start, onKey, setCurrentInput, submit, abandon,
     } = useSutom();
 
     const inputRef = useRef<HTMLInputElement>(null);
@@ -58,9 +58,9 @@ export default function SutomPage() {
             </div>
 
             {phase === 'playing' && (
-                <div className="w-full max-w-[440px] mb-3">
+                <div className="w-full max-w-[440px] mb-3 flex items-stretch gap-2">
                     {hintRevealed ? (
-                        <div className="px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200/60 dark:border-amber-700/40 text-sm flex items-center justify-between gap-3">
+                        <div className="flex-1 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200/60 dark:border-amber-700/40 text-sm flex items-center gap-3">
                             <span className="text-amber-700 dark:text-amber-300">
                                 <span className="text-[10px] font-bold tracking-wider uppercase mr-2 opacity-70">Catégorie</span>
                                 <span className="font-bold">{category}</span>
@@ -68,10 +68,14 @@ export default function SutomPage() {
                         </div>
                     ) : (
                         <button onClick={revealHint}
-                            className="w-full px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-amber-200/60 dark:border-amber-700/40 text-amber-700 dark:text-amber-300 text-sm font-bold hover:bg-amber-50 dark:hover:bg-amber-900/15 active:scale-[0.99] transition-all">
+                            className="flex-1 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-amber-200/60 dark:border-amber-700/40 text-amber-700 dark:text-amber-300 text-sm font-bold hover:bg-amber-50 dark:hover:bg-amber-900/15 active:scale-[0.99] transition-all">
                             💡 Indice — révéler la catégorie
                         </button>
                     )}
+                    <button onClick={abandon}
+                        className="px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 text-sm font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/15 dark:hover:text-red-400 active:scale-[0.99] transition-all whitespace-nowrap">
+                        Abandonner
+                    </button>
                 </div>
             )}
 
