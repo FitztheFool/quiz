@@ -183,10 +183,8 @@ export default function DashboardPage() {
 
     if (status === 'loading' || loading) {
         return (
-            <div className="min-h-screen bg-transparent flex items-center justify-center">
-                <div className="text-center">
-                    <LoadingSpinner message="Chargement des quiz..." />
-                </div>
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <LoadingSpinner fullScreen={false} message="Chargement des quiz..." />
             </div>
         );
     }
